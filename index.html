@@ -370,14 +370,19 @@ function esquadrias(M){
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
   const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   for(const k in mapa){const L=mapa[k];if(L.length<2)continue;if(passaPor(M,L[0][0].pts[L[0][1]],L.map(x=>x[0])))continue;
-    const dirs=L.map(([m,e])=>nrm(sub(m.pts[1-e],m.pts[e])));let par=null,np=0;
+    const dirs=L.map(([m,e])=>nrm(sub(m.pts[1-e],m.pts[e])));
+    const exp=(m,e)=>!m.noEsq&&(m.esq===true||(Array.isArray(m.esq)&&m.esq[e]));
+    const cands=[];
     for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const c=dot(dirs[i],dirs[j]),t=Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI;if(t<30||t>150)continue;
-      const pn=nrm(crs(dirs[i],dirs[j]));if(L.every((_,k2)=>k2===i||k2===j||Math.abs(dot(dirs[k2],pn))>0.95)){
-        const resto=L.map((_,k2)=>k2).filter(k2=>k2!==i&&k2!==j),vert=resto.length&&resto.every(k2=>Math.abs(dirs[k2][2])>0.95);
-        if(!par||vert){if(vert&&!par?.v){par=[i,j];par.v=true;np=1;}else if(!par){par=[i,j];np=1;}else np++;}}}
-    if(np!==1)continue;
+      if(!quer(L[i][0],L[i][1])||!quer(L[j][0],L[j][1]))continue;
+      const pn=nrm(crs(dirs[i],dirs[j]));if(!L.every((_,k2)=>k2===i||k2===j||Math.abs(dot(dirs[k2],pn))>0.95))continue;
+      const resto=L.map((_,k2)=>k2).filter(k2=>k2!==i&&k2!==j),vert=resto.length&&resto.every(k2=>Math.abs(dirs[k2][2])>0.95);
+      const ex=(exp(L[i][0],L[i][1])?1:0)+(exp(L[j][0],L[j][1])?1:0);
+      cands.push({par:[i,j],sc:ex*10+(vert?1:0)});}
+    if(!cands.length)continue;
+    cands.sort((a,b)=>b.sc-a.sc);if(cands.length>1&&cands[0].sc===cands[1].sc)continue;
+    const par=cands[0].par;
     const[m1,e1]=L[par[0]],[m2,e2]=L[par[1]];
-    if(!quer(m1,e1)||!quer(m2,e2))continue;
     const P=m1.pts[e1],u=dirs[par[0]],v=dirs[par[1]];
     const th=Math.acos(Math.max(-1,Math.min(1,dot(u,v))))*180/Math.PI;
     const n=nrm(sub(u,v));
@@ -912,7 +917,7 @@ function pegar(e){
   upd();
 }
 const fmtP=p=>'('+p.map(v=>Math.round(v)).join(', ')+')';
-let MSGSEL='';function avisoSel(t){MSGSEL=t;const e=$('selMsg');if(e){e.textContent=t;e.style.display=t?'':'none';}}
+let MSGSEL='';function avisoSel(t){MSGSEL=t;const e=$('selMsg');if(e){e.textContent=t;e.style.display=t?'':'none';if(t)setTimeout(()=>e.scrollIntoView({behavior:'smooth',block:'center'}),80);}}
 function painelSel(){
   const box=$('selBox');$('dicaSel').style.display=SEL.length?'none':'';
   const ms=SEL.map(k=>(LAST.M||[]).find(m=>chaveM(m)===k)).filter(Boolean);
