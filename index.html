@@ -27,7 +27,7 @@ h1{font:700 30px/1.05 'Barlow Condensed',sans-serif;margin:0 0 6px;letter-spacin
 .vbtn{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;z-index:2}
 .vbtn button{flex:1;padding:8px 0;font:600 13px 'IBM Plex Sans';background:#2a2d31e8;color:var(--tx);border:1px solid var(--line);border-radius:8px}
 .vbtn button.on{background:var(--or);border-color:var(--or);color:#1b1e21}
-.legend{position:absolute;bottom:10px;left:12px;right:12px;z-index:2;font:12px 'IBM Plex Mono';color:#3b3f45;pointer-events:auto}
+.legend{position:absolute;bottom:10px;left:12px;right:12px;z-index:2;font:12px 'IBM Plex Mono';color:#555;pointer-events:auto}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}
 h2{font:600 15px 'Barlow Condensed';letter-spacing:2px;color:var(--mut);text-transform:uppercase;margin:0 0 12px}
 .tipos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -782,13 +782,18 @@ $('kerf').oninput=()=>{CFG.kerf=parseFloat($('kerf').value)||0;upd();};
 
 // ===== 3D =====
 const vw=$('viewer');
-const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0xd5d8dc);
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0xffffff);R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
 vw.insertBefore(R.domElement,vw.firstChild);
 const scene=new THREE.Scene();
-scene.add(new THREE.AmbientLight(0xffffff,.55));
-const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(5,10,7);scene.add(dl);
+scene.add(new THREE.HemisphereLight(0xffffff,0xd8d4cc,.75));
+const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(6,14,8);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);dl.shadow.radius=4;dl.shadow.bias=-0.0005;scene.add(dl);scene.add(dl.target);
 const dl2=new THREE.DirectionalLight(0xffffff,.3);dl2.position.set(-6,4,-5);scene.add(dl2);
-const grid=new THREE.GridHelper(60,60,0xaeb3b9,0xc2c6cb);scene.add(grid);
+const grid=new THREE.Group();
+{const g1=new THREE.GridHelper(40,400,0xededed,0xededed),g2=new THREE.GridHelper(40,40,0xd2d2d2,0xd2d2d2);grid.add(g1,g2);
+ const ax=(a,b,c)=>{const g=new THREE.BufferGeometry().setFromPoints([a,b]);grid.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:c})));};
+ ax(new THREE.Vector3(-20,0.001,0),new THREE.Vector3(20,0.001,0),0xe06666);ax(new THREE.Vector3(0,0.001,-20),new THREE.Vector3(0,0.001,20),0x66c266);
+ const sh=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.ShadowMaterial({opacity:.18}));sh.rotation.x=-Math.PI/2;sh.receiveShadow=true;grid.add(sh);}
+scene.add(grid);
 const pcam=new THREE.PerspectiveCamera(40,1,.05,500),ocam=new THREE.OrthographicCamera(-1,1,1,-1,-100,200);
 let view='3d',cam=pcam,group=new THREE.Group();scene.add(group);
 const orb={th:-0.75,ph:1.0,r:15,tg:new THREE.Vector3()};let oz=1,opan=new THREE.Vector2();
@@ -813,24 +818,25 @@ function caixaCortada(m,p,mat){
 }
 function draw(M){
   scene.remove(group);group=new THREE.Group();
-  R.setClearColor(LINHAS?0xf4f5f6:0xd5d8dc);LMAT.color.set(LINHAS?0x1f2226:0x8d939b);
+  R.setClearColor(0xffffff);LMAT.color.set(0x1b1c1e);
   const LCL=new THREE.LineBasicMaterial({color:0x1f2226});const up=new THREE.Vector3(0,1,0),mats={};PICK=[];
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
   for(const m of M){
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=m.pf||g.perfil,sel=SEL.includes(chaveM(m));
-    const mat=sel?SELMAT:mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x2a2d31,roughness:.5,metalness:.35});
+    const mat=sel?SELMAT:mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x8a857a,roughness:.6,metalness:.15});
     for(let i=1;i<m.pts.length;i++){
       let a=P3(...m.pts[i-1]),b=P3(...m.pts[i]);
       if(m.trim&&m.pts.length===2){const u=b.clone().sub(a).normalize();a=a.clone().add(u.clone().multiplyScalar(m.trim[0]/1000));b=b.clone().sub(u.clone().multiplyScalar(m.trim[1]/1000));}
       const dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
       const round=p.tipo==='red'||p.tipo==='macico';
       if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),sel?SELLIN:LCL));const pk=new THREE.Mesh(UC,INV);pk.scale.set(.06,len,.06);pk.position.copy(a).add(b).multiplyScalar(.5);pk.quaternion.setFromUnitVectors(up,dir.clone().normalize());pk.userData.mk=chaveM(m);group.add(pk);PICK.push(pk);continue;}
-      if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);cm.userData.mk=chaveM(m);if(LINHAS)cm.material=INV;group.add(cm);PICK.push(cm);if(!m.curva&&(LINHAS||sel)){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),sel?SELLIN:LMAT);group.add(eg);}continue;}
+      if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);cm.userData.mk=chaveM(m);if(LINHAS)cm.material=INV;group.add(cm);PICK.push(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),sel?SELLIN:LMAT);group.add(eg);}cm.castShadow=!LINHAS;continue;}
       const mesh=new THREE.Mesh(round?UC:UB,mat);
       const w=p.a/1000,h=((p.tipo==='ret'||p.tipo==='placa')?p.b:p.tipo==='chapa'?p.t:p.a)/1000;
       mesh.scale.set(w,len+(m.curva?w*0.6:0),round?w:h);mesh.position.copy(a).add(b).multiplyScalar(.5);
       mesh.quaternion.setFromUnitVectors(up,dir.normalize());if(LINHAS)mesh.material=INV;mesh.userData.mk=chaveM(m);group.add(mesh);PICK.push(mesh);
-      if(!round&&!m.curva&&(LINHAS||sel)){const eg=new THREE.LineSegments(EUB,sel?SELLIN:LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
+      mesh.castShadow=!LINHAS;
+      if(!round&&!m.curva){const eg=new THREE.LineSegments(EUB,sel?SELLIN:LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
     }
     for(const q of m.pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   }
@@ -839,11 +845,12 @@ function draw(M){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
   else if(PN.length&&CHAPA){const pos=[];for(const pts of PN){for(let i=1;i<pts.length-1;i++)for(const q of[pts[0],pts[i],pts[i+1]]){const v=P3(...q);pos.push(v.x,v.y,v.z);}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
-    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xeceef0,roughness:.8,metalness:0,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1})));
+    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x7d786e,roughness:.7,metalness:.1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1})));
     const lp=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);lp.push(a.x,a.y,a.z,b.x,b.y,b.z);}
-    const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));group.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xb4b9bf})));}
+    const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));group.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x1b1c1e})));}
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
+  {const c=P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,0),r=Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,bbox.z1-bbox.z0)/1000;dl.position.set(c.x+r*.5,c.y+r*1.6,c.z+r*.8);dl.target.position.copy(c);const sc=dl.shadow.camera;sc.left=sc.bottom=-r;sc.right=sc.top=r;sc.near=.1;sc.far=r*5;sc.updateProjectionMatrix();}
   scene.add(group);orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
 }
 function fitR(){return Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,(bbox.z1-bbox.z0)*1.5)/1000*1.6+0.8;}
