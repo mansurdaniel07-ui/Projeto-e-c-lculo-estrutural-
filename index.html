@@ -77,6 +77,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 .topo{display:flex;flex-direction:column;gap:2px;padding:4px 4px 14px;border-left:4px solid var(--or);padding-left:12px;margin-bottom:12px}.topo b{font:700 24px 'Barlow Condensed';letter-spacing:2px}.topo span{font:12px 'IBM Plex Mono';color:var(--mut)}
 .det{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px}.det summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--or)}
 .vtools{position:absolute;right:10px;top:58px;z-index:2;display:flex;flex-direction:column;gap:6px}.vtools button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:#2a2d31e8;color:#fff;font-size:18px}.vtools button.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
+.chopts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 -4px;font-size:13px;color:var(--mut)}.chopts .chip{padding:6px 10px}.chopts .chip.on{background:var(--or);color:#1b1e21;border-color:var(--or)}.chopts input{width:70px;padding:6px;background:#15171a;border:1px solid var(--line);border-radius:6px;color:var(--tx);font:500 14px 'IBM Plex Mono'}
 .selbox{margin:12px -16px -16px;padding:12px 16px 16px;border-top:1px solid var(--line);background:#25282c;border-radius:0 0 14px 14px}
 .selbox .inf{font:13px 'IBM Plex Mono';color:var(--tx);margin-bottom:10px}.selbox .inf b{color:var(--or)}
 .selbox .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.selbox .acts .btn{padding:10px 4px;font-size:13px}
@@ -114,6 +115,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
     <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar · 2 dedos movem · toque duplo aproxima</div>
     <div class="legend" id="legend"></div>
   </div>
+  <div id="chapaOpts" class="chopts" style="display:none"></div>
   <div id="selMsg" class="sub" style="display:none;margin:10px 0 -6px;padding:8px 10px;border:1px solid var(--or);border-radius:8px;color:var(--tx)"></div>
   <div id="selBox" class="selbox" style="display:none"></div>
 </div>
@@ -263,6 +265,7 @@ function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=p
 
 
 
+function chapaCfg(){return Object.assign({cor:'cinza',esp:3,lado:'fora'},MOD&&MOD.chapa||{});}
 function chapaPorFora(M){
   const PN=M.paineis;if(!PN||!PN.length)return;
   const all=PN.flat(),c=[0,1,2].map(k=>all.reduce((s,p)=>s+p[k],0)/all.length);
@@ -273,11 +276,19 @@ function chapaPorFora(M){
     const pc=[0,1,2].map(k=>pts.reduce((s,p)=>s+p[k],0)/pts.length);
     if((pc[0]-c[0])*n[0]+(pc[1]-c[1])*n[1]+(pc[2]-c[2])*n[2]<0)n=n.map(x=>-x);
     const mn=[0,1,2].map(k=>Math.min(...pts.map(p=>p[k]))-60),mx=[0,1,2].map(k=>Math.max(...pts.map(p=>p[k]))+60);
-    let prot=0;
-    for(const m of st){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],hw=Math.max(g.perfil.a||0,g.perfil.b||0)/2;
+    {const sdq=q=>(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]+(q[2]-a[2])*n[2];
+     for(const mg of[0,1500,4000]){let vote=0;const dentroLat=q=>q.every((v,k)=>Math.abs(n[k])>.7||(v>=mn[k]-mg&&v<=mx[k]+mg));
+       for(const m of st){const A=m.pts[0],B=m.pts[m.pts.length-1];
+         for(const[P,Q]of[[A,B],[B,A]])if(Math.abs(sdq(P))<5&&dentroLat(P)){const sq=sdq(Q);if(Math.abs(sq)>5)vote+=sq>0?1:-1;}}
+       if(vote){if(vote>0)n=n.map(x=>-x);break;}}}
+    let pOut=null,pIn=null;
+    for(const m of st){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pp=m.pf||g.perfil,hw=Math.max(pp.a||0,pp.b||0)/2;
       for(const q of m.pts){if(q.some((v,k)=>v<mn[k]||v>mx[k]))continue;
-        const sd=(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]+(q[2]-a[2])*n[2];if(Math.abs(sd)<150)prot=Math.max(prot,sd+hw);}}
-    const off=Math.max(0,prot)+3;PN[ix]=pts.map(p=>[p[0]+n[0]*off,p[1]+n[1]*off,p[2]+n[2]*off]);
+        const sd=(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]+(q[2]-a[2])*n[2];if(Math.abs(sd)<150){pOut=Math.max(pOut??-1e9,sd+hw);pIn=Math.min(pIn??1e9,sd-hw);}}}
+    const ch=chapaCfg(),fora=ch.lado!=='dentro';
+    const base=fora?(pOut??0)+0.3:(pIn??0)-0.3;
+    PN[ix]=pts.map(p=>[p[0]+n[0]*base,p[1]+n[1]*base,p[2]+n[2]*base]);
+    (M.pnN=M.pnN||[])[ix]=fora?n:n.map(x=>-x);
   });
 }
 // ===== ajustes feitos na tela =====
@@ -855,10 +866,13 @@ function draw(M){
   const PN=M.paineis||[];
   if(PN.length&&CHAPA&&LINHAS){const pos=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);pos.push(a.x,a.y,a.z,b.x,b.y,b.z);}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
-  else if(PN.length&&CHAPA){const pos=[];for(const pts of PN){for(let i=1;i<pts.length-1;i++)for(const q of[pts[0],pts[i],pts[i+1]]){const v=P3(...q);pos.push(v.x,v.y,v.z);}}
+  else if(PN.length&&CHAPA){const ch=chapaCfg(),e=Math.max(.5,+ch.esp||3),pos=[],lp=[];
+    const add3=(q)=>{const v=P3(...q);pos.push(v.x,v.y,v.z);},lin=(a,b)=>{const A=P3(...a),B=P3(...b);lp.push(A.x,A.y,A.z,B.x,B.y,B.z);};
+    PN.forEach((pts,ix)=>{const n=(M.pnN||[])[ix]||[0,0,1],B=pts.map(p=>[p[0]+n[0]*e,p[1]+n[1]*e,p[2]+n[2]*e]);
+      for(let i=1;i<pts.length-1;i++){add3(pts[0]);add3(pts[i]);add3(pts[i+1]);add3(B[0]);add3(B[i+1]);add3(B[i]);}
+      for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;add3(pts[i]);add3(pts[j]);add3(B[j]);add3(pts[i]);add3(B[j]);add3(B[i]);lin(pts[i],pts[j]);lin(B[i],B[j]);lin(pts[i],B[i]);}});
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
-    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x7d786e,roughness:.7,metalness:.1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1})));
-    const lp=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);lp.push(a.x,a.y,a.z,b.x,b.y,b.z);}
+    const cm=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:ch.cor==='branco'?0xf2f2ef:0x7d786e,roughness:.7,metalness:.1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1}));cm.castShadow=true;group.add(cm);
     const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));group.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x1b1c1e})));}
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
@@ -934,6 +948,17 @@ function pegar(e){
   upd();
 }
 const fmtP=p=>'('+p.map(v=>Math.round(v)).join(', ')+')';
+
+function opcoesChapa(){const box=$('chapaOpts');if(!box)return;const temPN=LAST.M&&LAST.M.paineis&&LAST.M.paineis.length;
+  box.style.display=CHAPA&&temPN?'':'none';if(!CHAPA||!temPN)return;const c=chapaCfg();
+  box.innerHTML=`<b style="color:var(--tx)">Chapa:</b>
+   <span class="chip ${c.cor==='branco'?'on':''}" data-c="branco">Branca</span><span class="chip ${c.cor==='cinza'?'on':''}" data-c="cinza">Cinza</span>
+   <span class="chip ${c.lado==='fora'?'on':''}" data-l="fora">Por fora</span><span class="chip ${c.lado==='dentro'?'on':''}" data-l="dentro">Por dentro</span>
+   <span>esp. <input type="number" step="0.5" id="chEsp" value="${c.esp}"> mm</span>`;
+  const set=o=>{MOD.chapa=Object.assign(chapaCfg(),o);upd();};
+  box.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>set({cor:b.dataset.c}));
+  box.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>set({lado:b.dataset.l}));
+  $('chEsp').onchange=()=>set({esp:Math.max(.5,+$('chEsp').value||3)});}
 let MSGSEL='';function avisoSel(t){MSGSEL=t;const e=$('selMsg');if(e){e.textContent=t;e.style.display=t?'':'none';if(t)setTimeout(()=>e.scrollIntoView({behavior:'smooth',block:'center'}),80);}}
 function painelSel(){
   const box=$('selBox');$('dicaSel').style.display=SEL.length?'none':'';
@@ -1052,10 +1077,10 @@ function upd(reset){
     Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');if(g.perfil.tipo==='placa'){cl+=`<tr><td>${g.perfil.a}×${g.perfil.b} mm · esp. ${g.perfil.t}<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span></td><td class="n">${c[k]} un</td><td class="n">–</td></tr>`;return;}cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
   $('tab').innerHTML=`<table><tr><th>Perfil</th><th class="n">Metros</th><th class="n">Barras</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
   const area=(M.paineis||[]).reduce((a,p)=>a+areaPainel(p),0)/1e6;
-  $('area').textContent=area>0?`Área de chapa / molde: ${area.toFixed(1)} m²`:'';$('bChapa').style.display=area>0?'':'none';
+  $('area').textContent=area>0?`Área de chapa / molde: ${area.toFixed(1)} m² · espessura ${chapaCfg().esp} mm · ${chapaCfg().lado==='dentro'?'por dentro':'por fora'}`:'';$('bChapa').style.display=area>0?'':'none';
   $('kB').textContent=tot;$('kP').textContent=M.length;$('kK').textContent=Math.round(kg);
   const bd=$('badge');bd.textContent=emd?`${emd} EMENDA(S)`:'SEM EMENDA';bd.className='badge'+(emd?' warn':'');
-  LAST={M,cut,gid};painelSel();store('dc-estr-atual',{mod:MOD,val:VAL});
+  LAST={M,cut,gid};painelSel();opcoesChapa();store('dc-estr-atual',{mod:MOD,val:VAL});
   if(reset)setView(view);else render();
 }
 function copiar(txt){const ta=$('ta');ta.style.display='block';ta.value=txt;ta.select();
