@@ -222,7 +222,8 @@ function construir(fn,P){
     M.push({pts,g,curva:true,nota:nota||('dobrada · '+ang.length+' dobra(s): '+ang.map(a=>a+'°').join(', '))});};
   const PN=[];
   const painel=(pts)=>{if(Array.isArray(pts)&&pts.length>=3&&pts.every(p=>Array.isArray(p)&&p.length===3&&p.every(isFinite)))PN.push(pts);};
-  fn(P,{add,poli,arco,dobrada,divide,divPts,painel});
+  const perfil=id=>{const g=(MOD&&MOD.grupos||[]).find(x=>x.id===id)||(MOD&&MOD.grupos||[])[0];const p=g?g.perfil:{tipo:'ret',a:50,b:50,t:2};return {...p,w:p.tipo==='chapa'?p.t:p.a,h:p.tipo==='ret'?p.b:p.a};};
+  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil});
   // limpeza
   const seen=new Set(),out=[];
   for(const m of M){
@@ -247,6 +248,52 @@ function cortar(lens,barra,kerf){
 function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];x+=a[1]*b[2]-a[2]*b[1];y+=a[2]*b[0]-a[0]*b[2];z+=a[0]*b[1]-a[1]*b[0];}return Math.hypot(x,y,z)/2;}
 
 
+
+// ===== encontros: desconto de medida (padrão de serralheria) =====
+function passaPor(M,P,excl){
+  for(const o of M){if(o.curva||o.pts.length!==2||excl.includes(o))continue;
+    const A=o.pts[0],B=o.pts[1],d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]],L2=d[0]*d[0]+d[1]*d[1]+d[2]*d[2];if(!L2)continue;
+    const t=((P[0]-A[0])*d[0]+(P[1]-A[1])*d[1]+(P[2]-A[2])*d[2])/L2,Lt=Math.sqrt(L2);
+    if(t*Lt<3||t*Lt>Lt-3)continue;
+    const q=[A[0]+d[0]*t-P[0],A[1]+d[1]*t-P[1],A[2]+d[2]*t-P[2]];if(Math.hypot(...q)<3)return o;}
+  return null;
+}
+function juntas(M){
+  const st=M.filter(m=>!m.curva&&m.pts.length===2);
+  const pf=m=>(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil,larg=m=>{const p=pf(m);return p.tipo==='chapa'?p.t:p.a;};
+  const dir=m=>{const d=[m.pts[1][0]-m.pts[0][0],m.pts[1][1]-m.pts[0][1],m.pts[1][2]-m.pts[0][2]],l=Math.hypot(...d)||1;return d.map(v=>v/l);};
+  const sen=(a,b)=>{const c=Math.abs(a[0]*b[0]+a[1]*b[1]+a[2]*b[2]);return Math.sqrt(Math.max(0,1-c*c));};
+  const mesmo=(a,b)=>Math.abs(a[0]-b[0])<3&&Math.abs(a[1]-b[1])<3&&Math.abs(a[2]-b[2])<3;
+  const nomeG=o=>(MOD.grupos.find(x=>x.id===o.g)||{}).nome||'';
+  for(const m of st){m.trim=[0,0];m.junta=['',''];}
+  for(const m of st){const dm=dir(m);
+    for(const e of[0,1]){
+      if(m.cuts&&m.cuts[e])continue;
+      const P=m.pts[e];
+      let ganha=null,ded=0;
+      const tr=passaPor(st,P,[m]);
+      if(tr&&sen(dm,dir(tr))>0.3){ganha=tr;ded=larg(tr)/2/sen(dm,dir(tr));}
+      else{
+        const fins=st.filter(o=>o!==m&&(mesmo(o.pts[0],P)||mesmo(o.pts[1],P))&&sen(dm,dir(o))>0.3);
+        if(fins.length){
+          const esq=fins.filter(o=>o.cuts&&((mesmo(o.pts[0],P)&&o.cuts[0])||(mesmo(o.pts[1],P)&&o.cuts[1])));
+          const vert=v=>Math.abs(v[2])>0.9;
+          if(esq.length){ganha=esq[0];ded=larg(ganha)/2;}
+          else if(vert(dm)){}
+          else{const vs=fins.filter(o=>vert(dir(o)));
+            if(vs.length){ganha=vs[0];ded=larg(ganha)/2;}
+            else{const mais=fins.filter(o=>o.len>m.len||(o.len===m.len&&M.indexOf(o)<M.indexOf(m)));
+              if(mais.length){ganha=mais.sort((a,b)=>larg(b)-larg(a))[0];ded=larg(ganha)/2;}}}
+        }
+      }
+      if(ganha&&ded>0){m.trim[e]=ded;m.junta[e]=nomeG(ganha);}
+    }
+    const desc=Math.round(m.trim[0]+m.trim[1]);
+    m.lenCorte=Math.round(m.len-m.trim[0]-m.trim[1]+(m.ext||0));
+    if(desc&&!m.notaEsq)m.notaEsq='corte reto · eixo '+m.len+' − '+desc+' (encontros)';
+    else if(desc)m.notaEsq+=' − '+desc+' (encontro)';
+  }
+}
 // ===== meia esquadria =====
 function esquadrias(M){
   const auto=!!(MOD&&MOD.esqAuto),mapa={},key=p=>p.map(v=>Math.round(v)).join(',');
@@ -255,7 +302,7 @@ function esquadrias(M){
   M.forEach(m=>{if(m.curva||m.pts.length!==2)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
   const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-  for(const k in mapa){const L=mapa[k];if(L.length<2)continue;
+  for(const k in mapa){const L=mapa[k];if(L.length<2)continue;if(passaPor(M,L[0][0].pts[L[0][1]],L.map(x=>x[0])))continue;
     const dirs=L.map(([m,e])=>nrm(sub(m.pts[1-e],m.pts[e])));let par=null,np=0;
     for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const c=dot(dirs[i],dirs[j]),t=Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI;if(t<30||t>150)continue;
       const pn=nrm(crs(dirs[i],dirs[j]));if(L.every((_,k2)=>k2===i||k2===j||Math.abs(dot(dirs[k2],pn))>0.95)){
@@ -383,28 +430,34 @@ PR.piscina={
     for(let j=0;j<cy.length-1;j++){add([0,cy[j],0],[0,cy[j+1],0],'c','aresta da borda');add([L,cy[j],0],[L,cy[j+1],0],'c','aresta da borda');}}
  })};
 PR.mesa={
- titulo:'Mesa móvel',
- resumo:'Mesa de ferro com quadro superior, travessas, pernas e travamento inferior. Rodízios opcionais.',
- perguntas:['Medida do tampo e altura de trabalho','Vai ter rodízio? Qual altura?'],
+ titulo:'Mesa',
+ resumo:'Mesa no padrão de serralheria: tampo esquadrejado (meia esquadria 45° nos 4 cantos) com medida externa C × L, pernas inteiras soldadas por baixo do quadro (altura menos o perfil do tampo), travessas internas e reforços encostando nas faces e já descontados.',
+ perguntas:['Medida externa do tampo e altura total','Vai ter perna no meio? (vão máximo entre pernas)','Rodízio e reforço inferior?'],
  grupos:[{id:'l',nome:'Tampo – comprimento'},{id:'t',nome:'Tampo – largura'},{id:'p',nome:'Pernas'},{id:'r',nome:'Reforço inferior'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:3000,grupo:'Medidas'},
   {id:'L',nome:'Largura',tipo:'num',valor:1500,grupo:'Medidas'},
-  {id:'H',nome:'Altura total',tipo:'num',valor:900,grupo:'Medidas'},
-  {id:'esp',nome:'Espaç. travessas',tipo:'num',valor:600,grupo:'Estrutura'},
-  {id:'vao',nome:'Vão máx. pernas',tipo:'num',valor:2000,grupo:'Estrutura'},
-  {id:'rod',nome:'Rodízios',tipo:'bool',valor:true,grupo:'Rodízios'},
-  {id:'rodH',nome:'Altura rodízio',tipo:'num',valor:100,grupo:'Rodízios',se:'rod'},
-  {id:'inf',nome:'Travamento inferior',tipo:'bool',valor:true,grupo:'Travamento inferior'},
-  {id:'infH',nome:'Altura do chão',tipo:'num',valor:200,grupo:'Travamento inferior',se:'inf'}],
+  {id:'H',nome:'Altura total',tipo:'num',valor:1000,grupo:'Medidas'},
+  {id:'esp',nome:'Espaç. travessas do tampo',tipo:'num',valor:600,grupo:'Estrutura'},
+  {id:'vao',nome:'Vão máx. entre pernas',tipo:'num',valor:2000,grupo:'Estrutura'},
+  {id:'rod',nome:'Rodízios',tipo:'bool',valor:false,grupo:'Rodízios'},
+  {id:'rodH',nome:'Altura do rodízio',tipo:'num',valor:100,grupo:'Rodízios',se:'rod'},
+  {id:'inf',nome:'Reforço inferior',tipo:'bool',valor:true,grupo:'Reforço inferior'},
+  {id:'infH',nome:'Altura do chão',tipo:'num',valor:200,grupo:'Reforço inferior',se:'inf'}],
  codigo:String(function(P,H){
-  const {add,divide}=H;const r=P.rod?P.rodH:0,xl=divide(0,P.C,P.vao),xt=divide(0,P.C,P.esp);
-  for(const x of xl){add([x,0,r],[x,0,P.H],'p');add([x,P.L,r],[x,P.L,P.H],'p');}
-  add([0,0,P.H],[P.C,0,P.H],'l');add([0,P.L,P.H],[P.C,P.L,P.H],'l');
-  for(const x of xt)add([x,0,P.H],[x,P.L,P.H],'t');
-  H.painel([[0,0,P.H],[P.C,0,P.H],[P.C,P.L,P.H],[0,P.L,P.H]]);
-  if(P.inf){const z=P.infH;add([0,0,z],[P.C,0,z],'r');add([0,P.L,z],[P.C,P.L,z],'r');for(const x of xl)add([x,0,z],[x,P.L,z],'r');}
+  const {add,divide,painel,perfil}=H;
+  const wl=perfil('l').w,wt=perfil('t').w,hl=perfil('l').h,wp=perfil('p').w;
+  const r=P.rod?P.rodH:0,zt=P.H-hl/2,x0=wl/2,x1=P.C-wl/2,y0=wt/2,y1=P.L-wt/2;
+  const xl=divide(x0,x1,P.vao),xt=divide(x0,x1,P.esp);
+  add([x0,y0,zt],[x1,y0,zt],'l','',{esq:true});add([x0,y1,zt],[x1,y1,zt],'l','',{esq:true});
+  add([x0,y0,zt],[x0,y1,zt],'t','',{esq:true});add([x1,y0,zt],[x1,y1,zt],'t','',{esq:true});
+  for(const x of xt.slice(1,-1))add([x,y0,zt],[x,y1,zt],'t');
+  for(const x of xl){add([x,y0,r],[x,y0,zt],'p');add([x,y1,r],[x,y1,zt],'p');}
+  if(P.inf){const z=P.infH;
+    for(let i=0;i<xl.length-1;i++){add([xl[i],y0,z],[xl[i+1],y0,z],'r');add([xl[i],y1,z],[xl[i+1],y1,z],'r');}
+    for(const x of xl)add([x,y0,z],[x,y1,z],'r');}
+  painel([[0,0,P.H],[P.C,0,P.H],[P.C,P.L,P.H],[0,P.L,P.H]]);
  })};
 PR.molde={
  titulo:'Estrutura de molde (berço)',
@@ -676,7 +729,8 @@ const UB=new THREE.BoxGeometry(1,1,1),UC=new THREE.CylinderGeometry(.5,.5,1,10);
 let bbox={x0:0,x1:1,y0:0,y1:1,z0:0,z1:1};
 
 function caixaCortada(m,p,mat){
-  const up=new THREE.Vector3(0,1,0),A=P3(...m.pts[0]),B=P3(...m.pts[1]),d=B.clone().sub(A).normalize();
+  const up=new THREE.Vector3(0,1,0);let A=P3(...m.pts[0]),B=P3(...m.pts[1]);const d=B.clone().sub(A).normalize();
+  if(m.trim){if(!m.cuts[0])A=A.clone().add(d.clone().multiplyScalar(m.trim[0]/1000));if(!m.cuts[1])B=B.clone().sub(d.clone().multiplyScalar(m.trim[1]/1000));}
   const q=new THREE.Quaternion().setFromUnitVectors(up,d),e1=new THREE.Vector3(1,0,0).applyQuaternion(q),e3=new THREE.Vector3(0,0,1).applyQuaternion(q);
   const w=p.a/2000,h=(p.tipo==='ret'?p.b:p.tipo==='chapa'?p.t:p.a)/2000,offs=[[-w,-h],[w,-h],[w,h],[-w,h]].map(([a,b])=>e1.clone().multiplyScalar(a).add(e3.clone().multiplyScalar(b)));
   const N=c=>c?new THREE.Vector3(c.n[0],c.n[2],c.n[1]):null;
@@ -696,7 +750,9 @@ function draw(M){
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=g.perfil;
     const mat=mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x2a2d31,roughness:.5,metalness:.35});
     for(let i=1;i<m.pts.length;i++){
-      const a=P3(...m.pts[i-1]),b=P3(...m.pts[i]),dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
+      let a=P3(...m.pts[i-1]),b=P3(...m.pts[i]);
+      if(m.trim&&m.pts.length===2){const u=b.clone().sub(a).normalize();a=a.clone().add(u.clone().multiplyScalar(m.trim[0]/1000));b=b.clone().sub(u.clone().multiplyScalar(m.trim[1]/1000));}
+      const dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
       const round=p.tipo==='red'||p.tipo==='macico';
       if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),LCL));continue;}
       if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);if(!LINHAS)group.add(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),LMAT);group.add(eg);}continue;}
@@ -763,7 +819,7 @@ addEventListener('resize',resize);
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
 function upd(reset){
   let M=[];const st=$('status');
-  try{M=construir(compilar(MOD.codigo),VAL);esquadrias(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
+  try{M=construir(compilar(MOD.codigo),VAL);esquadrias(M);juntas(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
   draw(M);
   const dims=`${Math.round(bbox.x1-bbox.x0)} × ${Math.round(bbox.y1-bbox.y0)} × ${Math.round(bbox.z1-bbox.z0)} mm`;
@@ -960,6 +1016,7 @@ Regras:
   divPts([pontos],maxEsp) -> ordena pontos obrigatórios e completa com intermediários
   painel([[x,y,z],...]) superfície plana (3+ pontos, em ordem) só para mostrar a peça/chapa por cima da estrutura e calcular a área em m² (não entra na lista de corte). Use para desenhar a forma da peça (fundo e paredes da piscina, tampo, casca da capota).
 - Meia esquadria: se pedirem em TODOS os cantos/encontros em L, ponha "esqAuto": true no modelo; se for só em algumas peças, use {esq:true} nelas (as duas barras do encontro precisam terminar exatamente no mesmo ponto). Não precisa explicar na nota: o app escreve o ângulo e a medida da ponta longa.
+- MEDIDAS DE CORTE (padrão de serralharia): o usuário fala medidas EXTERNAS. Desenhe a linha de centro de cada perfil recuada meia largura (use H.perfil(grupoId) -> {a,b,t,w,h}; w = largura, h = altura). O app calcula sozinho a medida de corte: peça que termina encostada numa barra que passa é descontada (meia largura de cada lado); perna/montante vertical é inteira, as outras peças encostam nela; quadro em meia esquadria fica POR CIMA e a perna é soldada por baixo (perna = altura − altura do perfil do quadro). Para isso as pontas precisam se encontrar exatamente no mesmo ponto ou terminar sobre a linha de centro da barra que passa. Peças que encostam entre duas pernas devem ser trechos separados (perna no meio = duas peças, não uma que atravessa).
 - Linha de centro dos perfis. Barras não podem ter comprimento zero. Não duplique a mesma barra. Use loops; sem fetch, sem DOM, sem variáveis globais. Máximo ~1500 barras.
 - Pense como serralheiro: quadros/pórticos transversais com espaçamento definido, montantes, longarinas ligando, contraventamento quando precisar, pés/base no chão. Gabarito de molde: a estrutura segue a forma da peça (perfil da piscina, curva da capota etc.).
 - Padrão do usuário para gabarito de piscina: quadros transversais em PAR soldados (dois quadros a ~120 mm), um par em cada mudança de fundo (degrau, prainha) para o espelho ficar vertical, quadro próprio em cada degrau, cabeceiras nas pontas, longarinas, e base cruzada embaixo (dormentes transversais com balanço para fora em z negativo, sobre trilhos longitudinais). Escada normalmente na largura toda descendo da parte funda até a prainha.
