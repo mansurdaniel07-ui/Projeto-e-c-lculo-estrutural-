@@ -204,7 +204,7 @@ function divPts(points,max){
 function construir(fn,P){
   const M=[];
   const chk=()=>{ if(M.length>5000) throw new Error('Peças demais (>5000). Aumente os espaçamentos.'); };
-  const add=(a,b,g,nota,op)=>{chk();M.push({pts:[a,b],g,nota:nota||'',esq:op&&op.esq});};
+  const add=(a,b,g,nota,op)=>{chk();M.push({pts:[a,b],g,nota:nota||'',esq:op&&op.esq,livre:!!(op&&op.livre)});};
   const poli=(pts,g,fechado)=>{for(let i=0;i<pts.length-1;i++)add(pts[i],pts[i+1],g);if(fechado)add(pts[pts.length-1],pts[0],g);};
   const ptsArco=(c,r,a0,a1,plano,seg)=>{
     const n=seg||Math.max(8,Math.ceil(Math.abs(a1-a0)/6));const out=[];
@@ -251,7 +251,7 @@ function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=p
 
 // ===== encontros: desconto de medida (padrão de serralheria) =====
 function passaPor(M,P,excl){
-  for(const o of M){if(o.curva||o.pts.length!==2||excl.includes(o))continue;
+  for(const o of M){if(o.curva||o.pts.length!==2||o.livre||excl.includes(o))continue;
     const A=o.pts[0],B=o.pts[1],d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]],L2=d[0]*d[0]+d[1]*d[1]+d[2]*d[2];if(!L2)continue;
     const t=((P[0]-A[0])*d[0]+(P[1]-A[1])*d[1]+(P[2]-A[2])*d[2])/L2,Lt=Math.sqrt(L2);
     if(t*Lt<3||t*Lt>Lt-3)continue;
@@ -259,7 +259,7 @@ function passaPor(M,P,excl){
   return null;
 }
 function juntas(M){
-  const st=M.filter(m=>!m.curva&&m.pts.length===2);
+  const st=M.filter(m=>!m.curva&&m.pts.length===2&&!m.livre);
   const pf=m=>(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil,larg=m=>{const p=pf(m);return p.tipo==='chapa'?p.t:p.a;};
   const dir=m=>{const d=[m.pts[1][0]-m.pts[0][0],m.pts[1][1]-m.pts[0][1],m.pts[1][2]-m.pts[0][2]],l=Math.hypot(...d)||1;return d.map(v=>v/l);};
   const sen=(a,b)=>{const c=Math.abs(a[0]*b[0]+a[1]*b[1]+a[2]*b[2]);return Math.sqrt(Math.max(0,1-c*c));};
@@ -299,7 +299,7 @@ function esquadrias(M){
   const auto=!!(MOD&&MOD.esqAuto),mapa={},key=p=>p.map(v=>Math.round(v)).join(',');
   const quer=(m,e)=>auto||m.esq===true||(Array.isArray(m.esq)&&m.esq[e]);
   M.forEach(m=>{m.cuts=null;m.ext=0;m.notaEsq='';m.lenCorte=m.len;});
-  M.forEach(m=>{if(m.curva||m.pts.length!==2)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
+  M.forEach(m=>{if(m.curva||m.pts.length!==2||m.livre)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
   const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   for(const k in mapa){const L=mapa[k];if(L.length<2)continue;if(passaPor(M,L[0][0].pts[L[0][1]],L.map(x=>x[0])))continue;
@@ -570,14 +570,32 @@ PR.tanque={
   {id:'bExt',nome:'Balanço dos dormentes',tipo:'num',valor:300,grupo:'Base cruzada',se:'base'},
   {id:'bH',nome:'Altura de cada camada',tipo:'num',valor:80,grupo:'Base cruzada',se:'base'}],
  codigo:String(function(P,H){
-  const {add,divide,painel}=H;const C=P.C,L=P.L,A=P.H,xs=divide(0,C,P.esp),ys=divide(0,L,P.travY),yl=divide(0,L,P.travL);
-  for(const x of xs){add([x,0,0],[x,L,0],'q');add([x,0,A],[x,L,A],'q');for(const y of ys)add([x,y,0],[x,y,A],'q');}
-  for(let i=0;i<xs.length-1;i++){for(const y of yl)add([xs[i],y,A],[xs[i+1],y,A],'l');
-    add([xs[i],0,0],[xs[i+1],0,0],'l');add([xs[i],L,0],[xs[i+1],L,0],'l');
-    if(P.meio){add([xs[i],0,A/2],[xs[i+1],0,A/2],'l');add([xs[i],L,A/2],[xs[i+1],L,A/2],'l');}}
-  if(P.aresta){for(const[y,z]of[[0,0],[L,0],[0,A],[L,A]])add([0,y,z],[C,y,z],'c','aresta');
-    for(const x of[0,C]){add([x,0,A],[x,L,A],'c','aresta');add([x,0,0],[x,L,0],'c','aresta');for(const y of[0,L])add([x,y,0],[x,y,A],'c','aresta');}}
-  if(P.base){const h=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-h],[x,L+e,-h],'s','dormente');for(const y of divide(0,L,L/2))add([0,y,-2*h],[C,y,-2*h],'s','trilho');}
+  const {add,divide,painel,perfil}=H;const C=P.C,L=P.L,A=P.H;
+  const w=perfil('q').w,h=perfil('q').h,wl=perfil('l').w;
+  const x0=w/2,x1=C-w/2,y0=w/2,y1=L-w/2,zt=A-h/2,zb=h/2;
+  const xs=divide(x0,x1,P.esp),ys=divide(y0,y1,P.travY),yl=divide(y0,y1,P.travL);
+  // quadro de cima e quadro de baixo (boca): meia esquadria nos 4 cantos
+  for(const z of[zt,zb]){
+    add([x0,y0,z],[x1,y0,z],'q','',{esq:true});add([x0,y1,z],[x1,y1,z],'q','',{esq:true});
+    add([x0,y0,z],[x0,y1,z],'q','',{esq:true});add([x1,y0,z],[x1,y1,z],'q','',{esq:true});}
+  // travessas internas do tampo (encostam nas laterais)
+  for(const x of xs.slice(1,-1))add([x,y0,zt],[x,y1,zt],'q');
+  // longarinas internas do tampo (trechos entre travessas)
+  for(const y of yl.slice(1,-1))for(let i=0;i<xs.length-1;i++)add([xs[i],y,zt],[xs[i+1],y,zt],'l');
+  // montantes inteiros entre o quadro de baixo e o de cima
+  for(const x of xs){add([x,y0,zb],[x,y0,zt],'q');add([x,y1,zb],[x,y1,zt],'q');}
+  for(const y of ys.slice(1,-1)){add([x0,y,zb],[x0,y,zt],'q');add([x1,y,zb],[x1,y,zt],'q');}
+  // longarina no meio das laterais (trechos entre montantes)
+  if(P.meio){const zm=A/2;
+    for(let i=0;i<xs.length-1;i++){add([xs[i],y0,zm],[xs[i+1],y0,zm],'l');add([xs[i],y1,zm],[xs[i+1],y1,zm],'l');}
+    for(let i=0;i<ys.length-1;i++){add([x0,ys[i],zm],[x0,ys[i+1],zm],'l');add([x1,ys[i],zm],[x1,ys[i+1],zm],'l');}}
+  // cantoneira por fora das arestas (acabamento para plaquear)
+  if(P.aresta){const c=perfil('c').w/2-perfil('q').w/2;const o=-Math.max(0,c)/2;
+    const lv=(a,b)=>add(a,b,'c','aresta · 45° nas pontas',{livre:true});
+    for(const z of[A,0]){lv([0,o,z],[C,o,z]);lv([0,L-o,z],[C,L-o,z]);lv([o,0,z],[o,L,z]);lv([C-o,0,z],[C-o,L,z]);}
+    for(const[x,y]of[[0,0],[C,0],[0,L],[C,L]])lv([x,y,0],[x,y,A]);}
+  if(P.base){const hb=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-hb/2],[x,L+e,-hb/2],'s','dormente',{livre:true});
+    for(const y of divide(y0,y1,(y1-y0)/2))add([x0,y,-hb*1.5],[x1,y,-hb*1.5],'s','trilho',{livre:true});}
   painel([[0,0,A],[C,0,A],[C,L,A],[0,L,A]]);
   painel([[0,0,0],[C,0,0],[C,0,A],[0,0,A]]);painel([[0,L,0],[C,L,0],[C,L,A],[0,L,A]]);
   painel([[0,0,0],[0,L,0],[0,L,A],[0,0,A]]);painel([[C,0,0],[C,L,0],[C,L,A],[C,0,A]]);
@@ -832,7 +850,7 @@ function upd(reset){
     tot+=r.bars.length;kg+=q;emd+=r.emendas;const sob=r.bars.reduce((a,b)=>a+b.livre,0)/1000;
     out+=`<tr><td>${k}</td><td class="n">${m.toFixed(1)} m</td><td class="n"><b style="color:var(--or)">${r.bars.length}</b></td><td class="n">${q.toFixed(0)} kg</td></tr><tr><td colspan="4" style="color:var(--mut);font-size:11px">sobra ${sob.toFixed(1)} m${r.emendas?` · ${r.emendas} peça(s) acima de ${CFG.barra/1000} m com emenda`:''}</td></tr>`;}
   const cut={};let cl='';
-  for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=(m.lenCorte||m.len)+'|'+(m.curva?m.nota:(m.notaEsq||''));c[k]=(c[k]||0)+1;});cut[id]=c;
+  for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=(m.lenCorte||m.len)+'|'+(m.curva?m.nota:(m.notaEsq||(m.livre?m.nota:'')));c[k]=(c[k]||0)+1;});cut[id]=c;
     const g=GN(id);cl+=`<tr><td colspan="3" style="color:${g.cor};font-weight:600;padding-top:12px">${esc(g.nome)} · ${perfNome(g.perfil)}</td></tr>`;
     Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
   $('tab').innerHTML=`<table><tr><th>Perfil</th><th class="n">Metros</th><th class="n">Barras</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
@@ -1008,7 +1026,7 @@ Regras:
 - Use os números que o usuário falou; o que não falou, preencha com um valor típico e coloque em "perguntas".
 - perfil.tipo: ret (tubo quadrado/retangular a×b×t), red (tubo redondo Ø a × t), cant (cantoneira a×a×t), chapa (barra chata largura a × t), macico (ferro redondo maciço Ø a). Use medidas comerciais brasileiras (metalon 20x20 a 100x50, cantoneira 1"x1/8" = 25.4x3.17, tubo redondo 1.1/2" = 38.1x2 etc.).
 - "codigo" é uma função JavaScript pura (string) que recebe P (valores dos parâmetros por id) e H (ajudantes) e desenha as barras chamando:
-  add([x,y,z],[x,y,z],grupoId,nota?,{esq:true|[pontaA,pontaB]}?)  barra reta (uma peça); esq marca MEIA ESQUADRIA na(s) ponta(s): o app corta as duas barras que se encontram naquele ponto (só quando as duas estão marcadas) e soma a ponta longa na lista de corte
+  add([x,y,z],[x,y,z],grupoId,nota?,{esq:true|[pontaA,pontaB]}?)  barra reta (uma peça); {livre:true} = peça que não entra no cálculo de encontros (cantoneira de acabamento por fora, base solta); esq marca MEIA ESQUADRIA na(s) ponta(s): o app corta as duas barras que se encontram naquele ponto (só quando as duas estão marcadas) e soma a ponta longa na lista de corte
   poli([[x,y,z],...],grupoId,fechado?) várias barras retas encadeadas (uma peça por trecho)
   arco({c:[x,y,z],r,a0,a1,plano:'xz'|'yz'|'xy',g:grupoId,nota?}) UMA peça curva (calandrada); a0/a1 em graus; ponto = c + r·(cos,sin) no plano escolhido (xz: x e z; yz: y e z; xy: x e y)
   dobrada([[x,y,z],...],grupoId,nota?) UMA peça dobrada (a lista de corte mostra os ângulos das dobras)
