@@ -112,6 +112,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
     <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar</div>
     <div class="legend" id="legend"></div>
   </div>
+  <div id="selMsg" class="sub" style="display:none;margin:10px 0 -6px;padding:8px 10px;border:1px solid var(--or);border-radius:8px;color:var(--tx)"></div>
   <div id="selBox" class="selbox" style="display:none"></div>
 </div>
 
@@ -895,24 +896,25 @@ function pegar(e){
   RC.setFromCamera(nd,cam);const hit=RC.intersectObjects(PICK,false)[0];
   if(!hit){if(SEL.length){SEL=[];upd();}return;}
   const k=hit.object.userData.mk,i=SEL.indexOf(k);
-  if(i>=0)SEL.splice(i,1);else{SEL.push(k);if(SEL.length>2)SEL.shift();}
+  avisoSel('');if(i>=0)SEL.splice(i,1);else SEL.push(k);
   upd();
 }
 const fmtP=p=>'('+p.map(v=>Math.round(v)).join(', ')+')';
+let MSGSEL='';function avisoSel(t){MSGSEL=t;const e=$('selMsg');if(e){e.textContent=t;e.style.display=t?'':'none';}}
 function painelSel(){
   const box=$('selBox');$('dicaSel').style.display=SEL.length?'none':'';
   const ms=SEL.map(k=>(LAST.M||[]).find(m=>chaveM(m)===k)).filter(Boolean);
   SEL=ms.map(chaveM);
-  if(!ms.length){box.style.display='none';return;}
+  if(!ms.length){if((MOD.ajustes||[]).length){box.style.display='';box.innerHTML='<div class="acts"><div class="btn" data-a="desf">Desfazer último ajuste</div><div class="btn" data-a="tudo">Tirar todos os ajustes</div></div>';box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,[]));}else box.style.display='none';return;}
   const nomeG=m=>(MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g,pfm=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
   box.style.display='';
   box.innerHTML=ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
    `<div class="acts">
      <div class="btn on" data-a="fala">Ajustar falando</div>
-     ${ms.length===2?'<div class="btn" data-a="esq2">Meia esquadria entre as 2</div><div class="btn" data-a="face">Face com face</div><div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
+     ${ms.length>=2?'<div class="btn" data-a="esq2">Meia esquadria nos encontros</div><div class="btn" data-a="face">Unir (face com face)</div>'+(ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'')+'<div class="btn" data-a="reto">Corte reto</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
      <div class="btn" data-a="perfil">Perfil</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="rot">Girar perfil</div>
      <div class="btn" data-a="chapa">Chapinha</div><div class="btn" data-a="del">Apagar</div>
-     ${ms.length===1?'<div class="btn" data-a="dica" style="opacity:.6">Toque outra peça p/ unir</div>':''}
+     <div class="btn" data-a="dica" style="opacity:.6">Toque mais peças p/ unir</div>
      <div class="btn" data-a="limpar">Soltar</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
    </div><div id="selExtra"></div>`;
   box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,ms));
@@ -928,13 +930,23 @@ function pontoMaisPerto(A,B){ // pontos mais próximos entre dois segmentos
 function acaoSel(a,ms,px){
   const ex=$('selExtra');
   if(a==='perfil2'){ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(px,re=>{if(re)acaoSel('perfil2',ms,px);}));const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(px)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
-  if(a==='esq'){ajuste({op:'esq',k:chaveM(ms[0])});SEL=[];upd();return;}
-  if(a==='reto'){ajuste({op:'reto',k:chaveM(ms[0])});SEL=[];upd();return;}
-  if(a==='esq2'){ajuste({op:'esq2',k:chaveM(ms[0]),k2:chaveM(ms[1])});SEL=[];upd();return;}
-  if(a==='face'){const n=m=>esc((MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g);
-    ex.innerHTML=`<div class="sub" style="margin:8px 0 6px">Qual peça passa inteira? A outra encosta na face dela (e estica até a face se tiver folga).</div><div class="acts"><div class="btn" id="fA">1 passa · 2 encosta</div><div class="btn" id="fB">2 passa · 1 encosta</div></div>`;
-    $('fA').onclick=()=>{ajuste({op:'face',k:chaveM(ms[1]),k2:chaveM(ms[0])});SEL=[];upd();};
-    $('fB').onclick=()=>{ajuste({op:'face',k:chaveM(ms[0]),k2:chaveM(ms[1])});SEL=[];upd();};return;}
+  const fins=(m,P)=>(LAST.M||[]).filter(o=>o!==m&&o.pts.length===2&&(perto(o.pts[0],P)||perto(o.pts[1],P)));
+  if(a==='esq'){const m=ms[0];let ok=0,bloq=0;for(const P of[m.pts[0],m.pts[m.pts.length-1]]){if(passaPor(LAST.M,P,[m,...fins(m,P)])){bloq++;continue;}if(fins(m,P).length)ok++;}
+    if(!ok){avisoSel(bloq?'Não deu: nas pontas dessa peça tem um tubo passando inteiro. Use "Unir (face com face)" ou mude a outra peça.':'Não deu: nenhuma peça termina nas pontas dessa. Selecione as duas e use "Unir".');return;}
+    ajuste({op:'esq',k:chaveM(m)});SEL=[];avisoSel('Meia esquadria 45° aplicada em '+ok+' canto(s).');upd();return;}
+  if(a==='reto'){ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'reto',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel('Corte reto em '+ms.length+' peça(s).');upd();return;}
+  if(a==='esq2'){let n=0,bloq=0;const ks=ms.map(chaveM);
+    for(let i=0;i<ms.length;i++)for(let j=i+1;j<ms.length;j++){const A=ms[i],B=ms[j];
+      const P=[A.pts[0],A.pts[A.pts.length-1]].find(p=>perto(p,B.pts[0])||perto(p,B.pts[B.pts.length-1]));if(!P)continue;
+      if(passaPor(LAST.M,P,[A,B,...fins(A,P)])){bloq++;continue;}
+      (MOD.ajustes=MOD.ajustes||[]).push({op:'esq2',k:ks[i],k2:ks[j]});n++;}
+    if(!n){avisoSel(bloq?'Não deu: nesse canto tem um tubo passando inteiro.':'Não deu: essas peças não terminam no mesmo ponto. Use "Unir (face com face)".');return;}
+    MOD.editado=true;SEL=[];avisoSel('Meia esquadria 45° aplicada em '+n+' canto(s).');upd();return;}
+  if(a==='face'){
+    ex.innerHTML=`<div class="sub" style="margin:8px 0 6px">Qual peça passa inteira? As outras encostam na face dela (e esticam até a face se tiver folga).</div><div class="acts">${ms.map((m,i)=>`<div class="btn" data-p="${i}">${i+1} passa</div>`).join('')}</div>`;
+    ex.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const i=+b.dataset.p,ks=ms.map(chaveM);
+      ms.forEach((m,j)=>{if(j!==i)(MOD.ajustes=MOD.ajustes||[]).push({op:'face',k:ks[j],k2:ks[i]});});
+      MOD.editado=true;SEL=[];avisoSel('Unido: peça '+(i+1)+' passa inteira, '+(ms.length-1)+' peça(s) encostam na face dela.');upd();});return;}
   if(a==='comp'){const m=ms[0];
     ex.innerHTML=`<div class="mv"><label class="f">Eixo novo (mm)<input type="number" id="nl" value="${m.len}"></label><label class="f">Fixa<select id="fx"><option value="A">ponta 1</option><option value="B">ponta 2</option><option value="C">centro</option></select></label><div></div><div class="btn on" id="okL" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">corte hoje: ${m.lenCorte||m.len} mm (eixo ${m.len})</div>`;
     $('okL').onclick=()=>{ajuste({op:'comp',k:chaveM(m),len:+$('nl').value||m.len,fixo:$('fx').value});SEL=[];upd();};return;}
@@ -943,8 +955,9 @@ function acaoSel(a,ms,px){
     const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(p0)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
 
   if(a==='limpar'){SEL=[];upd();return;}
-  if(a==='desf'){MOD.ajustes.pop();upd();return;}
-  if(a==='del'){ms.forEach(m=>ajuste({op:'del',k:chaveM(m)}));SEL=[];upd();return;}
+  if(a==='tudo'){MOD.ajustes=[];avisoSel('Voltou ao modelo original.');upd();return;}
+  if(a==='desf'){const g=MOD.ajustes[MOD.ajustes.length-1].gr;MOD.ajustes=MOD.ajustes.filter(x=>x.gr!==g);avisoSel('Desfeito.');upd();return;}
+  if(a==='del'){ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'del',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel(ms.length+' peça(s) apagada(s). Toque Desfazer se precisar.');upd();return;}
   if(a==='rot'){ms.forEach(m=>{(MOD.ajustes=MOD.ajustes||[]).push({op:'rot',k:chaveM(m)});});MOD.editado=true;upd();return;}
   if(a==='fala'){const t=$('pedido');t.value='Na peça selecionada: ';t.focus();t.scrollIntoView({behavior:'smooth',block:'center'});return;}
   if(a==='mov'){ex.innerHTML=`<div class="mv"><label class="f">X (comprimento)<input type="number" id="dx" value="0"></label><label class="f">Y (largura)<input type="number" id="dy" value="0"></label><label class="f">Z (altura)<input type="number" id="dz" value="0"></label><div class="btn on" id="okMv" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">mm, pode ser negativo</div>`;
@@ -974,6 +987,7 @@ function acaoSel(a,ms,px){
 // ===== cálculo e resultado =====
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
 function upd(reset){
+  if(MOD&&MOD.ajustes){const gs=Date.now();MOD.ajustes.forEach(a=>{if(!a.gr)a.gr=gs;});}
   let M=[];const st=$('status');
   try{M=construir(compilar(MOD.codigo),VAL);aplicaAjustes(M);esquadrias(M);juntas(M);chapaPorFora(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
