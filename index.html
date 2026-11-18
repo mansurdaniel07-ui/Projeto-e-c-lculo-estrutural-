@@ -280,6 +280,10 @@ function chapaPorFora(M){
 // ===== ajustes feitos na tela =====
 const chaveM=m=>m.pts.map(p=>p.map(v=>Math.round(v)).join(',')).join('|');
 function grupoExtra(id,nome,perfil){if(!MOD.grupos.some(g=>g.id===id)){MOD.grupos.push({id,nome,proprio:!!perfil,perfil:perfil?clone(perfil):clone(MOD.perfilPadrao),cor:PALETA[MOD.grupos.length%PALETA.length]});return true;}return false;}
+
+const perto=(a,b)=>Math.abs(a[0]-b[0])<3&&Math.abs(a[1]-b[1])<3&&Math.abs(a[2]-b[2])<3;
+function projSeg(P,S){const A=S[0],B=S[S.length-1],d=B.map((v,i)=>v-A[i]),L2=d[0]*d[0]+d[1]*d[1]+d[2]*d[2]||1;let t=((P[0]-A[0])*d[0]+(P[1]-A[1])*d[1]+(P[2]-A[2])*d[2])/L2;t=Math.max(0,Math.min(1,t));return A.map((v,i)=>v+d[i]*t);}
+function dist(P,S){const Q=projSeg(P,S);return Math.hypot(P[0]-Q[0],P[1]-Q[1],P[2]-Q[2]);}
 function aplicaAjustes(M){
   for(const a of (MOD.ajustes||[])){
     if(a.op==='add'){M.push({pts:[a.a,a.b],g:a.g,nota:a.nota||'',len:Math.round(Math.hypot(a.b[0]-a.a[0],a.b[1]-a.a[1],a.b[2]-a.a[2])),livre:!!a.livre,placa:!!a.placa});continue;}
@@ -287,8 +291,22 @@ function aplicaAjustes(M){
     if(a.op==='del')M.splice(i,1);
     else if(a.op==='mov'){m.pts=m.pts.map(p=>[p[0]+a.d[0],p[1]+a.d[1],p[2]+a.d[2]]);}
     else if(a.op==='rot'){m.girado=!m.girado;}
+    else if(a.op==='perfil'){m.pfx=a.p;}
+    else if(a.op==='esq'){m.esq=true;m.noEsq=false;for(const P of[m.pts[0],m.pts[m.pts.length-1]])for(const o of M)if(o!==m&&o.pts.length===2&&(perto(o.pts[0],P)||perto(o.pts[1],P))){o.esq=o.esq===true?true:[perto(o.pts[0],P)||(Array.isArray(o.esq)&&o.esq[0]),perto(o.pts[1],P)||(Array.isArray(o.esq)&&o.esq[1])];o.noEsq=false;}}
+    else if(a.op==='reto'){m.noEsq=true;m.esq=false;}
+    else if(a.op==='esq2'){const o=M.find(x=>chaveM(x)===a.k2);if(!o)continue;for(const[x,y]of[[m,o],[o,m]]){const e=dist(x.pts[0],y.pts)<dist(x.pts[x.pts.length-1],y.pts)?0:1;const arr=Array.isArray(x.esq)?x.esq.slice():[x.esq===true,x.esq===true];arr[e]=true;x.esq=arr;x.noEsq=false;x.perde=(x.perde||[]).filter(k=>k!==chaveM(y));}}
+    else if(a.op==='face'){const o=M.find(x=>chaveM(x)===a.k2);if(!o)continue; // m encosta, o passa
+      const e=dist(m.pts[0],o.pts)<dist(m.pts[m.pts.length-1],o.pts)?0:1,E=m.pts[e===0?0:m.pts.length-1];
+      const Q=projSeg(E,o.pts);const F=m.pts[e===0?m.pts.length-1:0],u=[E[0]-F[0],E[1]-F[1],E[2]-F[2]],lu=Math.hypot(...u)||1,un=u.map(x=>x/lu);
+      const t=(Q[0]-F[0])*un[0]+(Q[1]-F[1])*un[1]+(Q[2]-F[2])*un[2];const N=F.map((v,i)=>v+un[i]*t);
+      if(e===0)m.pts[0]=N;else m.pts[m.pts.length-1]=N;
+      m.perde=[...(m.perde||[]),'@'+a.k2];o.ganha=[...(o.ganha||[]),'@'+a.k];m.noEsqEm=[...(m.noEsqEm||[]),e];o.refFace=a.k2;m.refFace=a.k2;m._oFace=o;(m._faces=m._faces||[]).push({o,e});}
+    else if(a.op==='comp'){const A=m.pts[0],B=m.pts[m.pts.length-1],u=B.map((v,i)=>v-A[i]),l=Math.hypot(...u)||1,un=u.map(x=>x/l),dl=a.len-l;
+      if(a.fixo==='A')m.pts[m.pts.length-1]=B.map((v,i)=>v+un[i]*dl);else if(a.fixo==='B')m.pts[0]=A.map((v,i)=>v-un[i]*dl);else{m.pts[0]=A.map((v,i)=>v-un[i]*dl/2);m.pts[m.pts.length-1]=B.map((v,i)=>v+un[i]*dl/2);}}
   }
-  for(const m of M)if(m.girado){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0];m.pf={...g.perfil,a:g.perfil.b||g.perfil.a,b:g.perfil.a};}
+  for(const m of M)if(m.pfx)m.pf=clone(m.pfx);
+  for(const m of M){let l=0;for(let i=1;i<m.pts.length;i++)l+=Math.hypot(m.pts[i][0]-m.pts[i-1][0],m.pts[i][1]-m.pts[i-1][1],m.pts[i][2]-m.pts[i-1][2]);m.len=Math.round(l);}
+  for(const m of M)if(m.girado){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],b0=m.pf||g.perfil;m.pf={...b0,a:b0.b||b0.a,b:b0.a};}
 }
 // ===== encontros: desconto de medida (padrão de serralheria) =====
 function passaPor(M,P,excl){
@@ -312,6 +330,10 @@ function juntas(M){
       if(m.cuts&&m.cuts[e])continue;
       const P=m.pts[e];
       let ganha=null,ded=0;
+      const fz=(m._faces||[]).find(f=>f.e===e);
+      if(fz){const o=fz.o;ded=larg(o)/2/Math.max(0.3,sen(dm,dir(o)));m.trim[e]=ded;m.junta[e]=nomeG(o)+' (face)';continue;}
+      {const enc=st.find(o=>o._faces&&o._faces.some(f=>f.o===m)&&dist(o.pts[o._faces.find(f=>f.o===m).e===0?0:o.pts.length-1],[P,P])<larg(o)+3);
+       if(enc){m.trim[e]=-larg(enc)/2;m.junta[e]='passa (face)';continue;}}
       const tr=passaPor(st,P,[m]);
       if(tr&&sen(dm,dir(tr))>0.3){ganha=tr;ded=larg(tr)/2/sen(dm,dir(tr));}
       else{
@@ -319,26 +341,25 @@ function juntas(M){
         if(fins.length){
           const esq=fins.filter(o=>o.cuts&&((mesmo(o.pts[0],P)&&o.cuts[0])||(mesmo(o.pts[1],P)&&o.cuts[1])));
           const vert=v=>Math.abs(v[2])>0.9;
+          const hz=fins.filter(o=>!vert(dir(o)));
           if(esq.length){ganha=esq[0];ded=larg(ganha)/2;}
-          else if(vert(dm)){}
-          else{const vs=fins.filter(o=>vert(dir(o)));
-            if(vs.length){ganha=vs[0];ded=larg(ganha)/2;}
-            else{const mais=fins.filter(o=>o.len>m.len||(o.len===m.len&&M.indexOf(o)<M.indexOf(m)));
-              if(mais.length){ganha=mais.sort((a,b)=>larg(b)-larg(a))[0];ded=larg(ganha)/2;}}}
+          else if(vert(dm)){if(hz.length){ganha=hz.sort((a,b)=>larg(b)-larg(a))[0];ded=larg(ganha)/2;}}
+          else{const mais=hz.filter(o=>o.len>m.len||(o.len===m.len&&M.indexOf(o)<M.indexOf(m)));
+            if(mais.length){ganha=mais.sort((a,b)=>larg(b)-larg(a))[0];ded=larg(ganha)/2;}}
         }
       }
       if(ganha&&ded>0){m.trim[e]=ded;m.junta[e]=nomeG(ganha);}
     }
-    const desc=Math.round(m.trim[0]+m.trim[1]);
+    const desc=Math.round(m.trim[0]+m.trim[1]);if(desc<0&&!m.notaEsq)m.notaEsq='corte reto · eixo '+m.len+' + '+(-desc)+' (passa até a face)';
     m.lenCorte=Math.round(m.len-m.trim[0]-m.trim[1]+(m.ext||0));
-    if(desc&&!m.notaEsq)m.notaEsq='corte reto · eixo '+m.len+' − '+desc+' (encontros)';
-    else if(desc)m.notaEsq+=' − '+desc+' (encontro)';
+    if(desc>0&&!m.notaEsq)m.notaEsq='corte reto · eixo '+m.len+' − '+desc+' (encontros)';
+    else if(desc)m.notaEsq+=(desc>0?' − '+desc:' + '+(-desc))+' (encontro)';
   }
 }
 // ===== meia esquadria =====
 function esquadrias(M){
   const auto=!!(MOD&&MOD.esqAuto),mapa={},key=p=>p.map(v=>Math.round(v)).join(',');
-  const quer=(m,e)=>auto||m.esq===true||(Array.isArray(m.esq)&&m.esq[e]);
+  const quer=(m,e)=>!m.noEsq&&!(m.noEsqEm||[]).includes(e)&&(auto||m.esq===true||(Array.isArray(m.esq)&&m.esq[e]));
   M.forEach(m=>{m.cuts=null;m.ext=0;m.notaEsq='';m.lenCorte=m.len;});
   M.forEach(m=>{if(m.curva||m.pts.length!==2||m.livre||m.placa)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
@@ -900,9 +921,11 @@ function painelSel(){
   box.style.display='';
   box.innerHTML=ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
    `<div class="acts">
-     <div class="btn on" data-a="fala">Ajustar falando</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="del">Apagar</div>
-     <div class="btn" data-a="rot">Girar perfil</div><div class="btn" data-a="chapa">Chapinha na ponta</div>
-     ${ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'<div class="btn" data-a="dica" style="opacity:.6">Toque outra peça p/ ligar</div>'}
+     <div class="btn on" data-a="fala">Ajustar falando</div>
+     ${ms.length===2?'<div class="btn" data-a="esq2">Meia esquadria entre as 2</div><div class="btn" data-a="face">Face com face</div><div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
+     <div class="btn" data-a="perfil">Perfil</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="rot">Girar perfil</div>
+     <div class="btn" data-a="chapa">Chapinha</div><div class="btn" data-a="del">Apagar</div>
+     ${ms.length===1?'<div class="btn" data-a="dica" style="opacity:.6">Toque outra peça p/ unir</div>':''}
      <div class="btn" data-a="limpar">Soltar</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
    </div><div id="selExtra"></div>`;
   box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,ms));
@@ -915,8 +938,23 @@ function pontoMaisPerto(A,B){ // pontos mais próximos entre dois segmentos
   if(t<0){t=0;s=Math.min(1,Math.max(0,-c/a));}else if(t>1){t=1;s=Math.min(1,Math.max(0,(b-c)/a));}
   return[add(A[0],d1,s),add(B[0],d2,t),s,t];
 }
-function acaoSel(a,ms){
+function acaoSel(a,ms,px){
   const ex=$('selExtra');
+  if(a==='perfil2'){ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(px,re=>{if(re)acaoSel('perfil2',ms,px);}));const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(px)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
+  if(a==='esq'){ajuste({op:'esq',k:chaveM(ms[0])});SEL=[];upd();return;}
+  if(a==='reto'){ajuste({op:'reto',k:chaveM(ms[0])});SEL=[];upd();return;}
+  if(a==='esq2'){ajuste({op:'esq2',k:chaveM(ms[0]),k2:chaveM(ms[1])});SEL=[];upd();return;}
+  if(a==='face'){const n=m=>esc((MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g);
+    ex.innerHTML=`<div class="sub" style="margin:8px 0 6px">Qual peça passa inteira? A outra encosta na face dela (e estica até a face se tiver folga).</div><div class="acts"><div class="btn" id="fA">1 passa · 2 encosta</div><div class="btn" id="fB">2 passa · 1 encosta</div></div>`;
+    $('fA').onclick=()=>{ajuste({op:'face',k:chaveM(ms[1]),k2:chaveM(ms[0])});SEL=[];upd();};
+    $('fB').onclick=()=>{ajuste({op:'face',k:chaveM(ms[0]),k2:chaveM(ms[1])});SEL=[];upd();};return;}
+  if(a==='comp'){const m=ms[0];
+    ex.innerHTML=`<div class="mv"><label class="f">Eixo novo (mm)<input type="number" id="nl" value="${m.len}"></label><label class="f">Fixa<select id="fx"><option value="A">ponta 1</option><option value="B">ponta 2</option><option value="C">centro</option></select></label><div></div><div class="btn on" id="okL" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">corte hoje: ${m.lenCorte||m.len} mm (eixo ${m.len})</div>`;
+    $('okL').onclick=()=>{ajuste({op:'comp',k:chaveM(m),len:+$('nl').value||m.len,fixo:$('fx').value});SEL=[];upd();};return;}
+  if(a==='perfil'){const g=MOD.grupos.find(x=>x.id===ms[0].g)||MOD.grupos[0],p0=clone(ms[0].pf||g.perfil);
+    ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(p0,re=>{if(re)acaoSel('perfil2',ms,p0);}));
+    const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(p0)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
+
   if(a==='limpar'){SEL=[];upd();return;}
   if(a==='desf'){MOD.ajustes.pop();upd();return;}
   if(a==='del'){ms.forEach(m=>ajuste({op:'del',k:chaveM(m)}));SEL=[];upd();return;}
