@@ -269,7 +269,7 @@ function chapaCfg(){return Object.assign({cor:'cinza',esp:3,lado:'fora'},MOD&&MO
 function chapaPorFora(M){
   const PN=M.paineis;if(!PN||!PN.length)return;
   const all=PN.flat(),c=[0,1,2].map(k=>all.reduce((s,p)=>s+p[k],0)/all.length);
-  const st=M.filter(m=>m.pts.length>=2&&!m.placa);
+  const st=M.filter(m=>m.pts.length>=2&&!m.placa);const NS=[],OUT=[],IN=[];
   PN.forEach((pts,ix)=>{
     const a=pts[0],b=pts[1],d=pts[2],u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[d[0]-a[0],d[1]-a[1],d[2]-a[2]];
     let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];const l=Math.hypot(...n)||1;n=n.map(x=>x/l);
@@ -285,11 +285,25 @@ function chapaPorFora(M){
     for(const m of st){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pp=m.pf||g.perfil,hw=Math.max(pp.a||0,pp.b||0)/2;
       for(const q of m.pts){if(q.some((v,k)=>v<mn[k]||v>mx[k]))continue;
         const sd=(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]+(q[2]-a[2])*n[2];if(Math.abs(sd)<150){pOut=Math.max(pOut??-1e9,sd+hw);pIn=Math.min(pIn??1e9,sd-hw);}}}
-    const ch=chapaCfg(),fora=ch.lado!=='dentro';
-    const base=fora?(pOut??0)+0.3:(pIn??0)-0.3;
-    PN[ix]=pts.map(p=>[p[0]+n[0]*base,p[1]+n[1]*base,p[2]+n[2]*base]);
-    (M.pnN=M.pnN||[])[ix]=fora?n:n.map(x=>-x);
+    NS[ix]=n;OUT[ix]=pOut;IN[ix]=pIn;
   });
+  // deslocamento único da casca: as placas vizinhas dividem o mesmo canto (sem brecha)
+  const ch=chapaCfg(),fora=ch.lado!=='dentro',e=Math.max(.5,+ch.esp||3);
+  const outs=OUT.filter(v=>v!=null),ins=IN.filter(v=>v!=null);
+  const off=fora?(outs.length?Math.max(...outs):0)+0.3:(ins.length?Math.min(...ins):0)-0.3;
+  const kk=p=>p.map(v=>Math.round(v)).join(','),dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],vm={};
+  PN.forEach((pts,ix)=>pts.forEach(p=>{const k=kk(p),l=(vm[k]=vm[k]||[]);if(!l.some(n=>dot(n,NS[ix])>0.99))l.push(NS[ix]);}));
+  const desl=(p,o)=>{const ns=vm[kk(p)]||[[0,0,1]];let d;
+    if(ns.length===1)d=ns[0].map(x=>x*o);
+    else if(ns.length===2){const c=dot(ns[0],ns[1]),k=o/(1+c);d=[0,1,2].map(i=>(ns[0][i]+ns[1][i])*k);}
+    else{const[A,B,C]=ns,det=A[0]*(B[1]*C[2]-B[2]*C[1])-A[1]*(B[0]*C[2]-B[2]*C[0])+A[2]*(B[0]*C[1]-B[1]*C[0]);
+      if(Math.abs(det)<1e-6){const sm=[0,1,2].map(i=>ns.reduce((s,n)=>s+n[i],0));const l=Math.hypot(...sm)||1;d=sm.map(x=>x/l*o);}
+      else{const r=[o,o,o],cr=(u,v)=>[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],bc=cr(B,C),ca=cr(C,A),ab=cr(A,B);d=[0,1,2].map(i=>(r[0]*bc[i]+r[1]*ca[i]+r[2]*ab[i])/det);}}
+    return[p[0]+d[0],p[1]+d[1],p[2]+d[2]];};
+  const base=PN.map(pts=>pts.map(p=>p.slice()));
+  M.pnBack=base.map(pts=>pts.map(p=>desl(p,fora?off+e:off-e)));
+  base.forEach((pts,ix)=>{PN[ix]=pts.map(p=>desl(p,off));});
+  M.pnN=NS;
 }
 // ===== ajustes feitos na tela =====
 const chaveM=m=>m.pts.map(p=>p.map(v=>Math.round(v)).join(',')).join('|');
@@ -868,7 +882,7 @@ function draw(M){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
   else if(PN.length&&CHAPA){const ch=chapaCfg(),e=Math.max(.5,+ch.esp||3),pos=[],lp=[];
     const add3=(q)=>{const v=P3(...q);pos.push(v.x,v.y,v.z);},lin=(a,b)=>{const A=P3(...a),B=P3(...b);lp.push(A.x,A.y,A.z,B.x,B.y,B.z);};
-    PN.forEach((pts,ix)=>{const n=(M.pnN||[])[ix]||[0,0,1],B=pts.map(p=>[p[0]+n[0]*e,p[1]+n[1]*e,p[2]+n[2]*e]);
+    PN.forEach((pts,ix)=>{const n=(M.pnN||[])[ix]||[0,0,1],B=(M.pnBack&&M.pnBack[ix])||pts.map(p=>[p[0]+n[0]*e,p[1]+n[1]*e,p[2]+n[2]*e]);
       for(let i=1;i<pts.length-1;i++){add3(pts[0]);add3(pts[i]);add3(pts[i+1]);add3(B[0]);add3(B[i+1]);add3(B[i]);}
       for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;add3(pts[i]);add3(pts[j]);add3(B[j]);add3(pts[i]);add3(B[j]);add3(B[i]);lin(pts[i],pts[j]);lin(B[i],B[j]);lin(pts[i],B[i]);}});
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
