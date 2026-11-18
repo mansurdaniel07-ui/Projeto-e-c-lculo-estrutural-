@@ -877,13 +877,13 @@ $('cpL').onclick=()=>{let t=MOD.titulo+'\nGrupo;Perfil;Medida mm;Qtd;Obs\n';
 // ===== meus modelos =====
 function listarSalvos(){const s=store('dc-estr-salvos')||[];
   $('saved').innerHTML=s.length?s.map((x,i)=>`<div><span data-i="${i}" class="ld" style="cursor:pointer;flex:1">${esc(x.mod.titulo)}<br><span style="color:var(--mut);font-size:11px">${esc(x.quando)}</span></span><span class="x" data-d="${i}">✕</span></div>`).join(''):'<span class="sub">Nenhum salvo ainda.</span>';
-  $('saved').querySelectorAll('.ld').forEach(e=>e.onclick=()=>{const x=s[+e.dataset.i];carregar(x.mod,x.val);scrollTo({top:0,behavior:'smooth'});});
+  $('saved').querySelectorAll('.ld').forEach(e=>e.onclick=()=>{const x=s[+e.dataset.i],k=presetDe(x.mod);if(k&&!x.mod.editado)carregar({...PR[k],preset:k},x.val);else carregar(x.mod,x.val);scrollTo({top:0,behavior:'smooth'});});
   $('saved').querySelectorAll('.x').forEach(e=>e.onclick=()=>{s.splice(+e.dataset.d,1);store('dc-estr-salvos',s);listarSalvos();});}
 $('bSalvar').onclick=()=>{const s=store('dc-estr-salvos')||[];s.unshift({mod:MOD,val:VAL,quando:new Date().toLocaleString('pt-BR')});store('dc-estr-salvos',s.slice(0,30));listarSalvos();flash('Salvo');};
 
 // ===== modelos prontos =====
 $('chips').innerHTML='<div class="sub" style="width:100%;margin-top:4px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
-$('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{carregar(PR[c.dataset.k]);$('status').textContent='';});
+$('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{carregar({...PR[c.dataset.k],preset:c.dataset.k});$('status').textContent='';});
 
 // ===== folha de projeto =====
 let DL=null,FOLHAS=[],EMPRESA=store('dc-estr-empresa')??'D. Compósitos';
@@ -1080,7 +1080,7 @@ function comandoLocal(txt){
   let t=norm(txt).trim();if(!t||!MOD||NOVO)return null;
   t=t.replace(/(\d)\s*x\s*(\d)/g,'$1 por $2').replace(/\b(purinha|prainha|praia|prainhas)\b/g,'prainha').replace(/(\d+)\s+(escadas?|degraus?|degrais)/g,'$1 degraus').replace(/\bfundo\b/g,'profundidade').replace(/\bcomprido\b/g,'comprimento');
   const feitos=[],mudou={};let trocou='';
-  for(const[re,k]of TIPOS_TXT)if(re.test(t)&&PR[k]){if(MOD.titulo!==PR[k].titulo){carregar(PR[k]);trocou=PR[k].titulo;}break;}
+  for(const[re,k]of TIPOS_TXT)if(re.test(t)&&PR[k]){if(MOD.titulo!==PR[k].titulo){carregar({...PR[k],preset:k});trocou=PR[k].titulo;}break;}
   const P=MOD.parametros,pn=p=>norm(p.nome).replace(/\(.*\)/,'').replace(/^n[ºo°]\s*/,'').trim();
   const grupos=[...new Set(P.map(p=>norm(p.grupo||'')))].filter(g=>g&&g!=='medidas'&&g!=='estrutura');
   const achaGrupo=s=>grupos.find(g=>s.includes(g.split(' ')[0].slice(0,6)));
@@ -1148,7 +1148,7 @@ async function enviar(){
     try{
       const op={modelTier:'complex'};if(imgs.length)op.images=imgs;
       const r=await sampler(msgs,op),j=lerJSON(r.text);
-      if(j.modelo){validar(j.modelo);carregar(j.modelo);}
+      if(j.modelo){validar(j.modelo);j.modelo.editado=true;delete j.modelo.preset;carregar(j.modelo);}
       else if(j.valores&&MOD){for(const k in j.valores)if(MOD.parametros.some(p=>p.id===k))VAL[k]=j.valores[k];montarUI();upd();}
       const f=j.fala||(j.modelo?'Montei. Confere as medidas.':'Ok.');addChat('cl',f);falar(f);
       ANEXOS=[];mostrarAnexos();st.textContent='';break;
@@ -1200,7 +1200,10 @@ mostrarChat();
 // ===== início =====
 resize();listarSalvos();
 const at=store('dc-estr-atual');
-try{if(at&&at.mod)carregar(at.mod,at.val);else carregar(PR.piscina);}catch(e){carregar(PR.piscina);}
+function presetDe(m){if(m.preset&&PR[m.preset])return m.preset;const t=norm(m.titulo||'');
+  if(m.codigo&&Object.values(PR).some(x=>x.codigo===m.codigo))return Object.keys(PR).find(k=>PR[k].codigo===m.codigo);
+  for(const[re,k]of[[/cilindr/,'cilindro'],[/tanque/,'tanque'],[/piscina/,'piscina'],[/^mesa/,'mesa'],[/berco|molde/,'molde'],[/corrimao/,'corrimao'],[/capota|arco/,'capota'],[/escada/,'escada']])if(re.test(t)&&/^(gabarito|mesa|estrutura|escada|corrimao)/.test(t))return k;return null;}
+try{if(at&&at.mod){const k=presetDe(at.mod);if(k&&!at.mod.editado)carregar({...PR[k],preset:k},at.val);else carregar(at.mod,at.val);}else carregar({...PR.piscina,preset:'piscina'});}catch(e){carregar({...PR.piscina,preset:'piscina'});}
 setView('3d');
 
 </script></body></html>
