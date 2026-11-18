@@ -387,8 +387,8 @@ function esquadrias(M){
 const PR={};
 PR.piscina={
  titulo:'Gabarito · piscina modular',
- resumo:'Gabarito de ferro com a medida externa da piscina, para plaquear por cima: montado de cabeça pra baixo (borda no chão, fundo em cima). Quadros em par soldados, quadro próprio em cada degrau, cabeceiras, longarinas e base cruzada com dormentes e trilhos. A chapa mostra a piscina chapeada por cima.',
- perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento entre os pares de quadros'],
+ resumo:'Gabarito simples em grade para plaquear: montado de cabeça pra baixo (borda no chão, fundo em cima). Quadros transversais, longarinas inteiras no comprimento (as peças menores encostam nelas) e montantes. Degrau e prainha no mesmo quadro, sem quadro em par. Cantoneira e base são opcionais.',
+ perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento dos quadros e das longarinas'],
  grupos:[{id:'q',nome:'Quadros (frente)'},{id:'l',nome:'Longarinas'},{id:'e',nome:'Escada'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
@@ -396,10 +396,8 @@ PR.piscina={
   {id:'L',nome:'Largura',tipo:'num',valor:6000,grupo:'Medidas'},
   {id:'H',nome:'Profundidade',tipo:'num',valor:1500,grupo:'Medidas'},
   {id:'esp',nome:'Espaç. quadros',tipo:'num',valor:1000,grupo:'Estrutura'},
-  {id:'travY',nome:'Espaç. montantes',tipo:'num',valor:1000,grupo:'Estrutura'},
+  {id:'travY',nome:'Vão máx. entre montantes',tipo:'num',valor:3000,grupo:'Estrutura'},
   {id:'travL',nome:'Espaç. longarinas',tipo:'num',valor:1500,grupo:'Estrutura'},
-  {id:'par',nome:'Quadros em par (soldados)',tipo:'bool',valor:true,grupo:'Estrutura'},
-  {id:'parGap',nome:'Distância do par',tipo:'num',valor:120,grupo:'Estrutura'},
   {id:'praia',nome:'Prainha',tipo:'bool',valor:true,grupo:'Prainha'},
   {id:'pComp',nome:'Comprimento',tipo:'num',valor:2500,grupo:'Prainha',se:'praia'},
   {id:'pProf',nome:'Profundidade',tipo:'num',valor:400,grupo:'Prainha',se:'praia'},
@@ -417,10 +415,10 @@ PR.piscina={
   {id:'hC',nome:'Comprimento',tipo:'num',valor:2000,grupo:'Hidro',se:'hidro'},
   {id:'hL',nome:'Largura',tipo:'num',valor:2000,grupo:'Hidro',se:'hidro'},
   {id:'hProf',nome:'Profundidade',tipo:'num',valor:800,grupo:'Hidro',se:'hidro'},
-  {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:true,grupo:'Arestas'},
+  {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:false,grupo:'Arestas'},
   {id:'borda',nome:'Borda externa',tipo:'bool',valor:true,grupo:'Borda'},
   {id:'bLarg',nome:'Largura da aba',tipo:'num',valor:200,grupo:'Borda',se:'borda'},
-  {id:'base',nome:'Base cruzada',tipo:'bool',valor:true,grupo:'Base cruzada'},
+  {id:'base',nome:'Base cruzada',tipo:'bool',valor:false,grupo:'Base cruzada'},
   {id:'bExt',nome:'Balanço dos dormentes',tipo:'num',valor:500,grupo:'Base cruzada',se:'base'},
   {id:'bTril',nome:'Nº de trilhos',tipo:'int',valor:3,grupo:'Base cruzada',se:'base'},
   {id:'bH',nome:'Altura de cada camada',tipo:'num',valor:80,grupo:'Base cruzada',se:'base'}],
@@ -437,42 +435,38 @@ PR.piscina={
     if(P.degrau&&y<P.dLarg&&x>L-P.dComp)d=Math.min(d,P.dProf);
     if(P.hidro&&x>hx0&&x<hx0+P.hC&&y>W-P.hL)d=Math.min(d,P.hProf);
     return d;};
-  // limites onde o fundo muda (em x)
   let bx=[];if(P.praia)bx.push(P.pComp);
   if(P.escada){if(larga)for(let i=1;i<=P.eN;i++)bx.push(x0e+i*P.ePiso);else for(let i=1;i<=P.eN;i++)bx.push(L-i*P.ePiso);}
   if(P.degrau)bx.push(L-P.dComp);if(P.hidro)bx.push(hx0,hx0+P.hC);
-  bx=[...new Set(bx.map(Math.round))].filter(x=>x>P.parGap&&x<L-P.parGap).sort((a,b)=>a-b);
-  const g=P.parGap/2;
-  let base=[0,L];for(const b of bx)base.push(b-g,b+g);
-  let xs=divPts(base,P.esp);
-  if(P.par){const ex=[];for(const x of xs){if(bx.some(b=>Math.abs(Math.abs(x-b)-g)<2))continue;
-      if(x<=0)ex.push(P.parGap);else if(x>=L)ex.push(L-P.parGap);else ex.push(x+P.parGap);}
-    xs=[...new Set([...xs,...ex].map(Math.round))].sort((a,b)=>a-b);}
-  const yL=divPts([0,W],P.travL),tops={};
+  bx=[...new Set(bx.map(Math.round))].filter(x=>x>30&&x<L-30);
+  const xs=divPts([0,L,...bx],P.esp),yL=divPts([0,W],P.travL);
   const yb=[];for(const y of[P.dLarg,ey0,ey1,W-P.hL])if(y>0&&y<W)yb.push(y);
-  const xe0=larga?x0e-g-1:L-P.eN*P.ePiso-g-1,xe1=larga?x0e+P.eN*P.ePiso+g+1:L+1;
+  const lados=x=>[y=>f(x-EPS,y),y=>f(x+EPS,y)];
+  // quadros transversais
   for(const x of xs){
-    const gq=(P.escada&&larga&&x>xe0&&x<xe1)?'e':'q';
-    let ys=[0,W];for(const y of yb)if(Math.abs(f(x,y-EPS)-f(x,y+EPS))>1)ys.push(y);
-    ys=divPts(ys,P.travY);const dI=[];for(let i=0;i<ys.length-1;i++)dI.push(f(x,(ys[i]+ys[i+1])/2));
-    add([x,0,0],[x,W,0],gq);
-    for(let i=0;i<ys.length;i++)add([x,ys[i],0],[x,ys[i],Math.max(i>0?dI[i-1]:0,i<dI.length?dI[i]:0)],gq);
-    let i0=0;for(let i=1;i<=dI.length;i++)if(i===dI.length||Math.abs(dI[i]-dI[i0])>1){add([x,ys[i0],dI[i0]],[x,ys[i],dI[i0]],gq);i0=i;}
-    for(const y of yL)(tops[y]=tops[y]||[]).push([x,f(x,y)]);
+    const[dl,dr]=lados(x);
+    let B=[0,W,...yL];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)B.push(y);
+    B=[...new Set(B.map(Math.round))].sort((a,b)=>a-b);
+    add([x,0,0],[x,W,0],'q','base do quadro');
+    const feitos=new Set();
+    for(const d of[dl,dr])for(let i=0;i<B.length-1;i++){const z=d((B[i]+B[i+1])/2),k=B[i]+'|'+B[i+1]+'|'+Math.round(z);if(feitos.has(k))continue;feitos.add(k);add([x,B[i],z],[x,B[i+1],z],'q');}
+    const Bm=[0,W];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)Bm.push(y);
+    const ys=divPts(Bm,P.travY);
+    for(const y of ys){const h=Math.max(dl(y-EPS),dl(y+EPS),dr(y-EPS),dr(y+EPS));add([x,y,0],[x,y,h],'q','montante');}
   }
-  for(const y of yL){const t=tops[y];for(let i=0;i<t.length-1;i++)if(Math.abs(t[i][1]-t[i+1][1])<1)add([t[i][0],y,t[i][1]],[t[i+1][0],y,t[i+1][1]],'l');}
-  for(let i=0;i<xs.length-1;i++){add([xs[i],0,0],[xs[i+1],0,0],'l');add([xs[i],W,0],[xs[i+1],W,0],'l');}
+  // longarinas inteiras (um tubo só enquanto a profundidade não muda)
+  for(const y of yL){let ini=null,zc=null;
+    for(let i=0;i<xs.length-1;i++){const z=f((xs[i]+xs[i+1])/2,y);
+      if(ini===null){ini=xs[i];zc=z;}else if(Math.abs(z-zc)>1){add([ini,y,zc],[xs[i],y,zc],'l');ini=xs[i];zc=z;}}
+    if(ini!==null)add([ini,y,zc],[L,y,zc],'l');}
+  add([0,0,0],[L,0,0],'l','borda');add([0,W,0],[L,W,0],'l','borda');
   if(P.borda){const b=P.bLarg;
     add([-b,-b,0],[L+b,-b,0],'b');add([-b,W+b,0],[L+b,W+b,0],'b');add([-b,-b,0],[-b,W+b,0],'b');add([L+b,-b,0],[L+b,W+b,0],'b');
-    for(const x of xs){add([x,-b,0],[x,0,0],'b');add([x,W,0],[x,W+b,0],'b');}
-    painel([[-b,-b,0],[L+b,-b,0],[L,0,0],[0,0,0]]);painel([[0,W,0],[L,W,0],[L+b,W+b,0],[-b,W+b,0]]);
-    painel([[-b,-b,0],[0,0,0],[0,W,0],[-b,W+b,0]]);painel([[L,0,0],[L+b,-b,0],[L+b,W+b,0],[L,W,0]]);}
-  if(P.base){const h=P.bH,e=P.bExt,yt=divPts([0,W],W/Math.max(1,P.bTril-1));
-    const xd=[];for(let i=0;i<xs.length;i++){if(i>0&&xs[i]-xs[i-1]<=P.parGap+2)continue;xd.push(xs[i+1]!==undefined&&xs[i+1]-xs[i]<=P.parGap+2?(xs[i]+xs[i+1])/2:xs[i]);}
-    for(const x of xd)add([x,-e,-h],[x,W+e,-h],'s','dormente');
-    for(const y of yt)add([xd[0],y,-2*h],[xd[xd.length-1],y,-2*h],'s','trilho');}
-  // chapa (fundo, paredes e espelhos)
-  let cx=[0,L,...bx];cx=[...new Set(cx)].sort((a,b)=>a-b);let cy=[0,W,...yb];cy=[...new Set(cy)].sort((a,b)=>a-b);
+    for(const x of xs){add([x,-b,0],[x,0,0],'b');add([x,W,0],[x,W+b,0],'b');}}
+  if(P.base){const h=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-h],[x,W+e,-h],'s','dormente',{livre:true});
+    for(const y of divPts([0,W],W/Math.max(1,P.bTril-1)))add([0,y,-2*h],[L,y,-2*h],'s','trilho',{livre:true});}
+  // chapa
+  let cx=[...new Set([0,L,...bx])].sort((a,b)=>a-b),cy=[...new Set([0,W,...yb])].sort((a,b)=>a-b);
   const D=[];for(let i=0;i<cx.length-1;i++){D.push([]);for(let j=0;j<cy.length-1;j++)D[i].push(f((cx[i]+cx[i+1])/2,(cy[j]+cy[j+1])/2));}
   for(let i=0;i<cx.length-1;i++)for(let j=0;j<cy.length-1;j++){const d=D[i][j],xa=cx[i],xb=cx[i+1],ya=cy[j],yb2=cy[j+1];
     painel([[xa,ya,d],[xb,ya,d],[xb,yb2,d],[xa,yb2,d]]);
@@ -481,15 +475,8 @@ PR.piscina={
     if(i===0)painel([[0,ya,0],[0,yb2,0],[0,yb2,d],[0,ya,d]]);
     if(i===cx.length-2)painel([[L,ya,0],[L,yb2,0],[L,yb2,d],[L,ya,d]]);
     if(i<cx.length-2&&Math.abs(D[i+1][j]-d)>1)painel([[xb,ya,d],[xb,yb2,d],[xb,yb2,D[i+1][j]],[xb,ya,D[i+1][j]]]);
-    if(j<cy.length-2&&Math.abs(D[i][j+1]-d)>1)painel([[xa,yb2,d],[xb,yb2,d],[xb,yb2,D[i][j+1]],[xa,yb2,D[i][j+1]]]);
-    if(P.aresta){const nb=(ii,jj)=>(ii<0||jj<0||ii>=cx.length-1||jj>=cy.length-1)?0:D[ii][jj];
-      if(nb(i,j-1)<d-1)add([xa,ya,d],[xb,ya,d],'c','aresta');
-      if(nb(i,j+1)<d-1)add([xa,yb2,d],[xb,yb2,d],'c','aresta');
-      if(nb(i-1,j)<d-1)add([xa,ya,d],[xa,yb2,d],'c','aresta');
-      if(nb(i+1,j)<d-1)add([xb,ya,d],[xb,yb2,d],'c','aresta');}}
-  if(P.aresta){for(const [xx,yy] of [[0,0],[0,W],[L,0],[L,W]])add([xx,yy,0],[xx,yy,f(xx,yy)],'c','aresta vertical');
-    for(let i=0;i<cx.length-1;i++){add([cx[i],0,0],[cx[i+1],0,0],'c','aresta da borda');add([cx[i],W,0],[cx[i+1],W,0],'c','aresta da borda');}
-    for(let j=0;j<cy.length-1;j++){add([0,cy[j],0],[0,cy[j+1],0],'c','aresta da borda');add([L,cy[j],0],[L,cy[j+1],0],'c','aresta da borda');}}
+    if(j<cy.length-2&&Math.abs(D[i][j+1]-d)>1)painel([[xa,yb2,d],[xb,yb2,d],[xb,yb2,D[i][j+1]],[xa,yb2,D[i][j+1]]]);}
+  if(P.aresta){for(const[xx,yy] of [[0,0],[0,W],[L,0],[L,W]])add([xx,yy,0],[xx,yy,f(xx,yy)],'c','aresta',{livre:true});}
  })};
 PR.mesa={
  titulo:'Mesa',
@@ -1189,7 +1176,7 @@ Regras:
 - MEDIDAS DE CORTE (padrão de serralharia): o usuário fala medidas EXTERNAS. Desenhe a linha de centro de cada perfil recuada meia largura (use H.perfil(grupoId) -> {a,b,t,w,h}; w = largura, h = altura). O app calcula sozinho a medida de corte: peça que termina encostada numa barra que passa é descontada (meia largura de cada lado); perna/montante vertical é inteira, as outras peças encostam nela; quadro em meia esquadria fica POR CIMA e a perna é soldada por baixo (perna = altura − altura do perfil do quadro). Para isso as pontas precisam se encontrar exatamente no mesmo ponto ou terminar sobre a linha de centro da barra que passa. Peças que encostam entre duas pernas devem ser trechos separados (perna no meio = duas peças, não uma que atravessa).
 - Linha de centro dos perfis. Barras não podem ter comprimento zero. Não duplique a mesma barra. Use loops; sem fetch, sem DOM, sem variáveis globais. Máximo ~1500 barras.
 - Pense como serralheiro: quadros/pórticos transversais com espaçamento definido, montantes, longarinas ligando, contraventamento quando precisar, pés/base no chão. Gabarito de molde: a estrutura segue a forma da peça (perfil da piscina, curva da capota etc.).
-- Padrão do usuário para gabarito de piscina: quadros transversais em PAR soldados (dois quadros a ~120 mm), um par em cada mudança de fundo (degrau, prainha) para o espelho ficar vertical, quadro próprio em cada degrau, cabeceiras nas pontas, longarinas, e base cruzada embaixo (dormentes transversais com balanço para fora em z negativo, sobre trilhos longitudinais). Escada normalmente na largura toda descendo da parte funda até a prainha.
+- PADRÃO SIMPLES (o usuário pede): grade simples, sem quadro em par, sem tubos colados lado a lado. O tubo comprido é UMA peça inteira (até a profundidade/altura mudar); as peças menores encostam nele e soldam por baixo ou pelo lado (são elas que levam o desconto). Nada de cortar o tubo comprido em pedaços entre os quadros. Reforço, base, cantoneira e par de quadros só se o usuário pedir. Piscina: escada normalmente na largura toda descendo da parte funda até a prainha; no degrau, o mesmo quadro tem a travessa nas duas alturas.
 - Piscina/gabarito de molde: modele como molde macho de cabeça pra baixo (borda em z=0 no chão, fundo em cima, z = profundidade a partir da borda). Escada: degraus com espelho e piso; prainha: área rasa com comprimento e profundidade; hidro/banco: área mais rasa.
 - O app tem um PERFIL PADRÃO para a peça toda (campo "perfilPadrao" no modelo). Por padrão todas as partes usam o mesmo perfil: só ponha "perfil" num grupo (e "proprio": true) quando o usuário pedir perfil diferente para aquela parte ou quando for cantoneira de aresta/borda, eixo etc. Gabaritos: piscina, tanque retangular, tanque cilíndrico (mandril com cambotas, réguas e eixo) ou qualquer peça a plaquear.
 - Cada grupo é uma parte; separe um grupo por parte que o serralheiro pode querer em perfil diferente (ex.: quadros de frente em metalon, longarinas, escada, arestas/bordas em cantoneira, base). Use de 2 a 6 grupos. Se o usuário disser o perfil de uma parte ("metalon 50x30 na frente", "cantoneira nas bordas"), use exatamente.
