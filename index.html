@@ -292,6 +292,10 @@ function aplicaAjustes(M){
     if(a.op==='del')M.splice(i,1);
     else if(a.op==='mov'){m.pts=m.pts.map(p=>[p[0]+a.d[0],p[1]+a.d[1],p[2]+a.d[2]]);}
     else if(a.op==='rot'){m.girado=!m.girado;}
+    else if(a.op==='uni'){const ps=[m,...(a.ks||[]).map(k=>M.find(x=>chaveM(x)===k)).filter(Boolean)];const A=m.pts[0],B=m.pts[m.pts.length-1],u=B.map((v,i)=>v-A[i]),l=Math.hypot(...u)||1,un=u.map(x=>x/l);
+      let tmin=0,tmax=l;for(const o of ps)for(const q of o.pts){const t=(q[0]-A[0])*un[0]+(q[1]-A[1])*un[1]+(q[2]-A[2])*un[2];tmin=Math.min(tmin,t);tmax=Math.max(tmax,t);}
+      for(const o of ps.slice(1)){const j=M.indexOf(o);if(j>=0)M.splice(j,1);}
+      m.pts=[A.map((v,i)=>v+un[i]*tmin),A.map((v,i)=>v+un[i]*tmax)];m.nota='peça única';m.esq=false;continue;}
     else if(a.op==='perfil'){m.pfx=a.p;}
     else if(a.op==='esq'){m.esq=true;m.noEsq=false;for(const P of[m.pts[0],m.pts[m.pts.length-1]])for(const o of M)if(o!==m&&o.pts.length===2&&(perto(o.pts[0],P)||perto(o.pts[1],P))){o.esq=o.esq===true?true:[perto(o.pts[0],P)||(Array.isArray(o.esq)&&o.esq[0]),perto(o.pts[1],P)||(Array.isArray(o.esq)&&o.esq[1])];o.noEsq=false;}}
     else if(a.op==='reto'){m.noEsq=true;m.esq=false;}
@@ -443,10 +447,15 @@ PR.piscina={
   const xs=divPts([0,L,...bx],P.esp),yL=divPts([0,W],P.travL);
   const yb=[];for(const y of[P.dLarg,ey0,ey1,W-P.hL])if(y>0&&y<W)yb.push(y);
   const lados=x=>[y=>f(x-EPS,y),y=>f(x+EPS,y)];
+  // longarinas: trechos inteiros enquanto a profundidade não muda
+  const runs=[];for(const y of yL){let ini=null,zc=null;
+    for(let i=0;i<xs.length-1;i++){const z=f((xs[i]+xs[i+1])/2,y);
+      if(ini===null){ini=xs[i];zc=z;}else if(Math.abs(z-zc)>1){runs.push([y,ini,xs[i],zc]);ini=xs[i];zc=z;}}
+    if(ini!==null)runs.push([y,ini,L,zc]);}
   // quadros transversais
   for(const x of xs){
     const[dl,dr]=lados(x);
-    let B=[0,W,...yL];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)B.push(y);
+    let B=[0,W,...runs.filter(r=>r[1]<x-1&&x<r[2]-1&&r[0]>0&&r[0]<W).map(r=>r[0])];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)B.push(y);
     B=[...new Set(B.map(Math.round))].sort((a,b)=>a-b);
     add([x,0,0],[x,W,0],'q','base do quadro');
     const feitos=new Set();
@@ -455,11 +464,7 @@ PR.piscina={
     const ys=divPts(Bm,P.travY);
     for(const y of ys){const h=Math.max(dl(y-EPS),dl(y+EPS),dr(y-EPS),dr(y+EPS));add([x,y,0],[x,y,h],'q','montante');}
   }
-  // longarinas inteiras (um tubo só enquanto a profundidade não muda)
-  for(const y of yL){let ini=null,zc=null;
-    for(let i=0;i<xs.length-1;i++){const z=f((xs[i]+xs[i+1])/2,y);
-      if(ini===null){ini=xs[i];zc=z;}else if(Math.abs(z-zc)>1){add([ini,y,zc],[xs[i],y,zc],'l');ini=xs[i];zc=z;}}
-    if(ini!==null)add([ini,y,zc],[L,y,zc],'l');}
+  for(const[y,a,b,z]of runs)add([a,y,z],[b,y,z],'l');
   add([0,0,0],[L,0,0],'l','borda');add([0,W,0],[L,W,0],'l','borda');
   if(P.borda){const b=P.bLarg;
     add([-b,-b,0],[L+b,-b,0],'b');add([-b,W+b,0],[L+b,W+b,0],'b');add([-b,-b,0],[-b,W+b,0],'b');add([L+b,-b,0],[L+b,W+b,0],'b');
@@ -915,13 +920,14 @@ function painelSel(){
   if(!ms.length){if((MOD.ajustes||[]).length){box.style.display='';box.innerHTML='<div class="acts"><div class="btn" data-a="desf">Desfazer último ajuste</div><div class="btn" data-a="tudo">Tirar todos os ajustes</div></div>';box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,[]));}else box.style.display='none';return;}
   const nomeG=m=>(MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g,pfm=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
   box.style.display='';
-  box.innerHTML=ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
+  const dica=ms.length===1?'<div class="sub" style="margin-bottom:8px">Toque em mais peças no desenho para unir, esquadrejar ou ligar.</div>':'';
+  box.innerHTML=dica+ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
    `<div class="acts">
      <div class="btn on" data-a="fala">Ajustar falando</div>
-     ${ms.length>=2?'<div class="btn" data-a="esq2">Meia esquadria nos encontros</div><div class="btn" data-a="face">Unir (face com face)</div>'+(ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'')+'<div class="btn" data-a="reto">Corte reto</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
+     ${ms.length>=2?'<div class="btn on" data-a="uni">Tornar um só</div><div class="btn" data-a="esq2">Meia esquadria nos encontros</div><div class="btn" data-a="face">Unir (face com face)</div>'+(ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'')+'<div class="btn" data-a="reto">Corte reto</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
      <div class="btn" data-a="perfil">Perfil</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="rot">Girar perfil</div>
      <div class="btn" data-a="chapa">Chapinha</div><div class="btn" data-a="del">Apagar</div>
-     <div class="btn" data-a="dica" style="opacity:.6">Toque mais peças p/ unir</div>
+
      <div class="btn" data-a="limpar">Soltar</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
    </div><div id="selExtra"></div>`;
   box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,ms));
@@ -935,13 +941,19 @@ function pontoMaisPerto(A,B){ // pontos mais próximos entre dois segmentos
   return[add(A[0],d1,s),add(B[0],d2,t),s,t];
 }
 function acaoSel(a,ms,px){
-  const ex=$('selExtra');
-  if(a==='perfil2'){ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(px,re=>{if(re)acaoSel('perfil2',ms,px);}));const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(px)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
+  const ex=$('selExtra');if(['mov','chapa','mf','comp','perfil','face'].includes(a))avisoSel('');setTimeout(()=>{if(ex&&ex.firstChild)ex.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+  if(a==='perfil2'){ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(px,re=>{if(re)acaoSel('perfil2',ms,px);}));const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(px)}));MOD.editado=true;SEL=[];avisoSel('Perfil trocado: '+perfNome(px));upd();};ex.appendChild(ok);return;}
   const fins=(m,P)=>(LAST.M||[]).filter(o=>o!==m&&o.pts.length===2&&(perto(o.pts[0],P)||perto(o.pts[1],P)));
   if(a==='esq'){const m=ms[0];let ok=0,bloq=0;for(const P of[m.pts[0],m.pts[m.pts.length-1]]){if(passaPor(LAST.M,P,[m,...fins(m,P)])){bloq++;continue;}if(fins(m,P).length)ok++;}
     if(!ok){avisoSel(bloq?'Não deu: nas pontas dessa peça tem um tubo passando inteiro. Use "Unir (face com face)" ou mude a outra peça.':'Não deu: nenhuma peça termina nas pontas dessa. Selecione as duas e use "Unir".');return;}
     ajuste({op:'esq',k:chaveM(m)});SEL=[];avisoSel('Meia esquadria 45° aplicada em '+ok+' canto(s).');upd();return;}
-  if(a==='reto'){ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'reto',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel('Corte reto em '+ms.length+' peça(s).');upd();return;}
+  if(a==='reto'){if(!ms.some(m=>m.cuts&&(m.cuts[0]||m.cuts[1]))){avisoSel('Essa(s) peça(s) já estão com corte reto.');return;}ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'reto',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel('Corte reto em '+ms.length+' peça(s).');upd();return;}
+
+  if(a==='uni'){const A=ms[0].pts[0],B=ms[0].pts[ms[0].pts.length-1],u=B.map((v,i)=>v-A[i]),l=Math.hypot(...u)||1,un=u.map(x=>x/l);
+    const fora=ms.slice(1).filter(o=>{const v=o.pts[o.pts.length-1].map((x,i)=>x-o.pts[0][i]),lv=Math.hypot(...v)||1;const par=Math.abs((v[0]*un[0]+v[1]*un[1]+v[2]*un[2])/lv)>0.99;
+      const q=o.pts[0],w=q.map((x,i)=>x-A[i]),t=w[0]*un[0]+w[1]*un[1]+w[2]*un[2],d=Math.hypot(...w.map((x,i)=>x-un[i]*t));return !par||d>5;});
+    if(fora.length){avisoSel('Não deu: para tornar um só, as peças precisam estar na mesma linha (uma seguida da outra).');return;}
+    ajuste({op:'uni',k:chaveM(ms[0]),ks:ms.slice(1).map(chaveM)});SEL=[];avisoSel(ms.length+' peças viraram uma peça só. As outras que cruzam agora encostam nela.');upd();return;}
   if(a==='esq2'){let n=0,bloq=0;const ks=ms.map(chaveM);
     for(let i=0;i<ms.length;i++)for(let j=i+1;j<ms.length;j++){const A=ms[i],B=ms[j];
       const P=[A.pts[0],A.pts[A.pts.length-1]].find(p=>perto(p,B.pts[0])||perto(p,B.pts[B.pts.length-1]));if(!P)continue;
@@ -956,20 +968,23 @@ function acaoSel(a,ms,px){
       MOD.editado=true;SEL=[];avisoSel('Unido: peça '+(i+1)+' passa inteira, '+(ms.length-1)+' peça(s) encostam na face dela.');upd();});return;}
   if(a==='comp'){const m=ms[0];
     ex.innerHTML=`<div class="mv"><label class="f">Eixo novo (mm)<input type="number" id="nl" value="${m.len}"></label><label class="f">Fixa<select id="fx"><option value="A">ponta 1</option><option value="B">ponta 2</option><option value="C">centro</option></select></label><div></div><div class="btn on" id="okL" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">corte hoje: ${m.lenCorte||m.len} mm (eixo ${m.len})</div>`;
-    $('okL').onclick=()=>{ajuste({op:'comp',k:chaveM(m),len:+$('nl').value||m.len,fixo:$('fx').value});SEL=[];upd();};return;}
+    $('okL').onclick=()=>{SEL=[];avisoSel('Medida do eixo mudada para '+(+$('nl').value||m.len)+' mm.');ajuste({op:'comp',k:chaveM(m),len:+$('nl').value||m.len,fixo:$('fx').value});};return;}
   if(a==='perfil'){const g=MOD.grupos.find(x=>x.id===ms[0].g)||MOD.grupos[0],p0=clone(ms[0].pf||g.perfil);
     ex.innerHTML='<div class="sub" style="margin:8px 0">Perfil só desta(s) peça(s):</div>';ex.appendChild(editorPerfil(p0,re=>{if(re)acaoSel('perfil2',ms,p0);}));
-    const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(p0)}));MOD.editado=true;SEL=[];upd();};ex.appendChild(ok);return;}
+    const ok=document.createElement('div');ok.className='btn on';ok.style.marginTop='8px';ok.textContent='Aplicar perfil';ok.onclick=()=>{ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'perfil',k:chaveM(m),p:clone(p0)}));MOD.editado=true;SEL=[];avisoSel('Perfil trocado: '+perfNome(p0));upd();};ex.appendChild(ok);return;}
 
   if(a==='limpar'){SEL=[];upd();return;}
   if(a==='tudo'){MOD.ajustes=[];avisoSel('Voltou ao modelo original.');upd();return;}
   if(a==='desf'){const g=MOD.ajustes[MOD.ajustes.length-1].gr;MOD.ajustes=MOD.ajustes.filter(x=>x.gr!==g);avisoSel('Desfeito.');upd();return;}
   if(a==='del'){ms.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'del',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel(ms.length+' peça(s) apagada(s). Toque Desfazer se precisar.');upd();return;}
-  if(a==='rot'){ms.forEach(m=>{(MOD.ajustes=MOD.ajustes||[]).push({op:'rot',k:chaveM(m)});});MOD.editado=true;upd();return;}
+const pfOf=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
+  if(a==='rot'){const ret=ms.filter(m=>{const p=pfOf(m);return(p.tipo==='ret'&&+p.a!==+(p.b||p.a))||p.tipo==='chapa'||p.tipo==='cant';});
+    if(!ret.length){avisoSel('Tubo quadrado ou redondo: girar não muda nada. Troque para retangular em "Perfil" e depois gire.');return;}
+    ret.forEach(m=>(MOD.ajustes=MOD.ajustes||[]).push({op:'rot',k:chaveM(m)}));MOD.editado=true;SEL=[];avisoSel('Perfil girado em '+ret.length+' peça(s) (deitado ↔ em pé).');upd();return;}
   if(a==='fala'){const t=$('pedido');t.value='Na peça selecionada: ';t.focus();t.scrollIntoView({behavior:'smooth',block:'center'});return;}
   if(a==='mov'){ex.innerHTML=`<div class="mv"><label class="f">X (comprimento)<input type="number" id="dx" value="0"></label><label class="f">Y (largura)<input type="number" id="dy" value="0"></label><label class="f">Z (altura)<input type="number" id="dz" value="0"></label><div class="btn on" id="okMv" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">mm, pode ser negativo</div>`;
     $('okMv').onclick=()=>{const d=['dx','dy','dz'].map(i=>parseFloat($(i).value)||0);const ks=ms.map(chaveM);
-      ms.forEach((m,i)=>(MOD.ajustes=MOD.ajustes||[]).push({op:'mov',k:ks[i],d}));SEL=ms.map(m=>chaveM({pts:m.pts.map(p=>[p[0]+d[0],p[1]+d[1],p[2]+d[2]])}));MOD.editado=true;upd();};return;}
+      if(!d.some(v=>v)){avisoSel('Digite quanto mover em X, Y ou Z (mm).');return;}ms.forEach((m,i)=>(MOD.ajustes=MOD.ajustes||[]).push({op:'mov',k:ks[i],d}));SEL=ms.map(m=>chaveM({pts:m.pts.map(p=>[p[0]+d[0],p[1]+d[1],p[2]+d[2]])}));MOD.editado=true;avisoSel('Movido '+d.join(' / ')+' mm (X / Y / Z).');upd();};return;}
   if(a==='chapa'){ex.innerHTML=`<div class="mv"><label class="f">Lado A (mm)<input type="number" id="pa" value="100"></label><label class="f">Lado B (mm)<input type="number" id="pb" value="100"></label><label class="f">Esp. (mm)<input type="number" id="pt" value="6.35"></label><div class="btn on" id="okCh" style="padding:10px">OK</div></div>
       <div class="acts" style="margin-top:6px"><div class="btn" id="pA">Ponta 1</div><div class="btn" id="pB">Ponta 2</div><div class="btn" id="pAB">As duas</div></div>`;
     let lado='A';const mk=()=>{const pa=+$('pa').value||100,pb=+$('pb').value||100,t=+$('pt').value||6.35;
@@ -980,16 +995,16 @@ function acaoSel(a,ms,px){
         const pontas=lado==='AB'?[[P0,d,tr[0],1],[P1,d,tr[1],-1]]:lado==='A'?[[P0,d,tr[0],1]]:[[P1,d,tr[1],-1]];
         for(const[P,dd,t0,sg]of pontas){const E=P.map((v,i)=>v+dd[i]*sg*(t0-t)),F=P.map((v,i)=>v+dd[i]*sg*t0);
           (MOD.ajustes=MOD.ajustes||[]).push({op:'add',a:E,b:F,g:'ch',nota:'chapinha soldada',placa:true,livre:true});}}
-      MOD.editado=true;montarPerfis();upd();};
+      MOD.editado=true;SEL=[];avisoSel('Chapinha '+pa+'×'+pb+' esp. '+t+' soldada na ponta. Entra na lista com o peso.');montarPerfis();upd();};
     $('pA').onclick=()=>{lado='A';mk();};$('pB').onclick=()=>{lado='B';mk();};$('pAB').onclick=()=>{lado='AB';mk();};$('okCh').onclick=()=>{lado='AB';mk();};return;}
   if(a==='lig'&&ms.length===2){const[p,q]=pontoMaisPerto(ms[0].pts,ms[1].pts);
-    if(Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])<20){$('selExtra').innerHTML='<div class="sub">As peças já se encontram. Use Mão-francesa.</div>';return;}
-    grupoExtra('rf','Reforços');ajuste({op:'add',a:p,b:q,g:'rf',nota:'reforço'});montarPerfis();return;}
+    if(Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])<20){avisoSel('Essas duas peças já se encostam. Para reforçar o canto use "Mão-francesa".');return;}
+    grupoExtra('rf','Reforços');SEL=[];avisoSel('Reforço criado ligando as duas peças ('+Math.round(Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]))+' mm no eixo).');ajuste({op:'add',a:p,b:q,g:'rf',nota:'reforço'});montarPerfis();return;}
   if(a==='mf'&&ms.length===2){ex.innerHTML=`<div class="mv"><label class="f">Distância do canto (mm)<input type="number" id="dmf" value="300"></label><div></div><div></div><div class="btn on" id="okMf" style="padding:10px">OK</div></div>`;
     $('okMf').onclick=()=>{const dist=+$('dmf').value||300,[p,q]=pontoMaisPerto(ms[0].pts,ms[1].pts),P=p.map((v,i)=>(v+q[i])/2);
       const dir=(m)=>{const A=m.pts[0],B=m.pts[m.pts.length-1],dA=Math.hypot(...A.map((v,i)=>v-P[i])),dB=Math.hypot(...B.map((v,i)=>v-P[i])),F=dA>dB?A:B,u=F.map((v,i)=>v-P[i]),l=Math.hypot(...u)||1;return u.map(x=>x/l);};
       const u=dir(ms[0]),v=dir(ms[1]);grupoExtra('mf','Mãos-francesas');
-      ajuste({op:'add',a:P.map((x,i)=>x+u[i]*dist),b:P.map((x,i)=>x+v[i]*dist),g:'mf',nota:'mão-francesa'});montarPerfis();};return;}
+      SEL=[];avisoSel('Mão-francesa criada a '+dist+' mm do canto.');ajuste({op:'add',a:P.map((x,i)=>x+u[i]*dist),b:P.map((x,i)=>x+v[i]*dist),g:'mf',nota:'mão-francesa'});montarPerfis();};return;}
 }
 // ===== cálculo e resultado =====
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
