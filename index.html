@@ -855,36 +855,55 @@ $('mic').onclick=micTeclado;
 })();
 function falar(t){if(falador&&FALAR)falador.speak(t,{language:'pt-BR'}).catch(()=>{});}
 
-// --- comando rápido ---
+// --- comando por frase (sem IA) ---
+const TIPOS_TXT=[[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
 function comandoLocal(txt){
-  txt=norm(txt).trim();if(!txt||!MOD||NOVO)return null;
-  const partes=txt.split(/,\s*(?=[a-z])|;| e |\n/).map(x=>x.trim()).filter(Boolean),feitos=[],mudou={};
-  for(const pt of partes){
-    const temNum=/\d/.test(pt),onoff=/\b(tira|tirar|sem|remove|desliga|nao|coloca|bota|poe|liga|com)\b/.test(pt);
+  let t=norm(txt).trim();if(!t||!MOD||NOVO)return null;
+  t=t.replace(/(\d)\s*x\s*(\d)/g,'$1 por $2').replace(/\b(purinha|prainha|praia|prainhas)\b/g,'prainha').replace(/(\d+)\s+(escadas?|degraus?|degrais)/g,'$1 degraus').replace(/\bfundo\b/g,'profundidade').replace(/\bcomprido\b/g,'comprimento');
+  const feitos=[],mudou={};let trocou='';
+  for(const[re,k]of TIPOS_TXT)if(re.test(t)&&PR[k]){if(MOD.titulo!==PR[k].titulo){carregar(PR[k]);trocou=PR[k].titulo;}break;}
+  const P=MOD.parametros,pn=p=>norm(p.nome).replace(/\(.*\)/,'').replace(/^n[ºo°]\s*/,'').trim();
+  const grupos=[...new Set(P.map(p=>norm(p.grupo||'')))].filter(g=>g&&g!=='medidas'&&g!=='estrutura');
+  const achaGrupo=s=>grupos.find(g=>s.includes(g.split(' ')[0].slice(0,6)));
+  const semNome=[];let ultFim=0;const re=/(\d+(?:[.,]\d+)?)\s*(metros?|m|cm|mm|centimetros?|milimetros?)?\b/g;let m;
+  while((m=re.exec(t))){
+    const ini=m.index,fim=m.index+m[0].length;
+    const SW=/^(de|da|do|das|dos|em|no|na|a|o|com|uma|um|para|pra|e|por)$/;
+    const lim=w=>w.trim().split(/\s+/).filter(w=>w&&!SW.test(w)&&!/\d/.test(w)&&!/^(metros?|m|cm|mm)$/.test(w));
+    const antesG=lim(t.slice(0,ini)).slice(-3),antesW=lim(t.slice(ultFim,ini)).slice(-3);ultFim=fim;const mDep=t.slice(fim).match(/^\s*(?:(?:de|da|do)\s+)*\S+/);
+    let dw=t.slice(fim).trim().split(/\s+/),comDe=false;while(dw.length&&/^(de|da|do)$/.test(dw[0])){dw.shift();comDe=true;}
+    const depois=dw[0]||'';
+    const has=(s,w)=>s.startsWith(w.slice(0,Math.max(4,w.length-1)))||w.startsWith(s.slice(0,Math.max(4,s.length-1)));
+    const gctx=antesG.join(' ')+' '+depois;
     let best=null,bs=0;
-    for(const p of MOD.parametros){
-      if(p.tipo==='bool'&&temNum&&!onoff)continue;
-      if(p.tipo!=='bool'&&!temNum&&p.tipo!=='sel')continue;
-      const n=norm(p.nome).replace(/\(.*\)/,'').replace(/^n[ºo°]\s*/,'').trim(),gr=norm(p.grupo||'');
-      const pal=n.split(/\s+/).filter(w=>w.length>2);let sc=0;
-      if(n&&pt.includes(n))sc=50+n.length;else if(pal.length&&pal.every(w=>pt.includes(w.slice(0,Math.max(4,w.length-1)))))sc=30+n.length;
-      if(!sc&&p.tipo==='bool'&&gr&&pt.includes(gr.slice(0,6)))sc=40;
-      if(!sc)continue;
-      if(gr&&gr!=='medidas'&&pt.includes(gr.slice(0,6)))sc+=100;
-      if(gr==='medidas')sc+=1;if(p.se&&!VAL[p.se]&&!mudou[p.se])sc-=5;
-      if(sc>bs){bs=sc;best=p;}}
-    if(!best)return null;
-    if(best.tipo==='bool'){const off=/\b(tira|tirar|sem|remove|desliga|nao)\b/.test(pt);mudou[best.id]=!off;feitos.push(best.nome+(off?' desligado':' ligado'));continue;}
-    const m=pt.match(/(-?\d+(?:[.,]\d+)?)/);
-    if(best.tipo==='sel'){const o=(best.opcoes||[]).find(o=>pt.includes(norm(o).split(' ')[0]));if(!o)return null;mudou[best.id]=o;feitos.push(best.nome+': '+o);continue;}
-    if(!m)return null;
-    let v=parseFloat(m[1].replace(',','.'));
-    if(best.tipo==='num'&&(best.un||'mm')==='mm'){if(/\bcm\b|centimetro/.test(pt))v*=10;else if(/\bmm\b|milimetro/.test(pt)){}else if(/\bm\b|metro/.test(pt)||(v<=30&&!/^\d{3,}$/.test(m[1])))v*=1000;}
+    const cand=(p,base)=>{const g=norm(p.grupo||'');let sc=base;
+      if(g&&g!=='medidas'&&g!=='estrutura'){if(gctx.includes(g.slice(0,6)))sc+=60;else sc-=30;}
+      if(g==='medidas')sc+=5;if(sc>bs){bs=sc;best=p;}};
+    const nums=P.filter(p=>p.tipo==='num'||p.tipo==='int').map(p=>({p,pal:pn(p).split(/\s+/).filter(w=>w.length>2)})).filter(x=>x.pal.length);
+    for(const{p,pal}of nums)if(depois&&has(depois,pal[0])&&(comDe||p.tipo==='int'))cand(p,200);
+    if(best&&mDep)ultFim=fim+mDep[0].length;
+    if(!best)for(let d=0;d<antesW.length&&!best;d++){const w=antesW[antesW.length-1-d];
+      const hits=nums.filter(x=>has(w,x.pal[0]));
+      if(hits.length){for(const x of hits)cand(x.p,150);}
+      else{const g=achaGrupo(w);if(g){const ng=nums.filter(x=>norm(x.p.grupo||'')===g);best=(ng.find(x=>antesW.some(a=>has(a,x.pal[0])))||ng.find(x=>x.p.tipo==='num')||{}).p||null;}}}
+    if(!best){semNome.push(m);continue;}
+    if(best.id in mudou&&best.tipo!=='int')continue;
+    let v=parseFloat(m[1].replace(',','.'));const u=m[2]||'';
+    if(best.tipo==='num'&&(best.un||'mm')==='mm'){if(/^c/.test(u))v*=10;else if(/^mm|^mili/.test(u)){}else if(/^m/.test(u)||(v<=30&&!/^\d{3,}$/.test(m[1])))v*=1000;}
     if(best.tipo==='int')v=Math.round(v);
-    mudou[best.id]=v;feitos.push((best.grupo&&best.grupo!=='Medidas'?best.grupo+' – ':'')+best.nome+' '+(best.tipo==='num'?Math.round(v)+' mm':v));
+    mudou[best.id]=v;if(best.se)mudou[best.se]=true;
+    feitos.push((best.grupo&&!/^(Medidas|Estrutura)$/.test(best.grupo)?best.grupo+' – ':'')+best.nome+' '+(best.tipo==='num'?Math.round(v)+' mm':v));
   }
-  if(!feitos.length)return null;
-  Object.assign(VAL,mudou);montarUI();upd();return 'Feito: '+feitos.join(' · ');
+  if(/ por /.test(t))for(const m of semNome){const p=['C','L','H'].map(id=>P.find(q=>q.id===id&&q.tipo==='num')).find(q=>q&&!(q.id in mudou));if(!p)break;
+    let v=parseFloat(m[1].replace(',','.'));const u=m[2]||'';if(/^c/.test(u))v*=10;else if(/^mm|^mili/.test(u)){}else if(/^m/.test(u)||(v<=30&&!/^\d{3,}$/.test(m[1])))v*=1000;
+    mudou[p.id]=v;feitos.push(p.nome+' '+Math.round(v)+' mm');}
+  for(const p of P){if(p.tipo!=='bool')continue;const n=pn(p).split(' ')[0].slice(0,6);if(n.length<4||!t.includes(n))continue;
+    const ctx=t.slice(Math.max(0,t.indexOf(n)-14),t.indexOf(n));
+    if(/\b(sem|tira|tirar|remove|desliga|nao)\b/.test(ctx)){mudou[p.id]=false;feitos.push(p.nome+' desligado');}
+    else if(/\b(com|coloca|bota|poe|liga|uma|um|e)\b/.test(ctx)&&!(p.id in mudou)){mudou[p.id]=true;feitos.push(p.nome+' ligado');}}
+  if(!feitos.length&&!trocou)return null;
+  Object.assign(VAL,mudou);montarUI();upd(!!trocou);
+  return (trocou?'Modelo: '+trocou+'. ':'')+(feitos.length?'Feito: '+feitos.join(' · '):'');
 }
 
 // --- enviar ---
