@@ -110,12 +110,13 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="badge" id="badge">OK</div>
   <div class="viewer" id="viewer">
     <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button></div>
-    <div class="vtools"><button id="bMao" title="Arrastar a vista com um dedo">✋</button><button id="bMais">＋</button><button id="bMenos">－</button><button id="bCentro" title="Ver tudo">⤢</button></div>
+    <div class="vtools"><button id="bMao" title="Arrastar a vista com um dedo">✋</button><button id="bMais">＋</button><button id="bMenos">－</button><button id="bCentro" title="Ver tudo">⤢</button><button id="bLapis" title="Desenhar linhas">✏️</button></div>
     <canvas id="ov" style="pointer-events:none;z-index:1"></canvas>
-    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar · 2 dedos movem · toque duplo aproxima</div>
+    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque na peça para marcar/desmarcar · 2 dedos movem · toque duplo aproxima · ✏️ desenha</div>
     <div class="legend" id="legend"></div>
   </div>
   <div id="chapaOpts" class="chopts" style="display:none"></div>
+  <div id="desBox" class="selbox" style="display:none;border-radius:0"></div>
   <div id="selMsg" class="sub" style="display:none;margin:10px 0 -6px;padding:8px 10px;border:1px solid var(--or);border-radius:8px;color:var(--tx)"></div>
   <div id="selBox" class="selbox" style="display:none"></div>
 </div>
@@ -146,6 +147,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 
 <div class="card">
   <h2>Perfis de ferro</h2>
+  <div class="swrow" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;flex-wrap:wrap;gap:6px"><span><b>Perfil em relação à linha (medida)</b><br><span class="sub" style="font-size:11px">gabarito por dentro: a medida é a de fora; por fora: a medida é a de dentro</span></span><select id="alinha" style="width:auto"><option value="centro">No centro da linha</option><option value="dentro">Por dentro da medida</option><option value="fora">Por fora da medida</option></select></div>
   <div class="swrow" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px"><span><b>Meia esquadria nos cantos</b><br><span class="sub" style="font-size:11px">corte 45° onde duas barras se encontram em L</span></span><label class="sw"><input type="checkbox" id="esqAuto"><span></span></label></div>
   <div id="perfis"></div>
   <div class="grid" style="margin-top:12px">
@@ -337,6 +339,11 @@ function aplicaAjustes(M){
       if(a.fixo==='A')m.pts[m.pts.length-1]=B.map((v,i)=>v+un[i]*dl);else if(a.fixo==='B')m.pts[0]=A.map((v,i)=>v-un[i]*dl);else{m.pts[0]=A.map((v,i)=>v-un[i]*dl/2);m.pts[m.pts.length-1]=B.map((v,i)=>v+un[i]*dl/2);}}
   }
   for(const m of M)if(m.pfx)m.pf=clone(m.pfx);
+  const al=MOD.alinha||'centro';
+  if(al!=='centro'){const st=M.filter(m=>m.pts.length===2&&!m.curva);if(st.length){
+    const mn=[0,1,2].map(k=>Math.min(...st.flatMap(m=>m.pts.map(p=>p[k])))),mx=[0,1,2].map(k=>Math.max(...st.flatMap(m=>m.pts.map(p=>p[k]))));
+    for(const m of st){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pp=m.pf||m.pfx||g.perfil,h=(pp.tipo==='chapa'?pp.t:pp.a)/2,sg=al==='dentro'?1:-1;
+      m.pts=m.pts.map(p=>p.map((v,k)=>mx[k]-mn[k]<1?v:Math.abs(v-mn[k])<1?v+sg*h:Math.abs(v-mx[k])<1?v-sg*h:v));}}}
   for(const m of M){let l=0;for(let i=1;i<m.pts.length;i++)l+=Math.hypot(m.pts[i][0]-m.pts[i-1][0],m.pts[i][1]-m.pts[i-1][1],m.pts[i][2]-m.pts[i-1][2]);m.len=Math.round(l);}
   for(const m of M)if(m.girado){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],b0=m.pf||g.perfil;m.pf={...b0,a:b0.b||b0.a,b:b0.a};}
 }
@@ -716,7 +723,8 @@ PR.cilindro={
     painel([[0,a[0],a[1]],[C,a[0],a[1]],[C,b[0],b[1]],[0,b[0],b[1]]]);}
   if(P.tampos)for(const x of[0,C])painel(Array.from({length:n},(_,k)=>{const t=k*2*Math.PI/n;return[x,R*Math.cos(t),z0+R*Math.sin(t)];}));
  })};
-const CHIPS=[['Piscina','piscina','g'],['Tanque retangular','tanque','g'],['Tanque cilíndrico','cilindro','g'],['Mesa','mesa','e'],['Berço de molde','molde','e'],['Escada','escada','e'],['Corrimão','corrimao','e'],['Capota em arco','capota','e']];
+PR.branco={titulo:'Projeto em branco',resumo:'Desenhe as linhas com o lápis ✏️ (toque nos pontos ou digite comprimento e direção). Depois marque as linhas e escolha o perfil de cada uma.',perguntas:[],grupos:[{id:'sk',nome:'Linhas desenhadas'}],perfilPadrao:{tipo:'ret',a:50,b:50,t:2},parametros:[],codigo:'function(P,H){}'};
+const CHIPS=[['Em branco (desenhar)','branco','d'],['Piscina','piscina','g'],['Tanque retangular','tanque','g'],['Tanque cilíndrico','cilindro','g'],['Mesa','mesa','e'],['Berço de molde','molde','e'],['Escada','escada','e'],['Corrimão','corrimao','e'],['Capota em arco','capota','e']];
 
 // ===== app =====
 const $=id=>document.getElementById(id);
@@ -772,7 +780,7 @@ function montarUI(){
     if(gn==='Medidas'||head)box.appendChild(sec);else{if(!detE){detE=document.createElement('details');detE.id='detEsp';detE.className='det';detE.innerHTML='<summary>Especificações detalhadas</summary>';}detE.appendChild(sec);}
   }
   if(detE)box.appendChild(detE);
-  vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;
+  vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;$('alinha').value=MOD.alinha||'centro';
   legenda();
 }
 function legenda(){$('legend').innerHTML=(CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`;
@@ -812,6 +820,7 @@ function montarPerfis(){
 }
 function fmtPre(t,v){return t==='ret'?v[0]+'×'+v[1]+'×'+v[2]:t==='red'?'Ø'+v[0]+'×'+v[2]:t==='macico'?'Ø'+v[0]:t==='chapa'?v[0]+'×'+v[2]:v[0]+'×'+v[2];}
 $('nomePeca').oninput=()=>{MOD.nome=$('nomePeca').value;$('tit').textContent=MOD.nome||MOD.titulo;store('dc-estr-atual',{mod:MOD,val:VAL});};
+$('alinha').onchange=()=>{MOD.alinha=$('alinha').value;upd();};
 $('esqAuto').onchange=()=>{MOD.esqAuto=$('esqAuto').checked;upd();};
 $('barra').value=CFG.barra;$('kerf').value=CFG.kerf;
 $('barra').oninput=()=>{CFG.barra=parseFloat($('barra').value)||6000;upd();};
@@ -866,7 +875,7 @@ function draw(M){
       if(m.trim&&m.pts.length===2){const u=b.clone().sub(a).normalize();a=a.clone().add(u.clone().multiplyScalar(m.trim[0]/1000));b=b.clone().sub(u.clone().multiplyScalar(m.trim[1]/1000));}
       const dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
       const round=p.tipo==='red'||p.tipo==='macico';
-      if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),sel?SELLIN:LCL));const pk=new THREE.Mesh(UC,INV);pk.scale.set(.06,len,.06);pk.position.copy(a).add(b).multiplyScalar(.5);pk.quaternion.setFromUnitVectors(up,dir.clone().normalize());pk.userData.mk=chaveM(m);group.add(pk);PICK.push(pk);continue;}
+      if(LINHAS){const a0=P3(...m.pts[i-1]),b0=P3(...m.pts[i]);group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a0,b0]),sel?SELLIN:LCL));const pk=new THREE.Mesh(UC,INV);pk.scale.set(.08,len,.08);pk.position.copy(a).add(b).multiplyScalar(.5);pk.quaternion.setFromUnitVectors(up,dir.clone().normalize());pk.userData.mk=chaveM(m);group.add(pk);PICK.push(pk);continue;}
       if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);cm.userData.mk=chaveM(m);if(LINHAS)cm.material=INV;group.add(cm);PICK.push(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),sel?SELLIN:LMAT);group.add(eg);}cm.castShadow=!LINHAS;continue;}
       const mesh=new THREE.Mesh(round?UC:UB,mat);
       const w=p.a/1000,h=((p.tipo==='ret'||p.tipo==='placa')?p.b:p.tipo==='chapa'?p.t:p.a)/1000;
@@ -944,11 +953,39 @@ $('bMao').onclick=()=>{MAO=!MAO;$('bMao').classList.toggle('on',MAO);$('dicaSel'
 $('bMais').onclick=()=>{if(view==='3d')orb.r=Math.max(.15,orb.r*.7);else oz*=1.4;render();};
 $('bMenos').onclick=()=>{if(view==='3d')orb.r*=1.4;else oz/=1.4;render();};
 $('bCentro').onclick=()=>setView(view);
+$('bLapis').onclick=()=>{DESENHO=!DESENHO;$('bLapis').classList.toggle('on',DESENHO);if(DESENHO&&!LINHAS){LINHAS=true;$('bLinhas').classList.add('on');upd();}if(!DESENHO){PT0=null;marcaPonto();}painelDesenho();};
 $('bLinhas').classList.toggle('on',LINHAS);$('bLinhas').onclick=()=>{LINHAS=!LINHAS;store('dc-estr-linhas',LINHAS);$('bLinhas').classList.toggle('on',LINHAS);upd();};
 $('bChapa').onclick=()=>{CHAPA=!CHAPA;$('bChapa').classList.toggle('on',CHAPA);upd();};
 addEventListener('resize',resize);
 
 
+
+// ===== desenhar linhas (lápis) =====
+let DESENHO=false,PT0=null,MARK=null;
+function snapModel(v){return[Math.round(v.x*1000/10)*10,Math.round(v.z*1000/10)*10,Math.round(v.y*1000/10)*10];}
+function desenhoToque(hit,nd){
+  let P=null;
+  if(hit){const m=(LAST.M||[]).find(x=>chaveM(x)===hit.object.userData.mk),h=[hit.point.x*1000,hit.point.z*1000,hit.point.y*1000];
+    if(m){const ends=[m.pts[0],m.pts[m.pts.length-1]],dd=ends.map(q=>Math.hypot(q[0]-h[0],q[1]-h[1],q[2]-h[2])),i=dd[0]<dd[1]?0:1;
+      P=dd[i]<300?ends[i].slice():projSeg(h,m.pts).map(v=>Math.round(v/10)*10);}}
+  if(!P){const pl=new THREE.Plane(new THREE.Vector3(0,1,0),0),t=new THREE.Vector3();if(RC.ray.intersectPlane(pl,t))P=snapModel(t).map(v=>Math.round(v/50)*50);}
+  if(!P)return;
+  if(!PT0){PT0=P;marcaPonto();painelDesenho();return;}
+  if(Math.hypot(P[0]-PT0[0],P[1]-PT0[1],P[2]-PT0[2])<5){avisoSel('Mesmo ponto. Toque em outro lugar.');return;}
+  novaLinha(PT0,P);PT0=P;marcaPonto();painelDesenho();
+}
+function novaLinha(A,B){grupoExtra('sk','Linhas desenhadas');(MOD.ajustes=MOD.ajustes||[]).push({op:'add',a:A,b:B,g:'sk',nota:'linha desenhada'});MOD.editado=true;montarPerfis();upd();
+  avisoSel('Linha de '+Math.round(Math.hypot(B[0]-A[0],B[1]-A[1],B[2]-A[2]))+' mm criada. Continue tocando ou digite a próxima.');}
+function marcaPonto(){if(MARK){scene.remove(MARK);MARK=null;}if(!PT0){render();return;}MARK=new THREE.Mesh(new THREE.SphereGeometry(.04,12,8),new THREE.MeshBasicMaterial({color:0xe3924a}));MARK.position.copy(P3(...PT0));scene.add(MARK);render();}
+function painelDesenho(){const box=$('desBox');if(!DESENHO){box.style.display='none';return;}box.style.display='';
+  box.innerHTML=`<div class="inf"><b>✏️ Desenhar linhas</b> — toque no chão ou na ponta de uma linha para começar. Cada toque seguinte faz uma linha.<br>${PT0?'Ponto atual: <b>'+fmtP(PT0)+'</b>':'<span style="color:var(--mut)">Sem ponto inicial (toque no desenho ou use 0,0,0)</span>'}</div>
+   <div class="mv"><label class="f">Comprimento (mm)<input type="number" id="dsL" value="1000"></label><label class="f">Direção<select id="dsD"><option value="0,1">+X (comprimento)</option><option value="0,-1">−X</option><option value="1,1">+Y (largura)</option><option value="1,-1">−Y</option><option value="2,1">+Z (subir)</option><option value="2,-1">−Z (descer)</option></select></label><div></div><div class="btn on" id="dsOk" style="padding:10px">Criar</div></div>
+   <div class="acts" style="margin-top:8px"><div class="btn" id="dsZero">Começar em 0,0,0</div><div class="btn" id="dsSolta">Novo início</div><div class="btn" id="dsFim">Terminar</div></div>`;
+  $('dsZero').onclick=()=>{PT0=[0,0,0];marcaPonto();painelDesenho();};
+  $('dsSolta').onclick=()=>{PT0=null;marcaPonto();painelDesenho();};
+  $('dsFim').onclick=()=>{DESENHO=false;PT0=null;marcaPonto();$('bLapis').classList.remove('on');painelDesenho();avisoSel('Desenho terminado. Marque as linhas e use "Perfil" para escolher o tubo de cada uma.');};
+  $('dsOk').onclick=()=>{if(!PT0)PT0=[0,0,0];const L=+$('dsL').value||0;if(!L)return;const[ax,sg]=$('dsD').value.split(',').map(Number),B=PT0.slice();B[ax]+=sg*L;novaLinha(PT0,B);PT0=B;marcaPonto();painelDesenho();};
+}
 // ===== seleção de peça =====
 const RC=new THREE.Raycaster();
 function pegar(e){
@@ -956,7 +993,8 @@ function pegar(e){
   RC.setFromCamera(nd,cam);const hit=RC.intersectObjects(PICK,false)[0];
   const agora=Date.now(),duplo=agora-ultToque<350;ultToque=agora;
   if(duplo&&view==='3d'){ALVOFIXO=!!hit;if(hit){orb.tg.copy(hit.point);orb.r=Math.max(.4,orb.r*.45);}else{orb.r=fitR();orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));}render();return;}
-  if(!hit){if(SEL.length){SEL=[];upd();}return;}
+  if(DESENHO){desenhoToque(hit,nd);return;}
+  if(!hit)return;
   const k=hit.object.userData.mk,i=SEL.indexOf(k);
   avisoSel('');if(i>=0)SEL.splice(i,1);else SEL.push(k);
   upd();
@@ -989,7 +1027,7 @@ function painelSel(){
      <div class="btn" data-a="perfil">Perfil</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="rot">Girar perfil</div>
      <div class="btn" data-a="chapa">Chapinha</div><div class="btn" data-a="del">Apagar</div>
 
-     <div class="btn" data-a="limpar">Soltar</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
+     <div class="btn" data-a="limpar">Desmarcar tudo</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
    </div><div id="selExtra"></div>`;
   box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,ms));
 }
@@ -1135,7 +1173,7 @@ function listarSalvos(){const s=store('dc-estr-salvos')||[];
 $('bSalvar').onclick=()=>{const s=store('dc-estr-salvos')||[];s.unshift({mod:MOD,val:VAL,quando:new Date().toLocaleString('pt-BR')});store('dc-estr-salvos',s.slice(0,30));listarSalvos();flash('Salvo');};
 
 // ===== modelos prontos =====
-$('chips').innerHTML='<div class="sub" style="width:100%;margin-top:4px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
+$('chips').innerHTML=CHIPS.filter(c=>c[2]==='d').map(([n,k])=>`<span class="chip" data-k="${k}" style="border-color:var(--or)">✏️ ${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
 $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{carregar({...PR[c.dataset.k],preset:c.dataset.k});$('status').textContent='';});
 
 // ===== folha de projeto =====
