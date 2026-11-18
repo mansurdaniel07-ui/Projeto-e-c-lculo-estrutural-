@@ -25,9 +25,9 @@ h1{font:700 30px/1.05 'Barlow Condensed',sans-serif;margin:0 0 6px;letter-spacin
 .viewer{position:relative;height:56vh;min-height:320px;margin:12px -16px -16px;border-top:1px solid var(--line);border-radius:0 0 14px 14px;overflow:hidden;touch-action:none}
 .viewer canvas{display:block;position:absolute;inset:0;width:100%!important;height:100%!important}
 .vbtn{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;z-index:2}
-.vbtn button{flex:1;padding:8px 0;font:600 13px 'IBM Plex Sans';background:#15171ae0;color:var(--tx);border:1px solid var(--line);border-radius:8px}
+.vbtn button{flex:1;padding:8px 0;font:600 13px 'IBM Plex Sans';background:#2a2d31e8;color:var(--tx);border:1px solid var(--line);border-radius:8px}
 .vbtn button.on{background:var(--or);border-color:var(--or);color:#1b1e21}
-.legend{position:absolute;bottom:10px;left:12px;z-index:2;font:12px 'IBM Plex Mono';color:var(--mut)}
+.legend{position:absolute;bottom:10px;left:12px;right:12px;z-index:2;font:12px 'IBM Plex Mono';color:#3b3f45;pointer-events:auto}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}
 h2{font:600 15px 'Barlow Condensed';letter-spacing:2px;color:var(--mut);text-transform:uppercase;margin:0 0 12px}
 .tipos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -75,6 +75,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 .prev img{width:100%;border-radius:8px;margin-top:10px;display:block;background:#fff}
 #bFalar.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .topo{display:flex;flex-direction:column;gap:2px;padding:4px 4px 14px;border-left:4px solid var(--or);padding-left:12px;margin-bottom:12px}.topo b{font:700 24px 'Barlow Condensed';letter-spacing:2px}.topo span{font:12px 'IBM Plex Mono';color:var(--mut)}
+.det{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px}.det summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--or)}
 .mic.rec{background:#c0453a;border-color:#c0453a;color:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .chip{padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:#17191c;font-size:13px;cursor:pointer}
@@ -102,16 +103,16 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="sub" id="sub">—</div>
   <div class="badge" id="badge">OK</div>
   <div class="viewer" id="viewer">
-    <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 64px">Chapa</button></div>
+    <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button></div>
     <canvas id="ov" style="pointer-events:none;z-index:1"></canvas>
     <div class="legend" id="legend"></div>
   </div>
 </div>
 
 <div class="card ask">
-  <h2>Comando de medidas</h2><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, meia esquadria, reforço…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, meia esquadria, reforço…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div>
+  <h2>Comando de medidas</h2><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, reforço, outra forma…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div>
   <div id="chat" class="chat" style="display:none"></div>
-  <textarea id="pedido" placeholder="Ex.: profundidade 1,40 · piso da escada 350 · 4 degraus · tira a prainha"></textarea>
+  <textarea id="pedido" placeholder="Ex.: piscina de 7 de comprimento, 3 de largura, 1,40 de profundidade, com 2 degraus e prainha de 1,60"></textarea>
   <div class="askrow">
     <div class="btn mic" id="mic" title="Falar">🎤</div>
     <label class="btn mic" id="anx" title="Mandar PDF ou foto">📎<input type="file" id="arq" accept="application/pdf,image/*" multiple style="display:none"></label>
@@ -133,6 +134,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 
 <div class="card">
   <h2>Perfis de ferro</h2>
+  <div class="swrow" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px"><span><b>Meia esquadria nos cantos</b><br><span class="sub" style="font-size:11px">corte 45° onde duas barras se encontram em L</span></span><label class="sw"><input type="checkbox" id="esqAuto"><span></span></label></div>
   <div id="perfis"></div>
   <div class="grid" style="margin-top:12px">
     <label class="f">Barra (mm)<input type="number" id="barra"></label>
@@ -202,7 +204,7 @@ function divPts(points,max){
 function construir(fn,P){
   const M=[];
   const chk=()=>{ if(M.length>5000) throw new Error('Peças demais (>5000). Aumente os espaçamentos.'); };
-  const add=(a,b,g,nota)=>{chk();M.push({pts:[a,b],g,nota:nota||''});};
+  const add=(a,b,g,nota,op)=>{chk();M.push({pts:[a,b],g,nota:nota||'',esq:op&&op.esq});};
   const poli=(pts,g,fechado)=>{for(let i=0;i<pts.length-1;i++)add(pts[i],pts[i+1],g);if(fechado)add(pts[pts.length-1],pts[0],g);};
   const ptsArco=(c,r,a0,a1,plano,seg)=>{
     const n=seg||Math.max(8,Math.ceil(Math.abs(a1-a0)/6));const out=[];
@@ -244,13 +246,42 @@ function cortar(lens,barra,kerf){
 
 function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];x+=a[1]*b[2]-a[2]*b[1];y+=a[2]*b[0]-a[0]*b[2];z+=a[0]*b[1]-a[1]*b[0];}return Math.hypot(x,y,z)/2;}
 
+
+// ===== meia esquadria =====
+function esquadrias(M){
+  const auto=!!(MOD&&MOD.esqAuto),mapa={},key=p=>p.map(v=>Math.round(v)).join(',');
+  const quer=(m,e)=>auto||m.esq===true||(Array.isArray(m.esq)&&m.esq[e]);
+  M.forEach(m=>{m.cuts=null;m.ext=0;m.notaEsq='';m.lenCorte=m.len;});
+  M.forEach(m=>{if(m.curva||m.pts.length!==2)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  for(const k in mapa){const L=mapa[k];if(L.length<2)continue;
+    const dirs=L.map(([m,e])=>nrm(sub(m.pts[1-e],m.pts[e])));let par=null,np=0;
+    for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const c=dot(dirs[i],dirs[j]),t=Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI;if(t<30||t>150)continue;
+      const pn=nrm(crs(dirs[i],dirs[j]));if(L.every((_,k2)=>k2===i||k2===j||Math.abs(dot(dirs[k2],pn))>0.95)){
+        const resto=L.map((_,k2)=>k2).filter(k2=>k2!==i&&k2!==j),vert=resto.length&&resto.every(k2=>Math.abs(dirs[k2][2])>0.95);
+        if(!par||vert){if(vert&&!par?.v){par=[i,j];par.v=true;np=1;}else if(!par){par=[i,j];np=1;}else np++;}}}
+    if(np!==1)continue;
+    const[m1,e1]=L[par[0]],[m2,e2]=L[par[1]];
+    if(!quer(m1,e1)||!quer(m2,e2))continue;
+    const P=m1.pts[e1],u=dirs[par[0]],v=dirs[par[1]];
+    const th=Math.acos(Math.max(-1,Math.min(1,dot(u,v))))*180/Math.PI;
+    const n=nrm(sub(u,v));
+    for(const[m,e,g]of[[m1,e1,null],[m2,e2,null]]){m.cuts=m.cuts||[null,null];m.cuts[e]={P,n,ang:(180-th)/2};}
+  }
+  for(const m of M){if(!m.cuts)continue;const gr=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],w=gr.perfil.a;
+    let ext=0;const angs=[];
+    for(const c of m.cuts){if(!c){angs.push('reto');continue;}const half=(90-c.ang)*Math.PI/180;ext+=(w/2)/Math.tan(half);angs.push(Math.round(c.ang)+'°');}
+    m.ext=Math.round(ext);m.lenCorte=m.len+m.ext;m.notaEsq='meia esquadria '+angs.join(' / ')+' · eixo '+m.len;}
+}
 // ===== modelos prontos =====
 const PR={};
 PR.piscina={
- titulo:'Gabarito universal · piscina modular',
+ titulo:'Gabarito · piscina modular',
  resumo:'Gabarito de ferro com a medida externa da piscina, para plaquear por cima: montado de cabeça pra baixo (borda no chão, fundo em cima). Quadros em par soldados, quadro próprio em cada degrau, cabeceiras, longarinas e base cruzada com dormentes e trilhos. A chapa mostra a piscina chapeada por cima.',
  perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento entre os pares de quadros'],
- grupos:[{id:'q',nome:'Quadros (frente)',perfil:{tipo:'ret',a:50,b:50,t:2}},{id:'l',nome:'Longarinas',perfil:{tipo:'ret',a:50,b:30,t:2}},{id:'e',nome:'Escada',perfil:{tipo:'ret',a:40,b:40,t:2}},{id:'c',nome:'Arestas (cantoneira)',perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada',perfil:{tipo:'ret',a:80,b:40,t:2}}],
+ grupos:[{id:'q',nome:'Quadros (frente)'},{id:'l',nome:'Longarinas'},{id:'e',nome:'Escada'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:10000,grupo:'Medidas'},
   {id:'L',nome:'Largura',tipo:'num',valor:6000,grupo:'Medidas'},
@@ -355,7 +386,8 @@ PR.mesa={
  titulo:'Mesa móvel',
  resumo:'Mesa de ferro com quadro superior, travessas, pernas e travamento inferior. Rodízios opcionais.',
  perguntas:['Medida do tampo e altura de trabalho','Vai ter rodízio? Qual altura?'],
- grupos:[{id:'q',nome:'Pernas e travessas',perfil:{tipo:'ret',a:50,b:50,t:2}},{id:'l',nome:'Longarinas',perfil:{tipo:'ret',a:50,b:30,t:2}}],
+ grupos:[{id:'l',nome:'Tampo – comprimento'},{id:'t',nome:'Tampo – largura'},{id:'p',nome:'Pernas'},{id:'r',nome:'Reforço inferior'}],
+ perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:3000,grupo:'Medidas'},
   {id:'L',nome:'Largura',tipo:'num',valor:1500,grupo:'Medidas'},
@@ -368,17 +400,18 @@ PR.mesa={
   {id:'infH',nome:'Altura do chão',tipo:'num',valor:200,grupo:'Travamento inferior',se:'inf'}],
  codigo:String(function(P,H){
   const {add,divide}=H;const r=P.rod?P.rodH:0,xl=divide(0,P.C,P.vao),xt=divide(0,P.C,P.esp);
-  for(const x of xl){add([x,0,r],[x,0,P.H],'q');add([x,P.L,r],[x,P.L,P.H],'q');}
+  for(const x of xl){add([x,0,r],[x,0,P.H],'p');add([x,P.L,r],[x,P.L,P.H],'p');}
   add([0,0,P.H],[P.C,0,P.H],'l');add([0,P.L,P.H],[P.C,P.L,P.H],'l');
-  for(const x of xt)add([x,0,P.H],[x,P.L,P.H],'q');
+  for(const x of xt)add([x,0,P.H],[x,P.L,P.H],'t');
   H.painel([[0,0,P.H],[P.C,0,P.H],[P.C,P.L,P.H],[0,P.L,P.H]]);
-  if(P.inf){const z=P.infH;add([0,0,z],[P.C,0,z],'l');add([0,P.L,z],[P.C,P.L,z],'l');for(const x of xl)add([x,0,z],[x,P.L,z],'q');}
+  if(P.inf){const z=P.infH;add([0,0,z],[P.C,0,z],'r');add([0,P.L,z],[P.C,P.L,z],'r');for(const x of xl)add([x,0,z],[x,P.L,z],'r');}
  })};
 PR.molde={
  titulo:'Estrutura de molde (berço)',
  resumo:'Berço de ferro em pórticos para apoiar molde de fibra: quadros transversais, montantes, longarinas e diagonais nas pontas.',
  perguntas:['Medida do molde (comprimento, largura, altura do berço)','Espaçamento dos quadros'],
- grupos:[{id:'q',nome:'Quadros',perfil:{tipo:'ret',a:50,b:50,t:2}},{id:'l',nome:'Longarinas',perfil:{tipo:'ret',a:40,b:40,t:2}}],
+ grupos:[{id:'q',nome:'Quadros'},{id:'l',nome:'Longarinas'}],
+ perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:6000,grupo:'Medidas'},
   {id:'L',nome:'Largura',tipo:'num',valor:2500,grupo:'Medidas'},
@@ -397,7 +430,8 @@ PR.escada={
  titulo:'Escada metálica reta',
  resumo:'Duas longarinas inclinadas, apoios de degrau em cantoneira e guarda-corpo opcional.',
  perguntas:['Altura total a vencer','Nº de degraus, piso e largura','Vai ter guarda-corpo?'],
- grupos:[{id:'l',nome:'Longarinas',perfil:{tipo:'ret',a:100,b:50,t:3}},{id:'q',nome:'Apoios de degrau',perfil:{tipo:'cant',a:38.1,b:38.1,t:3.17}},{id:'g',nome:'Guarda-corpo',perfil:{tipo:'red',a:38.1,b:38.1,t:2}}],
+ grupos:[{id:'l',nome:'Longarinas'},{id:'q',nome:'Apoios de degrau',proprio:true,perfil:{tipo:'cant',a:38.1,b:38.1,t:3.17}},{id:'g',nome:'Guarda-corpo',proprio:true,perfil:{tipo:'red',a:38.1,b:38.1,t:2}}],
+ perfilPadrao:{tipo:'ret',a:100,b:50,t:3},
  parametros:[
   {id:'H',nome:'Altura total',tipo:'num',valor:2800,grupo:'Medidas'},
   {id:'N',nome:'Nº degraus',tipo:'int',valor:16,grupo:'Medidas'},
@@ -421,7 +455,8 @@ PR.corrimao={
  titulo:'Corrimão / guarda-corpo',
  resumo:'Corrimão com montantes, travessa intermediária e pontas dobradas pra baixo opcionais.',
  perguntas:['Comprimento e altura','Pontas com curva/dobra? Qual raio?'],
- grupos:[{id:'c',nome:'Corrimão',perfil:{tipo:'red',a:38.1,b:38.1,t:2}},{id:'m',nome:'Montantes',perfil:{tipo:'red',a:31.75,b:31.75,t:2}}],
+ grupos:[{id:'c',nome:'Corrimão'},{id:'m',nome:'Montantes'}],
+ perfilPadrao:{tipo:'red',a:38.1,b:38.1,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:4000,grupo:'Medidas'},
   {id:'H',nome:'Altura',tipo:'num',valor:900,grupo:'Medidas'},
@@ -442,7 +477,8 @@ PR.capota={
  titulo:'Estrutura em arco (capota)',
  resumo:'Arcos de ferro calandrados ligados por longarinas, sobre base retangular com pés. O raio sai do vão e da flecha.',
  perguntas:['Vão (largura) e flecha (altura do arco)','Comprimento e espaçamento dos arcos','Altura dos pés'],
- grupos:[{id:'a',nome:'Arcos',perfil:{tipo:'ret',a:40,b:40,t:2}},{id:'l',nome:'Longarinas',perfil:{tipo:'ret',a:30,b:30,t:1.5}},{id:'b',nome:'Base e pés',perfil:{tipo:'ret',a:50,b:50,t:2}}],
+ grupos:[{id:'a',nome:'Arcos'},{id:'l',nome:'Longarinas'},{id:'b',nome:'Base e pés'}],
+ perfilPadrao:{tipo:'ret',a:40,b:40,t:2},
  parametros:[
   {id:'L',nome:'Vão (largura)',tipo:'num',valor:2000,grupo:'Medidas'},
   {id:'f',nome:'Flecha (altura do arco)',tipo:'num',valor:600,grupo:'Medidas'},
@@ -461,7 +497,68 @@ PR.capota={
   const n=Math.max(2,P.nl);
   for(let k=0;k<n;k++){const t=(90+th-(2*th)*k/(n-1))*Math.PI/180,y=P.L/2+R*Math.cos(t),z=zc+R*Math.sin(t);add([0,y,z],[P.C,y,z],'l');}
  })};
-const CHIPS=[['Piscina autoportante','piscina'],['Mesa móvel','mesa'],['Berço de molde','molde'],['Escada','escada'],['Corrimão','corrimao'],['Capota em arco','capota']];
+
+PR.tanque={
+ titulo:'Gabarito · tanque retangular',
+ resumo:'Gabarito de ferro com a medida externa do tanque (ou caixa, cocho), montado de boca pra baixo para plaquear por cima: quadros transversais, longarinas, cantoneira nas arestas e base cruzada.',
+ perguntas:['Medida externa do tanque (comprimento, largura, altura)','Espaçamento dos quadros'],
+ grupos:[{id:'q',nome:'Quadros'},{id:'l',nome:'Longarinas'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
+ parametros:[
+  {id:'C',nome:'Comprimento',tipo:'num',valor:3000,grupo:'Medidas'},
+  {id:'L',nome:'Largura',tipo:'num',valor:2000,grupo:'Medidas'},
+  {id:'H',nome:'Altura',tipo:'num',valor:1500,grupo:'Medidas'},
+  {id:'esp',nome:'Espaç. quadros',tipo:'num',valor:800,grupo:'Estrutura'},
+  {id:'travY',nome:'Espaç. montantes',tipo:'num',valor:800,grupo:'Estrutura'},
+  {id:'travL',nome:'Espaç. longarinas',tipo:'num',valor:1000,grupo:'Estrutura'},
+  {id:'meio',nome:'Longarina no meio das laterais',tipo:'bool',valor:true,grupo:'Estrutura'},
+  {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:true,grupo:'Arestas'},
+  {id:'base',nome:'Base cruzada',tipo:'bool',valor:true,grupo:'Base cruzada'},
+  {id:'bExt',nome:'Balanço dos dormentes',tipo:'num',valor:300,grupo:'Base cruzada',se:'base'},
+  {id:'bH',nome:'Altura de cada camada',tipo:'num',valor:80,grupo:'Base cruzada',se:'base'}],
+ codigo:String(function(P,H){
+  const {add,divide,painel}=H;const C=P.C,L=P.L,A=P.H,xs=divide(0,C,P.esp),ys=divide(0,L,P.travY),yl=divide(0,L,P.travL);
+  for(const x of xs){add([x,0,0],[x,L,0],'q');add([x,0,A],[x,L,A],'q');for(const y of ys)add([x,y,0],[x,y,A],'q');}
+  for(let i=0;i<xs.length-1;i++){for(const y of yl)add([xs[i],y,A],[xs[i+1],y,A],'l');
+    add([xs[i],0,0],[xs[i+1],0,0],'l');add([xs[i],L,0],[xs[i+1],L,0],'l');
+    if(P.meio){add([xs[i],0,A/2],[xs[i+1],0,A/2],'l');add([xs[i],L,A/2],[xs[i+1],L,A/2],'l');}}
+  if(P.aresta){for(const[y,z]of[[0,0],[L,0],[0,A],[L,A]])add([0,y,z],[C,y,z],'c','aresta');
+    for(const x of[0,C]){add([x,0,A],[x,L,A],'c','aresta');add([x,0,0],[x,L,0],'c','aresta');for(const y of[0,L])add([x,y,0],[x,y,A],'c','aresta');}}
+  if(P.base){const h=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-h],[x,L+e,-h],'s','dormente');for(const y of divide(0,L,L/2))add([0,y,-2*h],[C,y,-2*h],'s','trilho');}
+  painel([[0,0,A],[C,0,A],[C,L,A],[0,L,A]]);
+  painel([[0,0,0],[C,0,0],[C,0,A],[0,0,A]]);painel([[0,L,0],[C,L,0],[C,L,A],[0,L,A]]);
+  painel([[0,0,0],[0,L,0],[0,L,A],[0,0,A]]);painel([[C,0,0],[C,L,0],[C,L,A],[C,0,A]]);
+ })};
+PR.cilindro={
+ titulo:'Gabarito · tanque cilíndrico',
+ resumo:'Mandril de ferro para tanque cilíndrico: cambotas calandradas com raios, réguas na volta toda, eixo central e cavaletes nas pontas. A chapa mostra o cilindro plaqueado.',
+ perguntas:['Diâmetro externo e comprimento do tanque','Quantas réguas na volta e espaçamento das cambotas','Vai ter eixo para girar?'],
+ grupos:[{id:'q',nome:'Cambotas e raios'},{id:'l',nome:'Réguas'},{id:'e',nome:'Eixo',proprio:true,perfil:{tipo:'red',a:60.3,b:60.3,t:3.75}},{id:'s',nome:'Cavaletes'}],
+ perfilPadrao:{tipo:'ret',a:40,b:40,t:2},
+ parametros:[
+  {id:'D',nome:'Diâmetro',tipo:'num',valor:2000,grupo:'Medidas'},
+  {id:'C',nome:'Comprimento',tipo:'num',valor:4000,grupo:'Medidas'},
+  {id:'esp',nome:'Espaç. cambotas',tipo:'num',valor:800,grupo:'Estrutura'},
+  {id:'nRib',nome:'Nº de réguas na volta',tipo:'int',valor:16,grupo:'Estrutura'},
+  {id:'nRaio',nome:'Nº de raios por cambota',tipo:'int',valor:6,grupo:'Estrutura'},
+  {id:'eixo',nome:'Eixo central',tipo:'bool',valor:true,grupo:'Eixo'},
+  {id:'eExt',nome:'Ponta do eixo pra fora',tipo:'num',valor:400,grupo:'Eixo',se:'eixo'},
+  {id:'cav',nome:'Cavaletes nas pontas',tipo:'bool',valor:true,grupo:'Cavaletes'},
+  {id:'folga',nome:'Folga do chão',tipo:'num',valor:300,grupo:'Cavaletes',se:'cav'},
+  {id:'tampos',nome:'Tampos (fundos) retos',tipo:'bool',valor:false,grupo:'Tampos'}],
+ codigo:String(function(P,H){
+  const {add,arco,divide,painel}=H;const R=P.D/2,C=P.C,z0=R+(P.cav?P.folga:0),xs=divide(0,C,P.esp);
+  for(const x of xs){arco({c:[x,0,z0],r:R,a0:0,a1:360,plano:'yz',g:'q',nota:'cambota calandrada R'+Math.round(R)});
+    if(P.nRaio>0)for(let k=0;k<P.nRaio;k++){const t=(k*360/P.nRaio+90)*Math.PI/180;add([x,0,z0],[x,R*Math.cos(t),z0+R*Math.sin(t)],'q','raio');}}
+  for(let k=0;k<P.nRib;k++){const t=k*2*Math.PI/P.nRib;add([0,R*Math.cos(t),z0+R*Math.sin(t)],[C,R*Math.cos(t),z0+R*Math.sin(t)],'l','régua');}
+  const ext=P.eixo?P.eExt:0;
+  if(P.eixo)add([-ext,0,z0],[C+ext,0,z0],'e','eixo');
+  if(P.cav)for(const x of[-ext*0.6,C+ext*0.6]){const a=z0*0.6;add([x,-a,0],[x,0,z0],'s','perna do cavalete');add([x,a,0],[x,0,z0],'s','perna do cavalete');add([x,-a,0],[x,a,0],'s','pé do cavalete');}
+  const n=36;for(let k=0;k<n;k++){const t0=k*2*Math.PI/n,t1=(k+1)*2*Math.PI/n,p=t=>[R*Math.cos(t),z0+R*Math.sin(t)],a=p(t0),b=p(t1);
+    painel([[0,a[0],a[1]],[C,a[0],a[1]],[C,b[0],b[1]],[0,b[0],b[1]]]);}
+  if(P.tampos)for(const x of[0,C])painel(Array.from({length:n},(_,k)=>{const t=k*2*Math.PI/n;return[x,R*Math.cos(t),z0+R*Math.sin(t)];}));
+ })};
+const CHIPS=[['Piscina','piscina','g'],['Tanque retangular','tanque','g'],['Tanque cilíndrico','cilindro','g'],['Mesa','mesa','e'],['Berço de molde','molde','e'],['Escada','escada','e'],['Corrimão','corrimao','e'],['Capota em arco','capota','e']];
 
 // ===== app =====
 const $=id=>document.getElementById(id);
@@ -472,13 +569,18 @@ const PRESETS={ret:[[20,20,1.5],[30,30,1.5],[30,30,2],[40,40,2],[50,50,2],[50,50
  chapa:[[25.4,0,4.76],[38.1,0,4.76],[50.8,0,6.35]],
  macico:[[8,0,0],[10,0,0],[12.5,0,0],[16,0,0]]};
 const TIPOS={ret:'Tubo quad./ret.',red:'Tubo redondo',cant:'Cantoneira',chapa:'Barra chata',macico:'Ferro redondo maciço'};
-let NOVO=false,MOD=null,VAL={},CFG={barra:6000,kerf:3},LAST={},CHAPA=false;
+let LINHAS=!!store('dc-estr-linhas'),CORES=!!store('dc-estr-cores'),NOVO=false,MOD=null,VAL={},CFG={barra:6000,kerf:3},LAST={},CHAPA=false;
 const clone=o=>JSON.parse(JSON.stringify(o));
 function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
 
 function carregar(m,vals){
   NOVO=false;MOD=clone(m);VAL={};
-  MOD.grupos.forEach((g,i)=>{g.cor=g.cor||PALETA[i%PALETA.length];g.perfil=g.perfil||{tipo:'ret',a:50,b:50,t:2};});
+  const igual=(a,b)=>a&&b&&a.tipo===b.tipo&&+a.a===+b.a&&+(a.b||a.a)===+(b.b||b.a)&&+a.t===+b.t;
+  if(!MOD.perfilPadrao){const cont={};for(const g of MOD.grupos)if(g.perfil){const k=JSON.stringify(g.perfil);cont[k]=(cont[k]||0)+1;}
+    const k=Object.keys(cont).sort((a,b)=>cont[b]-cont[a])[0];MOD.perfilPadrao=k?JSON.parse(k):{tipo:'ret',a:50,b:50,t:2};}
+  MOD.grupos.forEach((g,i)=>{g.cor=g.cor||PALETA[i%PALETA.length];
+    if(g.proprio===undefined)g.proprio=!!(g.perfil&&!igual(g.perfil,MOD.perfilPadrao));
+    if(!g.proprio||!g.perfil)g.perfil=clone(MOD.perfilPadrao);});
   for(const p of MOD.parametros)VAL[p.id]=vals&&p.id in vals?vals[p.id]:p.valor;
   montarUI();upd(true);
 }
@@ -486,7 +588,7 @@ function montarUI(){
   $('tit').textContent=MOD.titulo;
   $('resumo').textContent=MOD.resumo||'';
   $('perguntas').innerHTML=MOD.perguntas&&MOD.perguntas.length?`<div class="perg"><b>DEFINA AGORA</b><ul>${MOD.perguntas.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:'';
-  const box=$('params');box.innerHTML='';
+  const box=$('params');box.innerHTML='';let detE=null;
   const grupos=[...new Set(MOD.parametros.map(p=>p.grupo||'Medidas'))];
   for(const gn of grupos){
     const sec=document.createElement('div');sec.className='gsec';
@@ -509,72 +611,109 @@ function montarUI(){
         grid.appendChild(l);
       }
     }
-    box.appendChild(sec);
+    if(gn==='Medidas'||head)box.appendChild(sec);else{if(!detE){detE=document.createElement('details');detE.id='detEsp';detE.className='det';detE.innerHTML='<summary>Especificações detalhadas</summary>';}detE.appendChild(sec);}
   }
-  vis();montarPerfis();
-  $('legend').innerHTML=MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('');
+  if(detE)box.appendChild(detE);
+  vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;
+  legenda();
 }
+function legenda(){$('legend').innerHTML=(CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`;
+  $('lgCor').onclick=()=>{CORES=!CORES;store('dc-estr-cores',CORES);legenda();upd();};}
 function vis(){document.querySelectorAll('#params [data-se]').forEach(e=>{const s=e.dataset.se;e.style.display=!s||VAL[s]?'':'none';});}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function editorPerfil(p,onChange){
+  const d=document.createElement('div');const pl=PRESETS[p.tipo]||[];
+  d.innerHTML=`<div class="grid">
+   <label class="f">Perfil<select data-k="tipo">${Object.entries(TIPOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+   <label class="f">Medida comercial<select data-k="pre"><option value="">— escolher —</option>${pl.map((v,i)=>`<option value="${i}">${fmtPre(p.tipo,v)}</option>`).join('')}</select></label>
+   <label class="f">${p.tipo==='red'||p.tipo==='macico'?'Ø':(p.tipo==='chapa'?'Largura':'A')} (mm)<input type="number" step="any" data-k="a" value="${p.a}"></label>
+   ${p.tipo==='ret'?`<label class="f">B (mm)<input type="number" step="any" data-k="b" value="${p.b}"></label>`:''}
+   ${p.tipo!=='macico'?`<label class="f">Esp. (mm)<input type="number" step="any" data-k="t" value="${p.t}"></label>`:''}
+  </div>`;
+  const sel=d.querySelector('[data-k=tipo]');sel.value=p.tipo;
+  sel.onchange=()=>{p.tipo=sel.value;const l=PRESETS[p.tipo],v=l[Math.min(2,l.length-1)];p.a=v[0];p.b=v[1]||v[0];p.t=v[2];onChange(true);};
+  d.querySelector('[data-k=pre]').onchange=e=>{if(e.target.value==='')return;const v=PRESETS[p.tipo][+e.target.value];p.a=v[0];p.b=v[1]||v[0];p.t=v[2];onChange(true);};
+  d.querySelectorAll('input').forEach(i=>i.oninput=()=>{const v=parseFloat(i.value);if(isFinite(v)){p[i.dataset.k]=v;if(p.tipo!=='ret')p.b=p.a;onChange(false);}});
+  return d;
+}
+function aplicaPadrao(){for(const g of MOD.grupos)if(!g.proprio)g.perfil=clone(MOD.perfilPadrao);}
 function montarPerfis(){
   const box=$('perfis');box.innerHTML='';
+  const t=document.createElement('div');t.innerHTML=`<div class="pgrp">Perfil padrão (peça toda) · <span style="color:var(--or)">${perfNome(MOD.perfilPadrao)}</span></div>`;box.appendChild(t);
+  box.appendChild(editorPerfil(MOD.perfilPadrao,re=>{aplicaPadrao();if(re)montarPerfis();else t.querySelector('span').textContent=perfNome(MOD.perfilPadrao);upd();}));
+  const det=document.createElement('details');det.className='det';det.open=MOD.grupos.some(g=>g.proprio);
+  det.innerHTML=`<summary>Mudar o perfil de uma parte</summary>`;box.appendChild(det);
   for(const g of MOD.grupos){
-    const p=g.perfil,d=document.createElement('div');
-    const pl=PRESETS[p.tipo]||[];
-    d.innerHTML=`<div class="pgrp"><i style="background:${g.cor}"></i>${esc(g.nome)}</div>
-    <div class="grid">
-     <label class="f">Perfil<select data-k="tipo">${Object.entries(TIPOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
-     <label class="f">Padrão<select data-k="pre"><option value="">— escolher —</option>${pl.map((v,i)=>`<option value="${i}">${fmtPre(p.tipo,v)}</option>`).join('')}</select></label>
-     <label class="f">${p.tipo==='red'||p.tipo==='macico'?'Ø':(p.tipo==='chapa'?'Largura':'A')} (mm)<input type="number" step="any" data-k="a" value="${p.a}"></label>
-     ${p.tipo==='ret'?`<label class="f">B (mm)<input type="number" step="any" data-k="b" value="${p.b}"></label>`:''}
-     ${p.tipo!=='macico'?`<label class="f">Esp. (mm)<input type="number" step="any" data-k="t" value="${p.t}"></label>`:''}
-    </div>`;
-    box.appendChild(d);
-    const sel=d.querySelector('[data-k=tipo]');sel.value=p.tipo;
-    sel.onchange=()=>{p.tipo=sel.value;const l=PRESETS[p.tipo],v=l[Math.min(2,l.length-1)];p.a=v[0];p.b=v[1]||v[0];p.t=v[2];montarPerfis();upd();};
-    d.querySelector('[data-k=pre]').onchange=e=>{if(e.target.value==='')return;const v=PRESETS[p.tipo][+e.target.value];p.a=v[0];p.b=v[1]||v[0];p.t=v[2];montarPerfis();upd();};
-    d.querySelectorAll('input').forEach(i=>i.oninput=()=>{const v=parseFloat(i.value);if(isFinite(v)){p[i.dataset.k]=v;if(p.tipo!=='ret')p.b=p.a;upd();}});
+    const r=document.createElement('div');r.className='gsec';
+    r.innerHTML=`<div class="swrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:${g.cor}"></i><b>${esc(g.nome)}</b><br><span class="sub" style="font-size:11px">${g.proprio?perfNome(g.perfil):'usa o padrão'}</span></span><label class="sw"><input type="checkbox"><span></span></label></div>`;
+    const cb=r.querySelector('input');cb.checked=!!g.proprio;
+    cb.onchange=()=>{g.proprio=cb.checked;if(!g.proprio)g.perfil=clone(MOD.perfilPadrao);montarPerfis();det.open=true;upd();};
+    if(g.proprio)r.appendChild(editorPerfil(g.perfil,re=>{if(re)montarPerfis();else r.querySelector('.sub').textContent=perfNome(g.perfil);upd();}));
+    det.appendChild(r);
   }
 }
 function fmtPre(t,v){return t==='ret'?v[0]+'×'+v[1]+'×'+v[2]:t==='red'?'Ø'+v[0]+'×'+v[2]:t==='macico'?'Ø'+v[0]:t==='chapa'?v[0]+'×'+v[2]:v[0]+'×'+v[2];}
+$('esqAuto').onchange=()=>{MOD.esqAuto=$('esqAuto').checked;upd();};
 $('barra').value=CFG.barra;$('kerf').value=CFG.kerf;
 $('barra').oninput=()=>{CFG.barra=parseFloat($('barra').value)||6000;upd();};
 $('kerf').oninput=()=>{CFG.kerf=parseFloat($('kerf').value)||0;upd();};
 
 // ===== 3D =====
 const vw=$('viewer');
-const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0x1b1e21);
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0xd5d8dc);
 vw.insertBefore(R.domElement,vw.firstChild);
 const scene=new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff,.55));
 const dl=new THREE.DirectionalLight(0xffffff,.75);dl.position.set(5,10,7);scene.add(dl);
 const dl2=new THREE.DirectionalLight(0xffffff,.3);dl2.position.set(-6,4,-5);scene.add(dl2);
-const grid=new THREE.GridHelper(60,60,0x2c3036,0x24272b);scene.add(grid);
+const grid=new THREE.GridHelper(60,60,0xaeb3b9,0xc2c6cb);scene.add(grid);
 const pcam=new THREE.PerspectiveCamera(40,1,.05,500),ocam=new THREE.OrthographicCamera(-1,1,1,-1,-100,200);
 let view='3d',cam=pcam,group=new THREE.Group();scene.add(group);
 const orb={th:-0.75,ph:1.0,r:15,tg:new THREE.Vector3()};let oz=1,opan=new THREE.Vector2();
 const P3=(x,y,z)=>new THREE.Vector3(x/1000,z/1000,y/1000);
+const EUB=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),LMAT=new THREE.LineBasicMaterial({color:0x8d939b});
 const UB=new THREE.BoxGeometry(1,1,1),UC=new THREE.CylinderGeometry(.5,.5,1,10);
 let bbox={x0:0,x1:1,y0:0,y1:1,z0:0,z1:1};
+
+function caixaCortada(m,p,mat){
+  const up=new THREE.Vector3(0,1,0),A=P3(...m.pts[0]),B=P3(...m.pts[1]),d=B.clone().sub(A).normalize();
+  const q=new THREE.Quaternion().setFromUnitVectors(up,d),e1=new THREE.Vector3(1,0,0).applyQuaternion(q),e3=new THREE.Vector3(0,0,1).applyQuaternion(q);
+  const w=p.a/2000,h=(p.tipo==='ret'?p.b:p.tipo==='chapa'?p.t:p.a)/2000,offs=[[-w,-h],[w,-h],[w,h],[-w,h]].map(([a,b])=>e1.clone().multiplyScalar(a).add(e3.clone().multiplyScalar(b)));
+  const N=c=>c?new THREE.Vector3(c.n[0],c.n[2],c.n[1]):null;
+  const ponta=(E,c)=>{const n=N(c);return offs.map(o=>{let t=0;if(n){const dn=d.dot(n);if(Math.abs(dn)>1e-6)t=-o.dot(n)/dn;}return E.clone().add(o).add(d.clone().multiplyScalar(t));});};
+  const va=ponta(A,m.cuts[0]),vb=ponta(B,m.cuts[1]),V=[...va,...vb];
+  const F=[[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7],[0,3,2],[0,2,1],[4,5,6],[4,6,7]],pos=[];
+  for(const f of F)for(const i of f)pos.push(V[i].x,V[i].y,V[i].z);
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
+  const mt=mat.clone();mt.side=THREE.DoubleSide;return new THREE.Mesh(geo,mt);
+}
 function draw(M){
-  scene.remove(group);group=new THREE.Group();const up=new THREE.Vector3(0,1,0),mats={};
+  scene.remove(group);group=new THREE.Group();
+  R.setClearColor(LINHAS?0xf4f5f6:0xd5d8dc);LMAT.color.set(LINHAS?0x1f2226:0x8d939b);
+  const LCL=new THREE.LineBasicMaterial({color:0x1f2226});const up=new THREE.Vector3(0,1,0),mats={};
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
   for(const m of M){
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=g.perfil;
-    const mat=mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:g.cor,roughness:.6,metalness:.3});
+    const mat=mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x2a2d31,roughness:.5,metalness:.35});
     for(let i=1;i<m.pts.length;i++){
       const a=P3(...m.pts[i-1]),b=P3(...m.pts[i]),dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
-      const round=p.tipo==='red'||p.tipo==='macico',mesh=new THREE.Mesh(round?UC:UB,mat);
+      const round=p.tipo==='red'||p.tipo==='macico';
+      if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),LCL));continue;}
+      if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);if(!LINHAS)group.add(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),LMAT);group.add(eg);}continue;}
+      const mesh=new THREE.Mesh(round?UC:UB,mat);
       const w=p.a/1000,h=(p.tipo==='ret'?p.b:p.tipo==='chapa'?p.t:p.a)/1000;
       mesh.scale.set(w,len+(m.curva?w*0.6:0),round?w:h);mesh.position.copy(a).add(b).multiplyScalar(.5);
-      mesh.quaternion.setFromUnitVectors(up,dir.normalize());group.add(mesh);
+      mesh.quaternion.setFromUnitVectors(up,dir.normalize());if(!LINHAS)group.add(mesh);
+      if(!round&&!m.curva){const eg=new THREE.LineSegments(EUB,LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
     }
     for(const q of m.pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   }
   const PN=M.paineis||[];
-  if(PN.length&&CHAPA){const pos=[];for(const pts of PN){for(let i=1;i<pts.length-1;i++)for(const q of[pts[0],pts[i],pts[i+1]]){const v=P3(...q);pos.push(v.x,v.y,v.z);}}
+  if(PN.length&&CHAPA&&LINHAS){const pos=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);pos.push(a.x,a.y,a.z,b.x,b.y,b.z);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
+  else if(PN.length&&CHAPA){const pos=[];for(const pts of PN){for(let i=1;i<pts.length-1;i++)for(const q of[pts[0],pts[i],pts[i+1]]){const v=P3(...q);pos.push(v.x,v.y,v.z);}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
-    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xf2f3f4,roughness:.85,metalness:0,transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:true,polygonOffset:true,polygonOffsetFactor:1})));}
+    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.85,metalness:0,transparent:true,opacity:.78,side:THREE.DoubleSide,depthWrite:true,polygonOffset:true,polygonOffsetFactor:1})));}
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
   scene.add(group);orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
@@ -616,6 +755,7 @@ vw.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const o=pt
 const pu=e=>{ptr.delete(e.pointerId);pinch0=0;};vw.addEventListener('pointerup',pu);vw.addEventListener('pointercancel',pu);
 vw.addEventListener('wheel',e=>{e.preventDefault();const k=Math.exp(-e.deltaY*.001);if(view==='3d')orb.r/=k;else oz*=k;render();},{passive:false});
 document.querySelectorAll('.vbtn button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+$('bLinhas').classList.toggle('on',LINHAS);$('bLinhas').onclick=()=>{LINHAS=!LINHAS;store('dc-estr-linhas',LINHAS);$('bLinhas').classList.toggle('on',LINHAS);upd();};
 $('bChapa').onclick=()=>{CHAPA=!CHAPA;$('bChapa').classList.toggle('on',CHAPA);upd();};
 addEventListener('resize',resize);
 
@@ -623,20 +763,20 @@ addEventListener('resize',resize);
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
 function upd(reset){
   let M=[];const st=$('status');
-  try{M=construir(compilar(MOD.codigo),VAL);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
+  try{M=construir(compilar(MOD.codigo),VAL);esquadrias(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
   draw(M);
   const dims=`${Math.round(bbox.x1-bbox.x0)} × ${Math.round(bbox.y1-bbox.y0)} × ${Math.round(bbox.z1-bbox.z0)} mm`;
   $('sub').textContent=dims+' · '+MOD.grupos.length+' grupo(s) de perfil';
   const gid=[...new Set(M.map(m=>m.g))],GN=id=>MOD.grupos.find(g=>g.id===id)||MOD.grupos[0];
   const stock={};
-  for(const id of gid){const g=GN(id),k=perfNome(g.perfil);(stock[k]=stock[k]||{p:g.perfil,lens:[]}).lens.push(...M.filter(m=>m.g===id).map(m=>m.len));}
+  for(const id of gid){const g=GN(id),k=perfNome(g.perfil);(stock[k]=stock[k]||{p:g.perfil,lens:[]}).lens.push(...M.filter(m=>m.g===id).map(m=>m.lenCorte||m.len));}
   let tot=0,kg=0,emd=0,out='';
   for(const k in stock){const s=stock[k],r=cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);
     tot+=r.bars.length;kg+=q;emd+=r.emendas;const sob=r.bars.reduce((a,b)=>a+b.livre,0)/1000;
     out+=`<tr><td>${k}</td><td class="n">${m.toFixed(1)} m</td><td class="n"><b style="color:var(--or)">${r.bars.length}</b></td><td class="n">${q.toFixed(0)} kg</td></tr><tr><td colspan="4" style="color:var(--mut);font-size:11px">sobra ${sob.toFixed(1)} m${r.emendas?` · ${r.emendas} peça(s) acima de ${CFG.barra/1000} m com emenda`:''}</td></tr>`;}
   const cut={};let cl='';
-  for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=m.len+'|'+(m.curva?m.nota:'');c[k]=(c[k]||0)+1;});cut[id]=c;
+  for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=(m.lenCorte||m.len)+'|'+(m.curva?m.nota:(m.notaEsq||''));c[k]=(c[k]||0)+1;});cut[id]=c;
     const g=GN(id);cl+=`<tr><td colspan="3" style="color:${g.cor};font-weight:600;padding-top:12px">${esc(g.nome)} · ${perfNome(g.perfil)}</td></tr>`;
     Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
   $('tab').innerHTML=`<table><tr><th>Perfil</th><th class="n">Metros</th><th class="n">Barras</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
@@ -668,7 +808,7 @@ function listarSalvos(){const s=store('dc-estr-salvos')||[];
 $('bSalvar').onclick=()=>{const s=store('dc-estr-salvos')||[];s.unshift({mod:MOD,val:VAL,quando:new Date().toLocaleString('pt-BR')});store('dc-estr-salvos',s.slice(0,30));listarSalvos();flash('Salvo');};
 
 // ===== modelos prontos =====
-$('chips').innerHTML=CHIPS.map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
+$('chips').innerHTML='<div class="sub" style="width:100%;margin-top:4px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
 $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{carregar(PR[c.dataset.k]);$('status').textContent='';});
 
 // ===== folha de projeto =====
@@ -677,7 +817,7 @@ const FW=3508,FH=2480,MG=70;
 function proj(v,p){const[x,y,z]=p;
   if(v==='planta')return[x,-y];if(v==='lateral')return[x,-z];if(v==='frente')return[y,-z];
   return[(x-y)*0.866,(x+y)*0.5-z];}
-function escurece(hex){const n=parseInt(hex.slice(1),16),f=.62;return`rgb(${(n>>16&255)*f|0},${(n>>8&255)*f|0},${(n&255)*f|0})`;}
+function escurece(hex){if(!CORES)return '#2b2e31';const n=parseInt(hex.slice(1),16),f=.62;return`rgb(${(n>>16&255)*f|0},${(n>>8&255)*f|0},${(n&255)*f|0})`;}
 function txt(c,t,x,y,sz,cor,al,bold){c.font=`${bold?'700 ':''}${sz}px 'IBM Plex Sans',Arial,sans-serif`;c.fillStyle=cor||'#222';c.textAlign=al||'left';c.fillText(t,x,y);}
 function cotaH(c,x1,x2,y,ref,t){c.strokeStyle='#c05a10';c.lineWidth=2;c.beginPath();c.moveTo(x1,y);c.lineTo(x2,y);
   for(const x of[x1,x2]){c.moveTo(x,ref);c.lineTo(x,y+(y>ref?12:-12));c.moveTo(x-10,y+10);c.lineTo(x+10,y-10);}c.stroke();
@@ -722,7 +862,7 @@ function cabecalho(c,folha,tot){
   txt(c,'Folha '+folha+'/'+tot,tx+TW-30,ty+220,28,'#222','right',true);
 }
 function resumoPerfis(){const gid=LAST.gid,out=[],st={};
-  for(const id of gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],k=perfNome(g.perfil);(st[k]=st[k]||{p:g.perfil,lens:[],grupos:[]}).lens.push(...LAST.M.filter(m=>m.g===id).map(m=>m.len));st[k].grupos.push(g.nome);}
+  for(const id of gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],k=perfNome(g.perfil);(st[k]=st[k]||{p:g.perfil,lens:[],grupos:[]}).lens.push(...LAST.M.filter(m=>m.g===id).map(m=>m.lenCorte||m.len));st[k].grupos.push(g.nome);}
   for(const k in st){const s=st[k],r=cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000;out.push({k,g:s.grupos.join(', '),m,bar:r.bars.length,kg:m*kgm(s.p),em:r.emendas});}
   return out;}
 function gerarFolhas(){
@@ -802,6 +942,8 @@ Responda SOMENTE um objeto JSON, sem texto fora dele, neste formato:
                 {"id":"praia","nome":"Prainha","tipo":"bool","valor":true,"grupo":"Prainha"},
                 {"id":"pComp","nome":"Comprimento","tipo":"num","valor":1500,"grupo":"Prainha","se":"praia"},
                 {"id":"lados","nome":"Lados","tipo":"sel","valor":"2","opcoes":["1","2"],"grupo":"Guarda-corpo"}],
+ "esqAuto": false,
+ "perfilPadrao": {"tipo":"ret","a":50,"b":50,"t":2},
  "codigo": "function(P,H){ const {add,poli,arco,dobrada,divide,divPts}=H; ... }"
 }
 Regras:
@@ -810,18 +952,20 @@ Regras:
 - Use os números que o usuário falou; o que não falou, preencha com um valor típico e coloque em "perguntas".
 - perfil.tipo: ret (tubo quadrado/retangular a×b×t), red (tubo redondo Ø a × t), cant (cantoneira a×a×t), chapa (barra chata largura a × t), macico (ferro redondo maciço Ø a). Use medidas comerciais brasileiras (metalon 20x20 a 100x50, cantoneira 1"x1/8" = 25.4x3.17, tubo redondo 1.1/2" = 38.1x2 etc.).
 - "codigo" é uma função JavaScript pura (string) que recebe P (valores dos parâmetros por id) e H (ajudantes) e desenha as barras chamando:
-  add([x,y,z],[x,y,z],grupoId,nota?)  barra reta (uma peça)
+  add([x,y,z],[x,y,z],grupoId,nota?,{esq:true|[pontaA,pontaB]}?)  barra reta (uma peça); esq marca MEIA ESQUADRIA na(s) ponta(s): o app corta as duas barras que se encontram naquele ponto (só quando as duas estão marcadas) e soma a ponta longa na lista de corte
   poli([[x,y,z],...],grupoId,fechado?) várias barras retas encadeadas (uma peça por trecho)
   arco({c:[x,y,z],r,a0,a1,plano:'xz'|'yz'|'xy',g:grupoId,nota?}) UMA peça curva (calandrada); a0/a1 em graus; ponto = c + r·(cos,sin) no plano escolhido (xz: x e z; yz: y e z; xy: x e y)
   dobrada([[x,y,z],...],grupoId,nota?) UMA peça dobrada (a lista de corte mostra os ângulos das dobras)
   divide(a,b,maxEsp) -> posições de a até b com espaçamento <= maxEsp (inclui as pontas)
   divPts([pontos],maxEsp) -> ordena pontos obrigatórios e completa com intermediários
   painel([[x,y,z],...]) superfície plana (3+ pontos, em ordem) só para mostrar a peça/chapa por cima da estrutura e calcular a área em m² (não entra na lista de corte). Use para desenhar a forma da peça (fundo e paredes da piscina, tampo, casca da capota).
+- Meia esquadria: se pedirem em TODOS os cantos/encontros em L, ponha "esqAuto": true no modelo; se for só em algumas peças, use {esq:true} nelas (as duas barras do encontro precisam terminar exatamente no mesmo ponto). Não precisa explicar na nota: o app escreve o ângulo e a medida da ponta longa.
 - Linha de centro dos perfis. Barras não podem ter comprimento zero. Não duplique a mesma barra. Use loops; sem fetch, sem DOM, sem variáveis globais. Máximo ~1500 barras.
 - Pense como serralheiro: quadros/pórticos transversais com espaçamento definido, montantes, longarinas ligando, contraventamento quando precisar, pés/base no chão. Gabarito de molde: a estrutura segue a forma da peça (perfil da piscina, curva da capota etc.).
 - Padrão do usuário para gabarito de piscina: quadros transversais em PAR soldados (dois quadros a ~120 mm), um par em cada mudança de fundo (degrau, prainha) para o espelho ficar vertical, quadro próprio em cada degrau, cabeceiras nas pontas, longarinas, e base cruzada embaixo (dormentes transversais com balanço para fora em z negativo, sobre trilhos longitudinais). Escada normalmente na largura toda descendo da parte funda até a prainha.
 - Piscina/gabarito de molde: modele como molde macho de cabeça pra baixo (borda em z=0 no chão, fundo em cima, z = profundidade a partir da borda). Escada: degraus com espelho e piso; prainha: área rasa com comprimento e profundidade; hidro/banco: área mais rasa.
-- Cada grupo tem cor própria e perfil próprio; separe um grupo por parte que o serralheiro pode querer em perfil diferente (ex.: quadros de frente em metalon, longarinas, escada, arestas/bordas em cantoneira, base). Use de 2 a 6 grupos. Se o usuário disser o perfil de uma parte ("metalon 50x30 na frente", "cantoneira nas bordas"), use exatamente.
+- O app tem um PERFIL PADRÃO para a peça toda (campo "perfilPadrao" no modelo). Por padrão todas as partes usam o mesmo perfil: só ponha "perfil" num grupo (e "proprio": true) quando o usuário pedir perfil diferente para aquela parte ou quando for cantoneira de aresta/borda, eixo etc. Gabaritos: piscina, tanque retangular, tanque cilíndrico (mandril com cambotas, réguas e eixo) ou qualquer peça a plaquear.
+- Cada grupo é uma parte; separe um grupo por parte que o serralheiro pode querer em perfil diferente (ex.: quadros de frente em metalon, longarinas, escada, arestas/bordas em cantoneira, base). Use de 2 a 6 grupos. Se o usuário disser o perfil de uma parte ("metalon 50x30 na frente", "cantoneira nas bordas"), use exatamente.
 - Gabarito = estrutura de ferro com a medida externa da peça, que depois é plaqueada (chapeada) por cima: use painel() para a superfície plaqueada e coloque cantoneira nas arestas quando pedirem.`;
 const CONVERSA=`
 VOCÊ ESTÁ DENTRO DO APP, conversando com o serralheiro/projetista (ele fala por voz, às vezes dirigindo). A cada mensagem responda SOMENTE um JSON:
@@ -856,7 +1000,7 @@ $('mic').onclick=micTeclado;
 function falar(t){if(falador&&FALAR)falador.speak(t,{language:'pt-BR'}).catch(()=>{});}
 
 // --- comando por frase (sem IA) ---
-const TIPOS_TXT=[[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
+const TIPOS_TXT=[[/cilindr/,'cilindro'],[/\btanque\b/,'tanque'],[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
 function comandoLocal(txt){
   let t=norm(txt).trim();if(!t||!MOD||NOVO)return null;
   t=t.replace(/(\d)\s*x\s*(\d)/g,'$1 por $2').replace(/\b(purinha|prainha|praia|prainhas)\b/g,'prainha').replace(/(\d+)\s+(escadas?|degraus?|degrais)/g,'$1 degraus').replace(/\bfundo\b/g,'profundidade').replace(/\bcomprido\b/g,'comprimento');
@@ -911,13 +1055,13 @@ function lerJSON(t){let raw=t.trim().replace(/^```(json)?/,'').replace(/```$/,''
 async function enviar(){
   if(ocup)return;const txt=$('pedido').value.trim(),st=$('status');
   if(!txt&&!ANEXOS.length){st.textContent='Escreva, fale ou mande um PDF/foto.';return;}
-  if(txt&&!ANEXOS.length){const r=comandoLocal(txt);if(r){addChat('eu',txt);addChat('app',r);$('pedido').value='';st.textContent='';return;}}
+  if(txt&&!ANEXOS.length&&(!sampler||txt.split(/\s+/).length<=10)){const r=comandoLocal(txt);if(r){addChat('eu',txt);addChat('app',r);$('pedido').value='';st.textContent='';return;}}
   if(!sampler){st.className='status err';st.innerHTML='Esse pedido precisa do modo conversa. <a id="lkConv" href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or);font-weight:600">Abrir o modo conversa</a> (seu texto vai copiado, é só colar lá).';
     const lk=$('lkConv');lk.onclick=()=>{try{navigator.clipboard.writeText(txt);}catch(e){}};return;}
   ocup=true;$('bEnviar').style.opacity=.5;st.className='status';st.innerHTML='<span class="spin"></span>Montando a estrutura…';
   addChat('eu',(txt||'(projeto anexado)')+(ANEXOS.length?' 📎'+ANEXOS.length:''));$('pedido').value='';
   let prompt=API+'\n'+CONVERSA+'\n\n';
-  if(MOD&&!NOVO){const atual={titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),codigo:MOD.codigo};
+  if(MOD&&!NOVO){const atual={titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,proprio:!!g.proprio,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),esqAuto:!!MOD.esqAuto,perfilPadrao:MOD.perfilPadrao,codigo:MOD.codigo};
     prompt+='MODELO ATUAL NA TELA:\n'+JSON.stringify(atual)+'\n\n';}
   else prompt+='MODELO ATUAL: nenhum.\n\n';
   const hist=CHAT.slice(-13,-1).map(m=>(m.q==='eu'?'Usuário: ':m.q==='cl'?'Você: ':'App: ')+m.t).join('\n');
