@@ -978,14 +978,14 @@ function painelSel(){
   const box=$('selBox');$('dicaSel').style.display=SEL.length?'none':'';
   const ms=SEL.map(k=>(LAST.M||[]).find(m=>chaveM(m)===k)).filter(Boolean);
   SEL=ms.map(chaveM);
-  if(!ms.length){if((MOD.ajustes||[]).length){box.style.display='';box.innerHTML='<div class="acts"><div class="btn" data-a="desf">Desfazer último ajuste</div><div class="btn" data-a="tudo">Tirar todos os ajustes</div></div>';box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,[]));}else box.style.display='none';return;}
+  if(!ms.length){if((MOD.ajustes||[]).length){box.style.display='';box.innerHTML='<div class="sub" style="margin-bottom:8px">Toque em qualquer peça no desenho para continuar editando.</div><div class="acts"><div class="btn" data-a="desf">Desfazer último ajuste</div><div class="btn" data-a="tudo">Tirar todos os ajustes</div></div>';box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,[]));}else box.style.display='none';return;}
   const nomeG=m=>(MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g,pfm=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
   box.style.display='';
   const dica=ms.length===1?'<div class="sub" style="margin-bottom:8px">Toque em mais peças no desenho para unir, esquadrejar ou ligar.</div>':'';
   box.innerHTML=dica+ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
    `<div class="acts">
      <div class="btn on" data-a="fala">Ajustar falando</div>
-     ${ms.length>=2?'<div class="btn on" data-a="uni">Tornar um só</div><div class="btn" data-a="esq2">Meia esquadria nos encontros</div><div class="btn" data-a="face">Unir (face com face)</div>'+(ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'')+'<div class="btn" data-a="reto">Corte reto</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
+     ${ms.length>=2?'<div class="btn on" data-a="uni">Tornar um só</div><div class="btn" data-a="esq2">Meia esquadria nos encontros</div><div class="btn" data-a="face">Unir (face com face)</div>'+(ms.length===2?'<div class="btn on" data-a="div">Dividir com reforços</div><div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'')+'<div class="btn" data-a="reto">Corte reto</div>':'<div class="btn" data-a="esq">Meia esquadria</div><div class="btn" data-a="reto">Corte reto</div><div class="btn" data-a="comp">Medida</div>'}
      <div class="btn" data-a="perfil">Perfil</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="rot">Girar perfil</div>
      <div class="btn" data-a="chapa">Chapinha</div><div class="btn" data-a="del">Apagar</div>
 
@@ -1015,6 +1015,23 @@ function acaoSel(a,ms,px){
       const q=o.pts[0],w=q.map((x,i)=>x-A[i]),t=w[0]*un[0]+w[1]*un[1]+w[2]*un[2],d=Math.hypot(...w.map((x,i)=>x-un[i]*t));return !par||d>5;});
     if(fora.length){avisoSel('Não deu: para tornar um só, as peças precisam estar na mesma linha (uma seguida da outra).');return;}
     ajuste({op:'uni',k:chaveM(ms[0]),ks:ms.slice(1).map(chaveM)});SEL=[];avisoSel(ms.length+' peças viraram uma peça só. As outras que cruzam agora encostam nela.');upd();return;}
+
+  if(a==='div'){const[A,B]=ms,uA=(()=>{const v=A.pts[A.pts.length-1].map((x,i)=>x-A.pts[0][i]),l=Math.hypot(...v)||1;return v.map(x=>x/l);})(),uB=(()=>{const v=B.pts[B.pts.length-1].map((x,i)=>x-B.pts[0][i]),l=Math.hypot(...v)||1;return v.map(x=>x/l);})();
+    if(Math.abs(uA[0]*uB[0]+uA[1]*uB[1]+uA[2]*uB[2])<0.95){avisoSel('Para dividir, marque dois perfis paralelos (um de frente pro outro).');return;}
+    ex.innerHTML=`<div class="mv"><label class="f">Quantos reforços<input type="number" id="nDiv" value="2" min="1" step="1"></label><label class="f">Posição<select id="posDiv"><option value="entre">Entre os perfis (encosta)</option><option value="baixo">Por baixo (passa inteiro)</option></select></label><div></div><div class="btn on" id="okDiv" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">Ficam distribuídos por igual no trecho em que os dois perfis estão um de frente pro outro.</div>`;
+    $('okDiv').onclick=()=>{const n=Math.max(1,Math.round(+$('nDiv').value||2)),pos=$('posDiv').value;
+      const A0=A.pts[0],L=(m=>Math.hypot(...m.pts[m.pts.length-1].map((x,i)=>x-m.pts[0][i])))(A);
+      const prB=t=>{const P=A0.map((v,i)=>v+uA[i]*t);return[P,projSeg(P,B.pts)];};
+      // trecho comum: projeções das pontas de B sobre A
+      const tb=B.pts.map(q=>(q[0]-A0[0])*uA[0]+(q[1]-A0[1])*uA[1]+(q[2]-A0[2])*uA[2]),t0=Math.max(0,Math.min(...tb)),t1=Math.min(L,Math.max(...tb));
+      if(t1-t0<50){avisoSel('Esses perfis não ficam um de frente pro outro.');return;}
+      grupoExtra('rf','Reforços');const pa=(A.pf||(MOD.grupos.find(x=>x.id===A.g)||MOD.grupos[0]).perfil),pr=MOD.grupos.find(x=>x.id==='rf').perfil,hA=(pa.tipo==='ret'?pa.b:pa.a),hr=(pr.tipo==='ret'?pr.b:pr.a);
+      for(let i=1;i<=n;i++){const t=t0+(t1-t0)*i/(n+1);let[P,Q]=prB(t);
+        if(pos==='baixo'){const dz=-(hA/2+hr/2),v=Q.map((x,k)=>x-P[k]),l=Math.hypot(...v)||1,u=v.map(x=>x/l),ext=(pa.a||50)/2;
+          P=P.map((x,k)=>x-u[k]*ext);Q=Q.map((x,k)=>x+u[k]*ext);P[2]+=dz;Q[2]+=dz;
+          (MOD.ajustes=MOD.ajustes||[]).push({op:'add',a:P,b:Q,g:'rf',nota:'reforço por baixo',livre:true});}
+        else (MOD.ajustes=MOD.ajustes||[]).push({op:'add',a:P,b:Q,g:'rf',nota:'reforço'});}
+      MOD.editado=true;SEL=[];avisoSel(n+' reforço(s) '+(pos==='baixo'?'por baixo':'entre os perfis')+' colocados. Toque em outra peça para continuar editando.');montarPerfis();upd();};return;}
   if(a==='esq2'){let n=0,bloq=0;const ks=ms.map(chaveM);
     for(let i=0;i<ms.length;i++)for(let j=i+1;j<ms.length;j++){const A=ms[i],B=ms[j];
       const P=[A.pts[0],A.pts[A.pts.length-1]].find(p=>perto(p,B.pts[0])||perto(p,B.pts[B.pts.length-1]));if(!P)continue;
