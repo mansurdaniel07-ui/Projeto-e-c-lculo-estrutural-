@@ -1407,4 +1407,4 @@ function doPreset(k,old){const m={...clone(PR[k]),preset:k};if(old){m.ajustes=ol
 try{if(at&&at.mod){const k=presetDe(at.mod);if(at.val&&!store('dc-estr-v2')){delete at.val.aresta;delete at.val.base;delete at.val.par;store('dc-estr-v2',1);}if(k&&!at.mod.deClaude)carregar(doPreset(k,at.mod),at.val);else carregar(at.mod,at.val);}else carregar({...PR.piscina,preset:'piscina'});}catch(e){carregar({...PR.piscina,preset:'piscina'});}
 setView('3d');
 
-</script></body></html>
+</script><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});</script></body></html>
