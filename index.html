@@ -76,6 +76,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 #bFalar.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .topo{display:flex;flex-direction:column;gap:2px;padding:4px 4px 14px;border-left:4px solid var(--or);padding-left:12px;margin-bottom:12px}.topo b{font:700 24px 'Barlow Condensed';letter-spacing:2px}.topo span{font:12px 'IBM Plex Mono';color:var(--mut)}
 .det{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px}.det summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--or)}
+.vtools{position:absolute;right:10px;top:58px;z-index:2;display:flex;flex-direction:column;gap:6px}.vtools button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:#2a2d31e8;color:#fff;font-size:18px}.vtools button.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .selbox{margin:12px -16px -16px;padding:12px 16px 16px;border-top:1px solid var(--line);background:#25282c;border-radius:0 0 14px 14px}
 .selbox .inf{font:13px 'IBM Plex Mono';color:var(--tx);margin-bottom:10px}.selbox .inf b{color:var(--or)}
 .selbox .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.selbox .acts .btn{padding:10px 4px;font-size:13px}
@@ -108,8 +109,9 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="badge" id="badge">OK</div>
   <div class="viewer" id="viewer">
     <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button></div>
+    <div class="vtools"><button id="bMao" title="Arrastar a vista com um dedo">✋</button><button id="bMais">＋</button><button id="bMenos">－</button><button id="bCentro" title="Ver tudo">⤢</button></div>
     <canvas id="ov" style="pointer-events:none;z-index:1"></canvas>
-    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar</div>
+    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar · 2 dedos movem · toque duplo aproxima</div>
     <div class="legend" id="legend"></div>
   </div>
   <div id="selMsg" class="sub" style="display:none;margin:10px 0 -6px;padding:8px 10px;border:1px solid var(--or);border-radius:8px;color:var(--tx)"></div>
@@ -861,10 +863,10 @@ function draw(M){
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
   {const c=P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,0),r=Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,bbox.z1-bbox.z0)/1000;dl.position.set(c.x+r*.5,c.y+r*1.6,c.z+r*.8);dl.target.position.copy(c);const sc=dl.shadow.camera;sc.left=sc.bottom=-r;sc.right=sc.top=r;sc.near=.1;sc.far=r*5;sc.updateProjectionMatrix();}
-  scene.add(group);orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
+  scene.add(group);if(!ALVOFIXO)orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
 }
 function fitR(){return Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,(bbox.z1-bbox.z0)*1.5)/1000*1.6+0.8;}
-function setView(v){view=v;document.querySelectorAll('.vbtn button[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));oz=1;opan.set(0,0);if(v==='3d')orb.r=fitR();render();}
+function setView(v){ALVOFIXO=false;view=v;orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));document.querySelectorAll('.vbtn button[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));oz=1;opan.set(0,0);if(v==='3d')orb.r=fitR();render();}
 function resize(){const w=vw.clientWidth,h=vw.clientHeight;R.setSize(w,h,false);pcam.aspect=w/h;pcam.updateProjectionMatrix();const ov=$('ov');ov.width=w*devicePixelRatio;ov.height=h*devicePixelRatio;render();}
 function render(){
   const w=vw.clientWidth,h=vw.clientHeight,t=orb.tg;
@@ -891,16 +893,29 @@ function drawDims(){
     for(const p of[A,B]){c.beginPath();c.moveTo(p[0]-nx,p[1]-ny);c.lineTo(p[0]+nx,p[1]+ny);c.stroke();}
     c.save();c.translate((A[0]+B[0])/2,(A[1]+B[1])/2);let r=ang;if(r>Math.PI/2||r<-Math.PI/2)r+=Math.PI;c.rotate(r);c.fillText(Math.round(v)+'',0,-6);c.restore();}
 }
+
+let MAO=false,ultToque=0,ALVOFIXO=false;
+function panVista(dx,dy){ALVOFIXO=true;const h=vw.clientHeight,s=2*orb.r*Math.tan(pcam.fov*Math.PI/360)/h;
+  const f=new THREE.Vector3();pcam.getWorldDirection(f);const r=new THREE.Vector3().crossVectors(f,pcam.up).normalize(),u=new THREE.Vector3().crossVectors(r,f).normalize();
+  orb.tg.add(r.multiplyScalar(-dx*s)).add(u.multiplyScalar(dy*s));}
 const ptr=new Map();let pinch0=0;
 vw.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON'||e.target.tagName==='U')return;if(!ptr.size)toque={x:e.clientX,y:e.clientY,t:Date.now(),mv:false};ptr.set(e.pointerId,[e.clientX,e.clientY]);try{vw.setPointerCapture(e.pointerId);}catch(_){}if(ptr.size===2){const p=[...ptr.values()];pinch0=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);}});
 vw.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId),dx=e.clientX-o[0],dy=e.clientY-o[1];ptr.set(e.pointerId,[e.clientX,e.clientY]);
-  if(ptr.size===2){const p=[...ptr.values()],d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);if(pinch0){const k=d/pinch0;if(view==='3d')orb.r/=k;else oz*=k;}pinch0=d;}
+  if(ptr.size===2){const p=[...ptr.values()],d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);if(pinch0){const k=d/pinch0;if(view==='3d')orb.r=Math.max(.15,orb.r/k);else oz*=k;}pinch0=d;
+    // dois dedos arrastando = mover a vista (pan), metade do movimento de cada dedo
+    if(view==='3d')panVista(dx/2,dy/2);else{const s=(ocam.right-ocam.left)/vw.clientWidth;opan.x-=dx/2*s;opan.y+=dy/2*s;}}
+  else if(view==='3d'&&(MAO||e.shiftKey||e.buttons===2)){panVista(dx,dy);}
   else if(view==='3d'){orb.th+=dx*.008;orb.ph=Math.min(1.55,Math.max(.1,orb.ph-dy*.008));}
   else{const s=(ocam.right-ocam.left)/vw.clientWidth;opan.x-=dx*s;opan.y+=dy*s;}render();});
 let toque=null;const pu=e=>{const era=ptr.size;ptr.delete(e.pointerId);pinch0=0;
   if(toque&&era===1&&e.type==='pointerup'&&Math.hypot(e.clientX-toque.x,e.clientY-toque.y)<8&&Date.now()-toque.t<600)pegar(e);if(!ptr.size)toque=null;};vw.addEventListener('pointerup',pu);vw.addEventListener('pointercancel',pu);
+vw.addEventListener('contextmenu',e=>e.preventDefault());
 vw.addEventListener('wheel',e=>{e.preventDefault();const k=Math.exp(-e.deltaY*.001);if(view==='3d')orb.r/=k;else oz*=k;render();},{passive:false});
 document.querySelectorAll('.vbtn button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+$('bMao').onclick=()=>{MAO=!MAO;$('bMao').classList.toggle('on',MAO);$('dicaSel').textContent=MAO?'um dedo arrasta a vista · desligue ✋ para girar':'toque numa peça para selecionar · 2 dedos movem · toque duplo aproxima';};
+$('bMais').onclick=()=>{if(view==='3d')orb.r=Math.max(.15,orb.r*.7);else oz*=1.4;render();};
+$('bMenos').onclick=()=>{if(view==='3d')orb.r*=1.4;else oz/=1.4;render();};
+$('bCentro').onclick=()=>setView(view);
 $('bLinhas').classList.toggle('on',LINHAS);$('bLinhas').onclick=()=>{LINHAS=!LINHAS;store('dc-estr-linhas',LINHAS);$('bLinhas').classList.toggle('on',LINHAS);upd();};
 $('bChapa').onclick=()=>{CHAPA=!CHAPA;$('bChapa').classList.toggle('on',CHAPA);upd();};
 addEventListener('resize',resize);
@@ -911,6 +926,8 @@ const RC=new THREE.Raycaster();
 function pegar(e){
   const r=vw.getBoundingClientRect(),nd=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
   RC.setFromCamera(nd,cam);const hit=RC.intersectObjects(PICK,false)[0];
+  const agora=Date.now(),duplo=agora-ultToque<350;ultToque=agora;
+  if(duplo&&view==='3d'){ALVOFIXO=!!hit;if(hit){orb.tg.copy(hit.point);orb.r=Math.max(.4,orb.r*.45);}else{orb.r=fitR();orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));}render();return;}
   if(!hit){if(SEL.length){SEL=[];upd();}return;}
   const k=hit.object.userData.mk,i=SEL.indexOf(k);
   avisoSel('');if(i>=0)SEL.splice(i,1);else SEL.push(k);
