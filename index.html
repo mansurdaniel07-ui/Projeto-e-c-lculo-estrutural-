@@ -109,7 +109,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 </div>
 
 <div class="card ask">
-  <h2>Comando de medidas</h2>
+  <h2>Comando de medidas</h2><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, meia esquadria, reforço…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, meia esquadria, reforço…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div>
   <div id="chat" class="chat" style="display:none"></div>
   <textarea id="pedido" placeholder="Ex.: profundidade 1,40 · piso da escada 350 · 4 degraus · tira a prainha"></textarea>
   <div class="askrow">
@@ -912,7 +912,8 @@ async function enviar(){
   if(ocup)return;const txt=$('pedido').value.trim(),st=$('status');
   if(!txt&&!ANEXOS.length){st.textContent='Escreva, fale ou mande um PDF/foto.';return;}
   if(txt&&!ANEXOS.length){const r=comandoLocal(txt);if(r){addChat('eu',txt);addChat('app',r);$('pedido').value='';st.textContent='';return;}}
-  if(!sampler){st.className='status err';st.textContent='Não entendi. Fale o nome da medida e o valor, ex.: "largura 6 metros".';return;}
+  if(!sampler){st.className='status err';st.innerHTML='Esse pedido precisa do modo conversa. <a id="lkConv" href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or);font-weight:600">Abrir o modo conversa</a> (seu texto vai copiado, é só colar lá).';
+    const lk=$('lkConv');lk.onclick=()=>{try{navigator.clipboard.writeText(txt);}catch(e){}};return;}
   ocup=true;$('bEnviar').style.opacity=.5;st.className='status';st.innerHTML='<span class="spin"></span>Montando a estrutura…';
   addChat('eu',(txt||'(projeto anexado)')+(ANEXOS.length?' 📎'+ANEXOS.length:''));$('pedido').value='';
   let prompt=API+'\n'+CONVERSA+'\n\n';
