@@ -76,6 +76,10 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 #bFalar.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .topo{display:flex;flex-direction:column;gap:2px;padding:4px 4px 14px;border-left:4px solid var(--or);padding-left:12px;margin-bottom:12px}.topo b{font:700 24px 'Barlow Condensed';letter-spacing:2px}.topo span{font:12px 'IBM Plex Mono';color:var(--mut)}
 .det{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px}.det summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--or)}
+.selbox{margin:12px -16px -16px;padding:12px 16px 16px;border-top:1px solid var(--line);background:#25282c;border-radius:0 0 14px 14px}
+.selbox .inf{font:13px 'IBM Plex Mono';color:var(--tx);margin-bottom:10px}.selbox .inf b{color:var(--or)}
+.selbox .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.selbox .acts .btn{padding:10px 4px;font-size:13px}
+.selbox .mv{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:6px;margin-top:8px;align-items:end}
 .mic.rec{background:#c0453a;border-color:#c0453a;color:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .chip{padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:#17191c;font-size:13px;cursor:pointer}
@@ -105,8 +109,10 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="viewer" id="viewer">
     <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button></div>
     <canvas id="ov" style="pointer-events:none;z-index:1"></canvas>
+    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;z-index:2;color:#555;font-size:11px">toque numa peça para selecionar</div>
     <div class="legend" id="legend"></div>
   </div>
+  <div id="selBox" class="selbox" style="display:none"></div>
 </div>
 
 <div class="card ask">
@@ -121,6 +127,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="chips" id="anexos"></div>
   <div class="status" id="status"></div>
   <div class="askrow"><div class="btn" id="bNovoProj" style="padding:9px 6px;font-size:13px">Novo projeto</div><div class="btn" id="bFalar" style="display:none;padding:9px 6px;font-size:13px">🔊 Ler respostas</div></div>
+  <label class="f" style="margin-top:14px">Nome da peça / projeto<input type="text" id="nomePeca" placeholder="Ex.: corrimão de barco, gabarito do cocho…" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label>
   <div class="sub" style="margin-top:12px">Modelos prontos (abrem na hora):</div>
   <div class="chips" id="chips"></div>
 </div>
@@ -173,6 +180,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 // ===== núcleo: perfis, construção, corte =====
 function kgm(p){
   let A;
+  if(p.tipo==='placa') return p.a*p.b*7.85/1000;
   if(p.tipo==='red') A=Math.PI*(p.a-p.t)*p.t;
   else if(p.tipo==='cant') A=p.t*(2*p.a-p.t);
   else if(p.tipo==='chapa') A=p.a*p.t;
@@ -181,6 +189,7 @@ function kgm(p){
   return A*7.85/1000;
 }
 function perfNome(p){
+  if(p.tipo==='placa') return 'Chapa '+p.a+'×'+p.b+' · esp. '+p.t;
   if(p.tipo==='red') return 'Tubo redondo Ø'+p.a+'×'+p.t;
   if(p.tipo==='cant') return 'Cantoneira '+p.a+'×'+p.a+'×'+p.t;
   if(p.tipo==='chapa') return 'Barra chata '+p.a+'×'+p.t;
@@ -249,9 +258,41 @@ function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=p
 
 
 
+
+
+function chapaPorFora(M){
+  const PN=M.paineis;if(!PN||!PN.length)return;
+  const all=PN.flat(),c=[0,1,2].map(k=>all.reduce((s,p)=>s+p[k],0)/all.length);
+  const st=M.filter(m=>m.pts.length>=2&&!m.placa);
+  PN.forEach((pts,ix)=>{
+    const a=pts[0],b=pts[1],d=pts[2],u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[d[0]-a[0],d[1]-a[1],d[2]-a[2]];
+    let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];const l=Math.hypot(...n)||1;n=n.map(x=>x/l);
+    const pc=[0,1,2].map(k=>pts.reduce((s,p)=>s+p[k],0)/pts.length);
+    if((pc[0]-c[0])*n[0]+(pc[1]-c[1])*n[1]+(pc[2]-c[2])*n[2]<0)n=n.map(x=>-x);
+    const mn=[0,1,2].map(k=>Math.min(...pts.map(p=>p[k]))-60),mx=[0,1,2].map(k=>Math.max(...pts.map(p=>p[k]))+60);
+    let prot=0;
+    for(const m of st){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],hw=Math.max(g.perfil.a||0,g.perfil.b||0)/2;
+      for(const q of m.pts){if(q.some((v,k)=>v<mn[k]||v>mx[k]))continue;
+        const sd=(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]+(q[2]-a[2])*n[2];if(Math.abs(sd)<150)prot=Math.max(prot,sd+hw);}}
+    const off=Math.max(0,prot)+3;PN[ix]=pts.map(p=>[p[0]+n[0]*off,p[1]+n[1]*off,p[2]+n[2]*off]);
+  });
+}
+// ===== ajustes feitos na tela =====
+const chaveM=m=>m.pts.map(p=>p.map(v=>Math.round(v)).join(',')).join('|');
+function grupoExtra(id,nome,perfil){if(!MOD.grupos.some(g=>g.id===id)){MOD.grupos.push({id,nome,proprio:!!perfil,perfil:perfil?clone(perfil):clone(MOD.perfilPadrao),cor:PALETA[MOD.grupos.length%PALETA.length]});return true;}return false;}
+function aplicaAjustes(M){
+  for(const a of (MOD.ajustes||[])){
+    if(a.op==='add'){M.push({pts:[a.a,a.b],g:a.g,nota:a.nota||'',len:Math.round(Math.hypot(a.b[0]-a.a[0],a.b[1]-a.a[1],a.b[2]-a.a[2])),livre:!!a.livre,placa:!!a.placa});continue;}
+    const i=M.findIndex(m=>chaveM(m)===a.k);if(i<0)continue;const m=M[i];
+    if(a.op==='del')M.splice(i,1);
+    else if(a.op==='mov'){m.pts=m.pts.map(p=>[p[0]+a.d[0],p[1]+a.d[1],p[2]+a.d[2]]);}
+    else if(a.op==='rot'){m.girado=!m.girado;}
+  }
+  for(const m of M)if(m.girado){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0];m.pf={...g.perfil,a:g.perfil.b||g.perfil.a,b:g.perfil.a};}
+}
 // ===== encontros: desconto de medida (padrão de serralheria) =====
 function passaPor(M,P,excl){
-  for(const o of M){if(o.curva||o.pts.length!==2||o.livre||excl.includes(o))continue;
+  for(const o of M){if(o.curva||o.pts.length!==2||o.livre||o.placa||excl.includes(o))continue;
     const A=o.pts[0],B=o.pts[1],d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]],L2=d[0]*d[0]+d[1]*d[1]+d[2]*d[2];if(!L2)continue;
     const t=((P[0]-A[0])*d[0]+(P[1]-A[1])*d[1]+(P[2]-A[2])*d[2])/L2,Lt=Math.sqrt(L2);
     if(t*Lt<3||t*Lt>Lt-3)continue;
@@ -259,8 +300,8 @@ function passaPor(M,P,excl){
   return null;
 }
 function juntas(M){
-  const st=M.filter(m=>!m.curva&&m.pts.length===2&&!m.livre);
-  const pf=m=>(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil,larg=m=>{const p=pf(m);return p.tipo==='chapa'?p.t:p.a;};
+  const st=M.filter(m=>!m.curva&&m.pts.length===2&&!m.livre&&!m.placa);
+  const pf=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil,larg=m=>{const p=pf(m);return p.tipo==='chapa'?p.t:p.a;};
   const dir=m=>{const d=[m.pts[1][0]-m.pts[0][0],m.pts[1][1]-m.pts[0][1],m.pts[1][2]-m.pts[0][2]],l=Math.hypot(...d)||1;return d.map(v=>v/l);};
   const sen=(a,b)=>{const c=Math.abs(a[0]*b[0]+a[1]*b[1]+a[2]*b[2]);return Math.sqrt(Math.max(0,1-c*c));};
   const mesmo=(a,b)=>Math.abs(a[0]-b[0])<3&&Math.abs(a[1]-b[1])<3&&Math.abs(a[2]-b[2])<3;
@@ -299,7 +340,7 @@ function esquadrias(M){
   const auto=!!(MOD&&MOD.esqAuto),mapa={},key=p=>p.map(v=>Math.round(v)).join(',');
   const quer=(m,e)=>auto||m.esq===true||(Array.isArray(m.esq)&&m.esq[e]);
   M.forEach(m=>{m.cuts=null;m.ext=0;m.notaEsq='';m.lenCorte=m.len;});
-  M.forEach(m=>{if(m.curva||m.pts.length!==2||m.livre)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
+  M.forEach(m=>{if(m.curva||m.pts.length!==2||m.livre||m.placa)return;[0,1].forEach(e=>{const k=key(m.pts[e]);(mapa[k]=mapa[k]||[]).push([m,e]);});});
   const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l);};
   const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
   for(const k in mapa){const L=mapa[k];if(L.length<2)continue;if(passaPor(M,L[0][0].pts[L[0][1]],L.map(x=>x[0])))continue;
@@ -645,7 +686,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
 
 function carregar(m,vals){
-  NOVO=false;MOD=clone(m);VAL={};
+  NOVO=false;MOD=clone(m);VAL={};SEL=[];
   const igual=(a,b)=>a&&b&&a.tipo===b.tipo&&+a.a===+b.a&&+(a.b||a.a)===+(b.b||b.a)&&+a.t===+b.t;
   if(!MOD.perfilPadrao){const cont={};for(const g of MOD.grupos)if(g.perfil){const k=JSON.stringify(g.perfil);cont[k]=(cont[k]||0)+1;}
     const k=Object.keys(cont).sort((a,b)=>cont[b]-cont[a])[0];MOD.perfilPadrao=k?JSON.parse(k):{tipo:'ret',a:50,b:50,t:2};}
@@ -656,7 +697,7 @@ function carregar(m,vals){
   montarUI();upd(true);
 }
 function montarUI(){
-  $('tit').textContent=MOD.titulo;
+  $('tit').textContent=MOD.nome||MOD.titulo;$('nomePeca').value=MOD.nome||'';
   $('resumo').textContent=MOD.resumo||'';
   $('perguntas').innerHTML=MOD.perguntas&&MOD.perguntas.length?`<div class="perg"><b>DEFINA AGORA</b><ul>${MOD.perguntas.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:'';
   const box=$('params');box.innerHTML='';let detE=null;
@@ -724,6 +765,7 @@ function montarPerfis(){
   }
 }
 function fmtPre(t,v){return t==='ret'?v[0]+'×'+v[1]+'×'+v[2]:t==='red'?'Ø'+v[0]+'×'+v[2]:t==='macico'?'Ø'+v[0]:t==='chapa'?v[0]+'×'+v[2]:v[0]+'×'+v[2];}
+$('nomePeca').oninput=()=>{MOD.nome=$('nomePeca').value;$('tit').textContent=MOD.nome||MOD.titulo;store('dc-estr-atual',{mod:MOD,val:VAL});};
 $('esqAuto').onchange=()=>{MOD.esqAuto=$('esqAuto').checked;upd();};
 $('barra').value=CFG.barra;$('kerf').value=CFG.kerf;
 $('barra').oninput=()=>{CFG.barra=parseFloat($('barra').value)||6000;upd();};
@@ -743,6 +785,7 @@ let view='3d',cam=pcam,group=new THREE.Group();scene.add(group);
 const orb={th:-0.75,ph:1.0,r:15,tg:new THREE.Vector3()};let oz=1,opan=new THREE.Vector2();
 const P3=(x,y,z)=>new THREE.Vector3(x/1000,z/1000,y/1000);
 const EUB=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),LMAT=new THREE.LineBasicMaterial({color:0x8d939b});
+let PICK=[],SEL=[];const SELMAT=new THREE.MeshStandardMaterial({color:0xe3924a,roughness:.5,metalness:.2,emissive:0x5a2a00}),SELLIN=new THREE.LineBasicMaterial({color:0xe3924a}),INV=new THREE.MeshBasicMaterial({visible:false});
 const UB=new THREE.BoxGeometry(1,1,1),UC=new THREE.CylinderGeometry(.5,.5,1,10);
 let bbox={x0:0,x1:1,y0:0,y1:1,z0:0,z1:1};
 
@@ -762,23 +805,23 @@ function caixaCortada(m,p,mat){
 function draw(M){
   scene.remove(group);group=new THREE.Group();
   R.setClearColor(LINHAS?0xf4f5f6:0xd5d8dc);LMAT.color.set(LINHAS?0x1f2226:0x8d939b);
-  const LCL=new THREE.LineBasicMaterial({color:0x1f2226});const up=new THREE.Vector3(0,1,0),mats={};
+  const LCL=new THREE.LineBasicMaterial({color:0x1f2226});const up=new THREE.Vector3(0,1,0),mats={};PICK=[];
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
   for(const m of M){
-    const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=g.perfil;
-    const mat=mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x2a2d31,roughness:.5,metalness:.35});
+    const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=m.pf||g.perfil,sel=SEL.includes(chaveM(m));
+    const mat=sel?SELMAT:mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x2a2d31,roughness:.5,metalness:.35});
     for(let i=1;i<m.pts.length;i++){
       let a=P3(...m.pts[i-1]),b=P3(...m.pts[i]);
       if(m.trim&&m.pts.length===2){const u=b.clone().sub(a).normalize();a=a.clone().add(u.clone().multiplyScalar(m.trim[0]/1000));b=b.clone().sub(u.clone().multiplyScalar(m.trim[1]/1000));}
       const dir=b.clone().sub(a),len=dir.length();if(len<1e-6)continue;
       const round=p.tipo==='red'||p.tipo==='macico';
-      if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),LCL));continue;}
-      if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);if(!LINHAS)group.add(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),LMAT);group.add(eg);}continue;}
+      if(LINHAS&&(round||m.curva)){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),sel?SELLIN:LCL));const pk=new THREE.Mesh(UC,INV);pk.scale.set(.06,len,.06);pk.position.copy(a).add(b).multiplyScalar(.5);pk.quaternion.setFromUnitVectors(up,dir.clone().normalize());pk.userData.mk=chaveM(m);group.add(pk);PICK.push(pk);continue;}
+      if(m.cuts&&!round&&m.pts.length===2){const cm=caixaCortada(m,p,mat);cm.userData.mk=chaveM(m);if(LINHAS)cm.material=INV;group.add(cm);PICK.push(cm);if(!m.curva){const eg=new THREE.LineSegments(new THREE.EdgesGeometry(cm.geometry,20),sel?SELLIN:LMAT);group.add(eg);}continue;}
       const mesh=new THREE.Mesh(round?UC:UB,mat);
-      const w=p.a/1000,h=(p.tipo==='ret'?p.b:p.tipo==='chapa'?p.t:p.a)/1000;
+      const w=p.a/1000,h=((p.tipo==='ret'||p.tipo==='placa')?p.b:p.tipo==='chapa'?p.t:p.a)/1000;
       mesh.scale.set(w,len+(m.curva?w*0.6:0),round?w:h);mesh.position.copy(a).add(b).multiplyScalar(.5);
-      mesh.quaternion.setFromUnitVectors(up,dir.normalize());if(!LINHAS)group.add(mesh);
-      if(!round&&!m.curva){const eg=new THREE.LineSegments(EUB,LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
+      mesh.quaternion.setFromUnitVectors(up,dir.normalize());if(LINHAS)mesh.material=INV;mesh.userData.mk=chaveM(m);group.add(mesh);PICK.push(mesh);
+      if(!round&&!m.curva){const eg=new THREE.LineSegments(EUB,sel?SELLIN:LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
     }
     for(const q of m.pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   }
@@ -787,7 +830,9 @@ function draw(M){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
   else if(PN.length&&CHAPA){const pos=[];for(const pts of PN){for(let i=1;i<pts.length-1;i++)for(const q of[pts[0],pts[i],pts[i+1]]){const v=P3(...q);pos.push(v.x,v.y,v.z);}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
-    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.85,metalness:0,transparent:true,opacity:.78,side:THREE.DoubleSide,depthWrite:true,polygonOffset:true,polygonOffsetFactor:1})));}
+    group.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xeceef0,roughness:.8,metalness:0,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1})));
+    const lp=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);lp.push(a.x,a.y,a.z,b.x,b.y,b.z);}
+    const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));group.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xb4b9bf})));}
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
   scene.add(group);orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
@@ -821,44 +866,113 @@ function drawDims(){
     c.save();c.translate((A[0]+B[0])/2,(A[1]+B[1])/2);let r=ang;if(r>Math.PI/2||r<-Math.PI/2)r+=Math.PI;c.rotate(r);c.fillText(Math.round(v)+'',0,-6);c.restore();}
 }
 const ptr=new Map();let pinch0=0;
-vw.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;ptr.set(e.pointerId,[e.clientX,e.clientY]);try{vw.setPointerCapture(e.pointerId);}catch(_){}if(ptr.size===2){const p=[...ptr.values()];pinch0=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);}});
+vw.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON'||e.target.tagName==='U')return;if(!ptr.size)toque={x:e.clientX,y:e.clientY,t:Date.now(),mv:false};ptr.set(e.pointerId,[e.clientX,e.clientY]);try{vw.setPointerCapture(e.pointerId);}catch(_){}if(ptr.size===2){const p=[...ptr.values()];pinch0=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);}});
 vw.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId),dx=e.clientX-o[0],dy=e.clientY-o[1];ptr.set(e.pointerId,[e.clientX,e.clientY]);
   if(ptr.size===2){const p=[...ptr.values()],d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);if(pinch0){const k=d/pinch0;if(view==='3d')orb.r/=k;else oz*=k;}pinch0=d;}
   else if(view==='3d'){orb.th+=dx*.008;orb.ph=Math.min(1.55,Math.max(.1,orb.ph-dy*.008));}
   else{const s=(ocam.right-ocam.left)/vw.clientWidth;opan.x-=dx*s;opan.y+=dy*s;}render();});
-const pu=e=>{ptr.delete(e.pointerId);pinch0=0;};vw.addEventListener('pointerup',pu);vw.addEventListener('pointercancel',pu);
+let toque=null;const pu=e=>{const era=ptr.size;ptr.delete(e.pointerId);pinch0=0;
+  if(toque&&era===1&&e.type==='pointerup'&&Math.hypot(e.clientX-toque.x,e.clientY-toque.y)<8&&Date.now()-toque.t<600)pegar(e);if(!ptr.size)toque=null;};vw.addEventListener('pointerup',pu);vw.addEventListener('pointercancel',pu);
 vw.addEventListener('wheel',e=>{e.preventDefault();const k=Math.exp(-e.deltaY*.001);if(view==='3d')orb.r/=k;else oz*=k;render();},{passive:false});
 document.querySelectorAll('.vbtn button[data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 $('bLinhas').classList.toggle('on',LINHAS);$('bLinhas').onclick=()=>{LINHAS=!LINHAS;store('dc-estr-linhas',LINHAS);$('bLinhas').classList.toggle('on',LINHAS);upd();};
 $('bChapa').onclick=()=>{CHAPA=!CHAPA;$('bChapa').classList.toggle('on',CHAPA);upd();};
 addEventListener('resize',resize);
 
+
+// ===== seleção de peça =====
+const RC=new THREE.Raycaster();
+function pegar(e){
+  const r=vw.getBoundingClientRect(),nd=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  RC.setFromCamera(nd,cam);const hit=RC.intersectObjects(PICK,false)[0];
+  if(!hit){if(SEL.length){SEL=[];upd();}return;}
+  const k=hit.object.userData.mk,i=SEL.indexOf(k);
+  if(i>=0)SEL.splice(i,1);else{SEL.push(k);if(SEL.length>2)SEL.shift();}
+  upd();
+}
+const fmtP=p=>'('+p.map(v=>Math.round(v)).join(', ')+')';
+function painelSel(){
+  const box=$('selBox');$('dicaSel').style.display=SEL.length?'none':'';
+  const ms=SEL.map(k=>(LAST.M||[]).find(m=>chaveM(m)===k)).filter(Boolean);
+  SEL=ms.map(chaveM);
+  if(!ms.length){box.style.display='none';return;}
+  const nomeG=m=>(MOD.grupos.find(x=>x.id===m.g)||{}).nome||m.g,pfm=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
+  box.style.display='';
+  box.innerHTML=ms.map((m,i)=>`<div class="inf"><b>${ms.length>1?(i+1)+'. ':''}${esc(nomeG(m))}</b> · ${perfNome(pfm(m))}${m.girado?' (girado)':''}<br>corte ${m.lenCorte||m.len} mm${m.notaEsq?' · '+esc(m.notaEsq):''}<br><span style="color:var(--mut)">de ${fmtP(m.pts[0])} a ${fmtP(m.pts[m.pts.length-1])}</span></div>`).join('')+
+   `<div class="acts">
+     <div class="btn on" data-a="fala">Ajustar falando</div><div class="btn" data-a="mov">Mover</div><div class="btn" data-a="del">Apagar</div>
+     <div class="btn" data-a="rot">Girar perfil</div><div class="btn" data-a="chapa">Chapinha na ponta</div>
+     ${ms.length===2?'<div class="btn" data-a="mf">Mão-francesa</div><div class="btn" data-a="lig">Ligar (reforço)</div>':'<div class="btn" data-a="dica" style="opacity:.6">Toque outra peça p/ ligar</div>'}
+     <div class="btn" data-a="limpar">Soltar</div>${(MOD.ajustes||[]).length?'<div class="btn" data-a="desf">Desfazer</div>':''}
+   </div><div id="selExtra"></div>`;
+  box.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acaoSel(b.dataset.a,ms));
+}
+function ajuste(a){(MOD.ajustes=MOD.ajustes||[]).push(a);MOD.editado=true;upd();}
+function pontoMaisPerto(A,B){ // pontos mais próximos entre dois segmentos
+  const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],add=(a,b,t)=>a.map((v,i)=>v+b[i]*t);
+  const d1=sub(A[1],A[0]),d2=sub(B[1],B[0]),r=sub(A[0],B[0]),a=dot(d1,d1),e=dot(d2,d2),f=dot(d2,r),c=dot(d1,r),b=dot(d1,d2),den=a*e-b*b;
+  let s=den>1e-9?Math.min(1,Math.max(0,(b*f-c*e)/den)):0,t=(b*s+f)/e;
+  if(t<0){t=0;s=Math.min(1,Math.max(0,-c/a));}else if(t>1){t=1;s=Math.min(1,Math.max(0,(b-c)/a));}
+  return[add(A[0],d1,s),add(B[0],d2,t),s,t];
+}
+function acaoSel(a,ms){
+  const ex=$('selExtra');
+  if(a==='limpar'){SEL=[];upd();return;}
+  if(a==='desf'){MOD.ajustes.pop();upd();return;}
+  if(a==='del'){ms.forEach(m=>ajuste({op:'del',k:chaveM(m)}));SEL=[];upd();return;}
+  if(a==='rot'){ms.forEach(m=>{(MOD.ajustes=MOD.ajustes||[]).push({op:'rot',k:chaveM(m)});});MOD.editado=true;upd();return;}
+  if(a==='fala'){const t=$('pedido');t.value='Na peça selecionada: ';t.focus();t.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  if(a==='mov'){ex.innerHTML=`<div class="mv"><label class="f">X (comprimento)<input type="number" id="dx" value="0"></label><label class="f">Y (largura)<input type="number" id="dy" value="0"></label><label class="f">Z (altura)<input type="number" id="dz" value="0"></label><div class="btn on" id="okMv" style="padding:10px">OK</div></div><div class="sub" style="font-size:11px;margin-top:4px">mm, pode ser negativo</div>`;
+    $('okMv').onclick=()=>{const d=['dx','dy','dz'].map(i=>parseFloat($(i).value)||0);const ks=ms.map(chaveM);
+      ms.forEach((m,i)=>(MOD.ajustes=MOD.ajustes||[]).push({op:'mov',k:ks[i],d}));SEL=ms.map(m=>chaveM({pts:m.pts.map(p=>[p[0]+d[0],p[1]+d[1],p[2]+d[2]])}));MOD.editado=true;upd();};return;}
+  if(a==='chapa'){ex.innerHTML=`<div class="mv"><label class="f">Lado A (mm)<input type="number" id="pa" value="100"></label><label class="f">Lado B (mm)<input type="number" id="pb" value="100"></label><label class="f">Esp. (mm)<input type="number" id="pt" value="6.35"></label><div class="btn on" id="okCh" style="padding:10px">OK</div></div>
+      <div class="acts" style="margin-top:6px"><div class="btn" id="pA">Ponta 1</div><div class="btn" id="pB">Ponta 2</div><div class="btn" id="pAB">As duas</div></div>`;
+    let lado='A';const mk=()=>{const pa=+$('pa').value||100,pb=+$('pb').value||100,t=+$('pt').value||6.35;
+      if(grupoExtra('ch','Chapinhas de ligação',{tipo:'placa',a:pa,b:pb,t}))MOD.editado=true;
+      const g=MOD.grupos.find(x=>x.id==='ch');g.perfil={tipo:'placa',a:pa,b:pb,t};g.proprio=true;
+      for(const m of ms){const P0=m.pts[0],P1=m.pts[m.pts.length-1],u=P1.map((v,i)=>v-P0[i]),l=Math.hypot(...u),d=u.map(x=>x/l);
+        const tr=m.trim||[0,0];
+        const pontas=lado==='AB'?[[P0,d,tr[0],1],[P1,d,tr[1],-1]]:lado==='A'?[[P0,d,tr[0],1]]:[[P1,d,tr[1],-1]];
+        for(const[P,dd,t0,sg]of pontas){const E=P.map((v,i)=>v+dd[i]*sg*(t0-t)),F=P.map((v,i)=>v+dd[i]*sg*t0);
+          (MOD.ajustes=MOD.ajustes||[]).push({op:'add',a:E,b:F,g:'ch',nota:'chapinha soldada',placa:true,livre:true});}}
+      MOD.editado=true;montarPerfis();upd();};
+    $('pA').onclick=()=>{lado='A';mk();};$('pB').onclick=()=>{lado='B';mk();};$('pAB').onclick=()=>{lado='AB';mk();};$('okCh').onclick=()=>{lado='AB';mk();};return;}
+  if(a==='lig'&&ms.length===2){const[p,q]=pontoMaisPerto(ms[0].pts,ms[1].pts);
+    if(Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])<20){$('selExtra').innerHTML='<div class="sub">As peças já se encontram. Use Mão-francesa.</div>';return;}
+    grupoExtra('rf','Reforços');ajuste({op:'add',a:p,b:q,g:'rf',nota:'reforço'});montarPerfis();return;}
+  if(a==='mf'&&ms.length===2){ex.innerHTML=`<div class="mv"><label class="f">Distância do canto (mm)<input type="number" id="dmf" value="300"></label><div></div><div></div><div class="btn on" id="okMf" style="padding:10px">OK</div></div>`;
+    $('okMf').onclick=()=>{const dist=+$('dmf').value||300,[p,q]=pontoMaisPerto(ms[0].pts,ms[1].pts),P=p.map((v,i)=>(v+q[i])/2);
+      const dir=(m)=>{const A=m.pts[0],B=m.pts[m.pts.length-1],dA=Math.hypot(...A.map((v,i)=>v-P[i])),dB=Math.hypot(...B.map((v,i)=>v-P[i])),F=dA>dB?A:B,u=F.map((v,i)=>v-P[i]),l=Math.hypot(...u)||1;return u.map(x=>x/l);};
+      const u=dir(ms[0]),v=dir(ms[1]);grupoExtra('mf','Mãos-francesas');
+      ajuste({op:'add',a:P.map((x,i)=>x+u[i]*dist),b:P.map((x,i)=>x+v[i]*dist),g:'mf',nota:'mão-francesa'});montarPerfis();};return;}
+}
 // ===== cálculo e resultado =====
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
 function upd(reset){
   let M=[];const st=$('status');
-  try{M=construir(compilar(MOD.codigo),VAL);esquadrias(M);juntas(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
+  try{M=construir(compilar(MOD.codigo),VAL);aplicaAjustes(M);esquadrias(M);juntas(M);chapaPorFora(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
   draw(M);
   const dims=`${Math.round(bbox.x1-bbox.x0)} × ${Math.round(bbox.y1-bbox.y0)} × ${Math.round(bbox.z1-bbox.z0)} mm`;
   $('sub').textContent=dims+' · '+MOD.grupos.length+' grupo(s) de perfil';
   const gid=[...new Set(M.map(m=>m.g))],GN=id=>MOD.grupos.find(g=>g.id===id)||MOD.grupos[0];
   const stock={};
-  for(const id of gid){const g=GN(id),k=perfNome(g.perfil);(stock[k]=stock[k]||{p:g.perfil,lens:[]}).lens.push(...M.filter(m=>m.g===id).map(m=>m.lenCorte||m.len));}
+  for(const id of gid){const g=GN(id);for(const m of M.filter(m=>m.g===id)){const pp=m.pf||g.perfil,k=perfNome(pp);(stock[k]=stock[k]||{p:pp,lens:[]}).lens.push(m.lenCorte||m.len);}}
   let tot=0,kg=0,emd=0,out='';
-  for(const k in stock){const s=stock[k],r=cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);
+  for(const k in stock){const s=stock[k],r=s.p.tipo==='placa'?{bars:[],emendas:0}:cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);
     tot+=r.bars.length;kg+=q;emd+=r.emendas;const sob=r.bars.reduce((a,b)=>a+b.livre,0)/1000;
+    if(s.p.tipo==='placa'){out+=`<tr><td>${k}</td><td class="n">${s.lens.length} un</td><td class="n">–</td><td class="n">${q.toFixed(1)} kg</td></tr>`;continue;}
     out+=`<tr><td>${k}</td><td class="n">${m.toFixed(1)} m</td><td class="n"><b style="color:var(--or)">${r.bars.length}</b></td><td class="n">${q.toFixed(0)} kg</td></tr><tr><td colspan="4" style="color:var(--mut);font-size:11px">sobra ${sob.toFixed(1)} m${r.emendas?` · ${r.emendas} peça(s) acima de ${CFG.barra/1000} m com emenda`:''}</td></tr>`;}
   const cut={};let cl='';
   for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=(m.lenCorte||m.len)+'|'+(m.curva?m.nota:(m.notaEsq||(m.livre?m.nota:'')));c[k]=(c[k]||0)+1;});cut[id]=c;
     const g=GN(id);cl+=`<tr><td colspan="3" style="color:${g.cor};font-weight:600;padding-top:12px">${esc(g.nome)} · ${perfNome(g.perfil)}</td></tr>`;
-    Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
+    Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');if(g.perfil.tipo==='placa'){cl+=`<tr><td>${g.perfil.a}×${g.perfil.b} mm · esp. ${g.perfil.t}<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span></td><td class="n">${c[k]} un</td><td class="n">–</td></tr>`;return;}cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
   $('tab').innerHTML=`<table><tr><th>Perfil</th><th class="n">Metros</th><th class="n">Barras</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
   const area=(M.paineis||[]).reduce((a,p)=>a+areaPainel(p),0)/1e6;
   $('area').textContent=area>0?`Área de chapa / molde: ${area.toFixed(1)} m²`:'';$('bChapa').style.display=area>0?'':'none';
   $('kB').textContent=tot;$('kP').textContent=M.length;$('kK').textContent=Math.round(kg);
   const bd=$('badge');bd.textContent=emd?`${emd} EMENDA(S)`:'SEM EMENDA';bd.className='badge'+(emd?' warn':'');
-  LAST={M,cut,gid};store('dc-estr-atual',{mod:MOD,val:VAL});
+  LAST={M,cut,gid};painelSel();store('dc-estr-atual',{mod:MOD,val:VAL});
   if(reset)setView(view);else render();
 }
 function copiar(txt){const ta=$('ta');ta.style.display='block';ta.value=txt;ta.select();
@@ -877,7 +991,7 @@ $('cpL').onclick=()=>{let t=MOD.titulo+'\nGrupo;Perfil;Medida mm;Qtd;Obs\n';
 // ===== meus modelos =====
 function listarSalvos(){const s=store('dc-estr-salvos')||[];
   $('saved').innerHTML=s.length?s.map((x,i)=>`<div><span data-i="${i}" class="ld" style="cursor:pointer;flex:1">${esc(x.mod.titulo)}<br><span style="color:var(--mut);font-size:11px">${esc(x.quando)}</span></span><span class="x" data-d="${i}">✕</span></div>`).join(''):'<span class="sub">Nenhum salvo ainda.</span>';
-  $('saved').querySelectorAll('.ld').forEach(e=>e.onclick=()=>{const x=s[+e.dataset.i],k=presetDe(x.mod);if(k&&!x.mod.editado)carregar({...PR[k],preset:k},x.val);else carregar(x.mod,x.val);scrollTo({top:0,behavior:'smooth'});});
+  $('saved').querySelectorAll('.ld').forEach(e=>e.onclick=()=>{const x=s[+e.dataset.i],k=presetDe(x.mod);if(k&&!x.mod.deClaude)carregar(doPreset(k,x.mod),x.val);else carregar(x.mod,x.val);scrollTo({top:0,behavior:'smooth'});});
   $('saved').querySelectorAll('.x').forEach(e=>e.onclick=()=>{s.splice(+e.dataset.d,1);store('dc-estr-salvos',s);listarSalvos();});}
 $('bSalvar').onclick=()=>{const s=store('dc-estr-salvos')||[];s.unshift({mod:MOD,val:VAL,quando:new Date().toLocaleString('pt-BR')});store('dc-estr-salvos',s.slice(0,30));listarSalvos();flash('Salvo');};
 
@@ -930,14 +1044,14 @@ function cabecalho(c,folha,tot){
   const TW=980,tx=FW-MG-TW,ty=FH-MG-260;c.lineWidth=3;c.strokeRect(tx,ty,TW,260);
   c.fillStyle='#e3924a';c.fillRect(tx,ty,22,260);
   txt(c,(EMPRESA||'').toUpperCase().slice(0,30),tx+50,ty+62,44,'#2b2e31','left',true);
-  txt(c,MOD.titulo.slice(0,44),tx+50,ty+120,32,'#222','left',true);
+  txt(c,(MOD.nome||MOD.titulo).slice(0,44),tx+50,ty+120,32,'#222','left',true);
   txt(c,'Medidas em mm · sem escala · aço',tx+50,ty+172,26,'#555');
   txt(c,'Data: '+new Date().toLocaleDateString('pt-BR'),tx+50,ty+220,26,'#555');
   txt(c,'Folha '+folha+'/'+tot,tx+TW-30,ty+220,28,'#222','right',true);
 }
 function resumoPerfis(){const gid=LAST.gid,out=[],st={};
   for(const id of gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],k=perfNome(g.perfil);(st[k]=st[k]||{p:g.perfil,lens:[],grupos:[]}).lens.push(...LAST.M.filter(m=>m.g===id).map(m=>m.lenCorte||m.len));st[k].grupos.push(g.nome);}
-  for(const k in st){const s=st[k],r=cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000;out.push({k,g:s.grupos.join(', '),m,bar:r.bars.length,kg:m*kgm(s.p),em:r.emendas});}
+  for(const k in st){const s=st[k],r=s.p.tipo==='placa'?{bars:[],emendas:0}:cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000;out.push({k,g:s.grupos.join(', '),m,bar:r.bars.length,kg:m*kgm(s.p),em:r.emendas});}
   return out;}
 function gerarFolhas(){
   const M=LAST.M,PN=M.paineis||[];
@@ -1141,6 +1255,8 @@ async function enviar(){
   else prompt+='MODELO ATUAL: nenhum.\n\n';
   const hist=CHAT.slice(-13,-1).map(m=>(m.q==='eu'?'Usuário: ':m.q==='cl'?'Você: ':'App: ')+m.t).join('\n');
   if(hist)prompt+='CONVERSA ATÉ AGORA:\n'+hist+'\n\n';
+  if(SEL.length&&LAST.M){const ms=SEL.map(k=>LAST.M.find(m=>chaveM(m)===k)).filter(Boolean);if(ms.length)prompt+='PEÇA(S) SELECIONADA(S) NA TELA (o usuário tocou nelas; "essa peça" = estas): '+ms.map(m=>`grupo ${m.g}, de [${m.pts[0].map(Math.round)}] a [${m.pts[m.pts.length-1].map(Math.round)}] mm, corte ${m.lenCorte||m.len} mm`).join(' ; ')+'\n\n';}
+  if((MOD.ajustes||[]).length)prompt+='AJUSTES MANUAIS feitos na tela (incorpore no código novo se mandar modelo): '+JSON.stringify(MOD.ajustes)+'\n\n';
   prompt+='NOVA MENSAGEM DO USUÁRIO: '+(txt||'Monte a estrutura de ferro (gabarito) da peça do projeto anexado.');
   if(ANEXOS.length)prompt+='\n\nANEXOS: '+ANEXOS.length+' imagem(ns) do projeto/desenho do cliente ('+ANEXOS.map(a=>a.nome).join(', ')+'). Tire as medidas e a forma deles; o que não estiver legível, chute um valor típico, pergunte na fala e coloque em "perguntas".';
   let msgs=[{role:'user',content:prompt}];const imgs=ANEXOS.map(a=>a.blob);
@@ -1148,7 +1264,7 @@ async function enviar(){
     try{
       const op={modelTier:'complex'};if(imgs.length)op.images=imgs;
       const r=await sampler(msgs,op),j=lerJSON(r.text);
-      if(j.modelo){validar(j.modelo);j.modelo.editado=true;delete j.modelo.preset;carregar(j.modelo);}
+      if(j.modelo){validar(j.modelo);j.modelo.deClaude=true;delete j.modelo.preset;carregar(j.modelo);}
       else if(j.valores&&MOD){for(const k in j.valores)if(MOD.parametros.some(p=>p.id===k))VAL[k]=j.valores[k];montarUI();upd();}
       const f=j.fala||(j.modelo?'Montei. Confere as medidas.':'Ok.');addChat('cl',f);falar(f);
       ANEXOS=[];mostrarAnexos();st.textContent='';break;
@@ -1203,7 +1319,9 @@ const at=store('dc-estr-atual');
 function presetDe(m){if(m.preset&&PR[m.preset])return m.preset;const t=norm(m.titulo||'');
   if(m.codigo&&Object.values(PR).some(x=>x.codigo===m.codigo))return Object.keys(PR).find(k=>PR[k].codigo===m.codigo);
   for(const[re,k]of[[/cilindr/,'cilindro'],[/tanque/,'tanque'],[/piscina/,'piscina'],[/^mesa/,'mesa'],[/berco|molde/,'molde'],[/corrimao/,'corrimao'],[/capota|arco/,'capota'],[/escada/,'escada']])if(re.test(t)&&/^(gabarito|mesa|estrutura|escada|corrimao)/.test(t))return k;return null;}
-try{if(at&&at.mod){const k=presetDe(at.mod);if(k&&!at.mod.editado)carregar({...PR[k],preset:k},at.val);else carregar(at.mod,at.val);}else carregar({...PR.piscina,preset:'piscina'});}catch(e){carregar({...PR.piscina,preset:'piscina'});}
+function doPreset(k,old){const m={...clone(PR[k]),preset:k};if(old){m.ajustes=old.ajustes;m.nome=old.nome;m.esqAuto=old.esqAuto;if(old.perfilPadrao)m.perfilPadrao=old.perfilPadrao;
+    const og=old.grupos||[];m.grupos=m.grupos.map(g=>{const o=og.find(x=>x.id===g.id);return o&&o.proprio?{...g,proprio:true,perfil:o.perfil}:g;}).concat(og.filter(o=>!m.grupos.some(g=>g.id===o.id)&&['ch','rf','mf'].includes(o.id)));}return m;}
+try{if(at&&at.mod){const k=presetDe(at.mod);if(k&&!at.mod.deClaude)carregar(doPreset(k,at.mod),at.val);else carregar(at.mod,at.val);}else carregar({...PR.piscina,preset:'piscina'});}catch(e){carregar({...PR.piscina,preset:'piscina'});}
 setView('3d');
 
 </script></body></html>
