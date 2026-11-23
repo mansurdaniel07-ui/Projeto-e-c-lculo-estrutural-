@@ -52,7 +52,7 @@
   /* ===== catálogo de tipos de projeto (tela inicial) =====
      pagina: onde abre · preset: configuração pronta · emBreve: aparece no menu, ainda não abre */
   DC.TIPOS=[
-    {id:'livre',nome:'✨ Projeto novo',desc:'Fale, escreva ou mande foto/PDF e o Claude monta',destaque:true},
+    {id:'livre',nome:'+ Projeto novo',desc:'Fale, escreva ou mande foto/PDF e o assistente monta',destaque:true},
     {id:'fil',nome:'Filamentadora de tanques',desc:'3D animado, editável, vídeo e folhas',pagina:'filamentadora.html',destaque:true},
     {id:'branco',nome:'Em branco (desenhar)',desc:'Desenhar à mão',preset:'branco'},
     {id:'piscina',nome:'Piscina',desc:'Gabarito',preset:'piscina'},
@@ -233,5 +233,14 @@
     return[...out];
   };
 
+  /* ===== tela de abertura (marca) enquanto o app carrega ===== */
+  (function(){
+    const st=document.createElement('style');st.textContent="#dcSplash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#17181b;transition:opacity .45s}#dcSplash.fim{opacity:0;pointer-events:none}#dcSplash .m{text-align:center;font-family:'Barlow Semi Condensed','Barlow Condensed',Arial,sans-serif;color:#f2efe9}#dcSplash .m b{display:block;font-size:44px;letter-spacing:.04em;font-weight:700}#dcSplash .m b i{font-style:normal;color:#F98202}#dcSplash .m span{display:block;margin-top:6px;font:500 13px 'IBM Plex Sans',Arial,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#9a9ea4}#dcSplash .bar{width:160px;height:3px;margin:22px auto 0;background:#2c2e33;border-radius:2px;overflow:hidden}#dcSplash .bar:after{content:'';display:block;height:100%;width:40%;background:#F98202;animation:dcB 1s ease-in-out infinite}@keyframes dcB{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}";
+    document.head.appendChild(st);
+    const mostra=()=>{if(document.getElementById('dcSplash'))return;const d=document.createElement('div');d.id='dcSplash';d.innerHTML='<div class="m"><b><i>D.</i> Compósitos</b><span>Projetos de estruturas</span><div class="bar"></div></div>';document.body.appendChild(d);
+      const t0=Date.now(),tira=()=>setTimeout(()=>{d.classList.add('fim');setTimeout(()=>d.remove(),500)},Math.max(0,700-(Date.now()-t0)));
+      if(document.readyState==='complete')tira();else window.addEventListener('load',tira);setTimeout(tira,6000);};
+    if(document.body)mostra();else document.addEventListener('DOMContentLoaded',mostra);
+  })();
   window.DC=DC;
 })();

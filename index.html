@@ -144,7 +144,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 </div>
 
 <div class="card ask">
-  <h2>Comando</h2><div class="sub" style="margin:-4px 0 10px">Fale ou escreva o que quer montar (estrutura, gabarito, molde, berço, torre, grade…). O Claude monta e você ajusta.</div>
+  <h2>Comando</h2><div class="sub" style="margin:-4px 0 10px">Fale ou escreva o que quer montar (estrutura, gabarito, molde, berço, torre, grade…). O assistente monta e você ajusta.</div>
   <div id="chat" class="chat" style="display:none"></div>
   <textarea id="pedido" placeholder="Ex.: piscina de 7 de comprimento, 3 de largura, 1,40 de profundidade, com 2 degraus e prainha de 1,60"></textarea>
   <div class="askrow">
@@ -184,7 +184,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
     <label class="f">Qtd<input type="text" id="cQtd" placeholder="4" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label>
   </div>
   <div class="row" style="grid-template-columns:1fr"><div class="btn" id="cAdd">+ Adicionar componente</div></div>
-  <div class="note">Dica: fale "coloca 6 rodízios de 100 com trava" no Comando que o Claude adiciona.</div>
+  <div class="note">Dica: fale "coloca 6 rodízios de 100 com trava" no Comando que o assistente adiciona.</div>
 </div>
 
 <div class="card">
@@ -1677,8 +1677,7 @@ async function enviar(){
   if(ocup)return;const txt=$('pedido').value.trim(),st=$('status');
   if(!txt&&!ANEXOS.length){st.textContent='Escreva, fale ou mande um PDF/foto.';return;}
   if(txt&&!ANEXOS.length&&(!sampler||txt.split(/\s+/).length<=10)){const r=comandoLocal(txt);if(r){addChat('eu',txt);addChat('app',r);$('pedido').value='';st.textContent='';return;}}
-  if(!sampler){st.className='status err';st.innerHTML='Esse pedido precisa do modo conversa. <a id="lkConv" href="#"  style="color:var(--or);font-weight:600">Abrir o modo conversa</a> (seu texto vai copiado, é só colar lá).';
-    const lk=$('lkConv');lk.onclick=()=>{try{navigator.clipboard.writeText(txt);}catch(e){}};return;}
+  if(!sampler){st.className='status err';st.textContent='O assistente está sem conexão agora. Para medidas, use frases curtas como "comprimento 6 metros" ou "tira a prainha".';return;}
   ocup=true;$('bEnviar').style.opacity=.5;st.className='status';st.innerHTML='<span class="spin"></span>Montando a estrutura…';
   addChat('eu',(txt||'(projeto anexado)')+(ANEXOS.length?' 📎'+ANEXOS.length:''));$('pedido').value='';
   let prompt=API+'\n'+CONVERSA+'\n\n';
