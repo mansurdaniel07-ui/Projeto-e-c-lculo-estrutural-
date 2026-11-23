@@ -62,13 +62,14 @@
       onPartial(f){cbP=f},onFinal(f){cbF=f},onState(f){cbS=f},
       start(){return new Promise((ok,no)=>{
         try{
-          rec=new SR();rec.lang='pt-BR';rec.interimResults=true;rec.continuous=true;
+          rec=new SR();rec.lang='pt-BR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
           rec.onstart=()=>{ativo=true;cbS({state:'listening'});ok()};
           rec.onresult=e=>{let parc='';
             for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)cbF({text:r[0].transcript.trim()});else parc+=r[0].transcript}
             if(parc)cbP({text:parc})};
-          rec.onerror=e=>{if(!ativo)no(erro(e.error==='not-allowed'||e.error==='service-not-allowed'?'not_granted':'erro',e.error))};
-          rec.onend=()=>{ativo=false;cbS({state:'idle'})};
+          let ultErro=null;
+          rec.onerror=e=>{ultErro=e.error;if(!ativo)no(erro(e.error==='not-allowed'||e.error==='service-not-allowed'?'not_granted':'erro',e.error))};
+          rec.onend=()=>{ativo=false;cbS({state:'idle',error:ultErro})};
           rec.start();
         }catch(e){no(erro('erro',e.message))}
       })},

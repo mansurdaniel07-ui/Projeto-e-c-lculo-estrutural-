@@ -202,11 +202,28 @@
     if(!dictation){mic.onclick=teclado;return null;}
     dictation.onPartial(({text})=>{campo.value=base+text;});
     dictation.onFinal(({text})=>{base=base+text+' ';campo.value=base;});
-    dictation.onState(({state})=>{REC_=state==='listening';mic.classList.toggle('rec',REC_);if(op.rotulo)mic.textContent=REC_?op.rotulo[1]:op.rotulo[0];if(!REC_&&op.onFim)op.onFim();});
-    mic.onclick=()=>{if(REC_){dictation.stop().catch(()=>{});return;}op.antes&&op.antes();base=campo.value?campo.value.replace(/\s*$/,' '):'';
-      dictation.start().catch(e=>{if(e&&e.code==='not_granted')mic.onclick=teclado;teclado();});};
+    let ini='';
+    dictation.onPartial(({text})=>{campo.value=base+text;op.ouvindo&&op.ouvindo(text);});
+    dictation.onState(({state,error})=>{const era=REC_;REC_=state==='listening';mic.classList.toggle('rec',REC_);if(op.rotulo)mic.textContent=REC_?op.rotulo[1]:op.rotulo[0];
+      if(REC_){op.ouvindo&&op.ouvindo('');return;}
+      if(era){op.parou&&op.parou();const novo=campo.value.trim()!==ini.trim();
+        if(!novo){DC.aviso(error==='not-allowed'||error==='service-not-allowed'?'Microfone bloqueado: libere o microfone para este site nas configurações do navegador.':error==='network'?'Sem internet para reconhecer a voz.':'Não ouvi nada. Toque no microfone e fale o comando.','err');DC.falar('Não ouvi. Pode repetir?');return;}
+        if(op.onFim)op.onFim();}});
+    mic.onclick=()=>{if(REC_){dictation.stop().catch(()=>{});return;}op.antes&&op.antes();DC.calar();base=campo.value?campo.value.replace(/\s*$/,' '):'';ini=campo.value;
+      dictation.start().catch(e=>{if(e&&e.code==='not_granted'){mic.onclick=teclado;DC.aviso('Microfone bloqueado: libere o microfone para este site nas configurações do navegador.','err');}teclado();});};
     return dictation;
   };
+
+  /* ===== retorno ao usuário: aviso na tela (aparece também na tela cheia) e resposta falada ===== */
+  let avT=null;
+  DC.aviso=function(msg,tipo,ms){let el=document.getElementById('dcAviso');
+    if(!el){const st=document.createElement('style');st.textContent="#dcAviso{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:9998;max-width:min(92vw,560px);padding:12px 16px;border-radius:10px;background:rgba(28,29,32,.94);color:#f3f1ec;font:500 15px/1.35 'IBM Plex Sans',Barlow,Arial,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);border-left:4px solid #3F7A57;transition:transform .25s}#dcAviso.on{transform:translate(-50%,0)}#dcAviso.err{border-left-color:#C62828}#dcAviso.ouv{border-left-color:#F98202}";document.head.appendChild(st);
+      el=document.createElement('div');el.id='dcAviso';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.appendChild(el);}
+    el.textContent=msg;el.className='on'+(tipo?' '+tipo:'');clearTimeout(avT);if(ms!==0)avT=setTimeout(()=>el.classList.remove('on'),ms||3800);};
+  DC.vozResposta=(()=>{try{return localStorage.getItem('dc-voz-resp')!=='0'}catch(e){return true}})();
+  DC.setVozResposta=v=>{DC.vozResposta=!!v;try{localStorage.setItem('dc-voz-resp',v?'1':'0')}catch(e){}if(!v)DC.calar();};
+  DC.falar=async function(t){if(!DC.vozResposta||!t)return;try{const{tts}=await DC.recursos();if(tts)tts.speak(String(t).replace(/\[CONFIRMAR\]/g,''),{language:'pt-BR'}).catch(()=>{});}catch(e){}};
+  DC.calar=async function(){try{const{tts}=await DC.recursos();tts&&tts.stop&&tts.stop();}catch(e){}};
 
   /* ===== vídeo: grava o canvas do 3D (mp4 se o navegador aceitar, senão webm) ===== */
   DC.gravador=function(canvas){
@@ -216,7 +233,7 @@
     const parts=[],rec=new MediaRecorder(canvas.captureStream(30),{mimeType:mime,videoBitsPerSecond:8e6});
     rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data);};
     const fim=new Promise(r=>rec.onstop=r);rec.start(250);
-    return{ext:mime.includes('mp4')?'mp4':'webm',async parar(){rec.stop();await fim;return new Blob(parts,{type:mime.split(';')[0]});}};
+    return{ext:mime.includes('mp4')?'mp4':'webm',get pausado(){return rec.state==='paused'},pausar(){if(rec.state==='recording')rec.pause();},continuar(){if(rec.state==='paused')rec.resume();},async parar(){if(rec.state==='paused')rec.resume();rec.stop();await fim;return new Blob(parts,{type:mime.split(';')[0]});}};
   };
 
   /* ===== peças com nome: apagar/mostrar pelo nome (usado pelo Claude e pelo toque) ===== */

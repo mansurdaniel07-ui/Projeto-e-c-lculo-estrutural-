@@ -54,7 +54,15 @@ label.c{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu
 label.c input,label.c select{min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--in);color:var(--ink);font:500 16px Barlow,sans-serif}
 .sec{font:600 13px Barlow,sans-serif;color:var(--lar);margin:14px 0 6px}
 [hidden]{display:none!important}
-.bobbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 16px 0}.bobbar b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}.bobbar .vel{display:inline-flex;gap:0}.bobbar .vel .bt{border-radius:0;min-width:44px}.bobbar .vel .bt:first-child{border-radius:6px 0 0 6px}.bobbar .vel .bt:last-child{border-radius:0 6px 6px 0}
+.palco{position:relative}.palco.full{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#1b1c1f}.palco.full .vp{flex:1;height:auto;min-height:0}
+.dock{background:#1f2023;color:#eee;padding:8px 12px 10px;display:flex;flex-direction:column;gap:6px;touch-action:manipulation}
+.dock .linha{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.dock b{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9a9ea4;width:84px}
+.dock .bt{min-height:40px;background:#2c2e33;color:#f2f0ec;border-color:#3a3c42}.dock .bt.on{background:#F98202;color:#1b1b1b;border-color:#F98202}.dock .bt:disabled{opacity:.4}
+.dock .bt.grava{color:#ff6b5e}.dock .bt.grava.rec{background:#C62828;color:#fff;border-color:#C62828}.dock .inf{font-size:13px;color:#c9ccd0;margin-left:4px}
+.dock .vel{display:inline-flex}.dock .vel .bt{border-radius:0;min-width:44px}.dock .vel .bt:first-child{border-radius:6px 0 0 6px}.dock .vel .bt:last-child{border-radius:0 6px 6px 0}
+.dock{position:relative}.dock .recolhe{position:absolute;right:8px;top:6px;width:34px;height:30px;border:0;border-radius:6px;background:#2c2e33;color:#ddd;font-size:16px}.dock.min .extra{display:none!important}.dock.min .recolhe{transform:rotate(180deg)}
+@media(max-width:560px){.dock{padding:6px 8px 8px;gap:5px}.dock b{display:none}.dock .bt{min-height:36px;padding:6px 9px;font-size:13px}.dock .vel .bt{min-width:38px}.dock .inf{font-size:11.5px;width:100%;margin:0}.dock .linha:first-of-type{padding-right:40px}}
+html,body{overscroll-behavior:none}.vp,.dock{overscroll-behavior:contain}body.travada{overflow:hidden;touch-action:none}
 textarea{width:100%;min-height:76px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--in);color:var(--ink);font:16px Barlow,sans-serif;resize:vertical}
 .row{display:flex;gap:8px;margin-top:8px}
 .bt{min-height:46px;padding:0 14px;border-radius:6px;border:1px solid var(--line);background:var(--in);color:var(--ink);font:600 15px Barlow,sans-serif;cursor:pointer}
@@ -84,6 +92,7 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
   <small>Projeto de máquina · D. Compósitos</small>
 </header>
 
+<div class="palco" id="palco">
 <div class="vp" id="vp">
   <div class="nav" id="nav"><button class="h" id="navH" aria-expanded="true"><span>Navegador · Componentes</span><span id="navI">▸</span></button><ul id="list"></ul><div style="padding:0 12px 10px"><button id="bTudo" style="all:unset;cursor:pointer;color:#F98202;font-weight:600;font-size:13px">Mostrar tudo</button></div></div>
   <button class="tg" id="bTg" aria-label="Ferramentas" aria-expanded="false">☰</button>
@@ -99,7 +108,13 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
   <button class="bt" id="bVolta" hidden style="position:absolute;left:8px;bottom:8px;z-index:3;min-height:40px">Mostrar apagadas (0)</button>
   <div class="err" id="err">Não foi possível carregar o visualizador 3D neste navegador.</div>
 </div>
-<div class="bobbar" id="bobBar"><b>Bobinagem</b><span class="vel"><button class="bt" data-vel="1">1×</button><button class="bt" data-vel="10">10×</button><button class="bt" data-vel="30">30×</button><button class="bt" data-vel="60">60×</button></span><button class="bt" id="bBobZ">Recomeçar</button><button class="bt" id="bBobP">Tanque pronto</button><span id="stBob" class="s" style="margin:0"></span></div>
+<div class="dock" id="dock">
+  <button class="recolhe" id="dRecolhe" aria-label="Recolher controles">▾</button>
+  <div class="linha"><b>Bobinagem</b><button class="bt" id="dRoda">⏸ Pausar</button><span class="vel"><button class="bt" data-vel="1">1×</button><button class="bt" data-vel="10">10×</button><button class="bt" data-vel="30">30×</button><button class="bt" data-vel="60">60×</button></span><button class="bt extra" id="bBobZ">↺ Recomeçar</button><button class="bt extra" id="bBobP">Tanque pronto</button><span id="stBob" class="inf extra"></span></div>
+  <div class="linha"><b>Vídeo</b><button class="bt grava" id="dGrava">● Gravar</button><button class="bt" id="dPausa" disabled>⏸ Pausar</button><button class="bt" id="dSalva" disabled>■ Salvar</button><button class="bt extra" id="dAuto">🎬 Automático</button><span id="dTempo" class="inf"></span></div>
+  <div class="linha extra"><b>Tela</b><button class="bt" id="dTrava">🔒 Travar tela</button><button class="bt" id="dMic">🎤 Falar comando</button><button class="bt" id="dVoz">🔊 Resposta em voz</button><button class="bt" id="dFull">⛶ Tela cheia</button></div>
+</div>
+</div>
 <div id="apagL" hidden style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 16px 0"></div>
 
 <section class="band">
@@ -131,7 +146,12 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
         <label class="c">Folga do tanque ao chão (mm)<input id="iFol" inputmode="decimal"></label>
       </div>
       <div id="secAuto"><div class="sec">Roving</div>
-        <div class="f"><label class="c">Nº de fios<input id="iFios" inputmode="numeric"></label><label class="c">Largura da banda (mm)<input id="iBanda" inputmode="decimal"></label></div></div>
+        <div class="f"><label class="c">Nº de fios<input id="iFios" inputmode="numeric"></label><label class="c">Largura da banda (mm)<input id="iBanda" inputmode="decimal"></label></div>
+        <div class="sec">Reforços do tanque (no final da bobinagem)</div>
+        <div class="f"><label class="c">Reforço<select id="iRefOn"><option value="1">Com reforço</option><option value="0">Sem reforço</option></select></label><label class="c">Quantos reforços<input id="iRefN" inputmode="numeric"></label></div>
+        <div class="f"><label class="c">Distância entre reforços (mm)<input id="iRefEsp" inputmode="decimal"></label><label class="c">Largura do reforço (mm)<input id="iRefLarg" inputmode="decimal" list="lRefLarg"><datalist id="lRefLarg"><option value="100"><option value="200"><option value="300"><option value="400"></datalist></label></div>
+        <div class="f"><label class="c">Voltas em cada reforço<input id="iRefV" inputmode="numeric"></label></div>
+        <div class="st" id="refInfo"></div></div>
       <div id="secSemi"><div class="sec">Tecido</div>
         <div class="f">
           <label class="c">Material<select id="iMat"><option>Tecido biaxial 1808</option><option>Tecido biaxial 2408</option><option>Faixa de tecido</option><option>Manta</option></select></label>
@@ -217,7 +237,7 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
 {
 const $=id=>document.getElementById(id);
 const vp=$('vp');
-const DEF={tipo:'auto',D:3000,L:6000,Dm:3000,Lm:6000,fol:500,fios:8,banda:100,mat:'Tecido biaxial 1808',larg:1200,sob:100,cli:'',proj:'',apag:[],cmdT:'clp',mand:'motorredutor',carroM:'passo',ten:30,peso:1000,rpm:10,vc:30000,mod:2,z:20,pEsc:0,redEsc:0,tqEsc:0};
+const DEF={refOn:true,refN:3,refEsp:1500,refLarg:200,refVoltas:5,tipo:'auto',D:3000,L:6000,Dm:3000,Lm:6000,fol:500,fios:8,banda:100,mat:'Tecido biaxial 1808',larg:1200,sob:100,cli:'',proj:'',apag:[],cmdT:'clp',mand:'motorredutor',carroM:'passo',ten:30,peso:1000,rpm:10,vc:30000,mod:2,z:20,pEsc:0,redEsc:0,tqEsc:0};
 let S=DEF;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('dc-fil-3d')||'{}'))}catch(e){S=Object.assign({},DEF)}
 if(!Array.isArray(S.apag))S.apag=[];
 const salvar=()=>{try{localStorage.setItem('dc-fil-3d',JSON.stringify(S))}catch(e){}};
@@ -246,7 +266,7 @@ floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 const gridH=new THREE.GridHelper(40,40,0x80868c,0x959ba1);gridH.position.y=0.002;gridH.material.transparent=true;gridH.material.opacity=.35;scene.add(gridH);
 
 const M=(c,r=0.6,m=0.15,x={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},x));
-const mt={solda:M(0x3b3733,.7,.45,{envMapIntensity:.5}),preto:M(0x24272b,.5,.3,{envMapIntensity:.55}),graf:M(C.graf,.42,.35,{envMapIntensity:.6}),lar:M(C.lar,.45,.1),verde:M(C.verde,.55,.1),cinza:M(C.cinza,.45,.5,{envMapIntensity:.7}),aco:M(0xb9bec3,.25,.9,{envMapIntensity:.9}),branco:M(C.branco,.7,0),red:M(0xC62828,.4,0),yel:M(0xF2C230,.5,0),borr:M(0x222224,.85,0),resina:M(0xD9A55A,.15,0,{transparent:true,opacity:.45,depthWrite:false}),gota:M(0xC98A2B,.15,0),molhado:M(0xE2BE7E,.6,0,{side:THREE.DoubleSide})};
+const mt={solda:M(0x3b3733,.7,.45,{envMapIntensity:.5}),preto:M(0x24272b,.5,.3,{envMapIntensity:.55}),graf:M(C.graf,.42,.35,{envMapIntensity:.6}),lar:M(C.lar,.45,.1),verde:M(C.verde,.55,.1),cinza:M(C.cinza,.45,.5,{envMapIntensity:.7}),aco:M(0xb9bec3,.25,.9,{envMapIntensity:.9}),branco:M(C.branco,.7,0),red:M(0xC62828,.4,0),yel:M(0xF2C230,.5,0),borr:M(0x222224,.85,0),resina:M(0xA8601E,.15,0,{transparent:true,opacity:.45,depthWrite:false}),gota:M(0xC98A2B,.15,0),molhado:M(0xB36B27,.6,0,{side:THREE.DoubleSide})};
 const KEYS=['tanque','mandril','estrutura','apoio','acion','trilhos','carro','creel','painel','prot'];
 const G={};KEYS.forEach(k=>{G[k]=new THREE.Group();});
 const rot=new THREE.Group();scene.add(rot);rot.add(G.mandril,G.tanque);
@@ -275,6 +295,13 @@ const BOB=(()=>{const lado=canvasTex(512,256,(c,W,H)=>{c.fillStyle='#f3eee2';c.f
   const topo=canvasTex(256,256,(c,W)=>{c.fillStyle='#efe9dc';c.fillRect(0,0,W,W);for(let r=128;r>66;r-=3){c.strokeStyle=`rgba(170,155,120,${.12+Math.random()*.18})`;c.lineWidth=1;c.beginPath();c.arc(128,128,r,0,7);c.stroke()}
     const g=c.createRadialGradient(128,128,20,128,128,66);g.addColorStop(0,'#2a2622');g.addColorStop(1,'#6b6152');c.fillStyle=g;c.beginPath();c.arc(128,128,66,0,7);c.fill()});
   const ml=new THREE.MeshStandardMaterial({map:lado,roughness:.85,metalness:0}),mt2=new THREE.MeshStandardMaterial({map:topo,roughness:.9,metalness:0});return{mat:[ml,mt2,mt2]}})();
+/* reforços: posições (mm a partir da ponta do tanque), centralizados e fora das bordas */
+function posReforcos(){const n=Math.max(1,Math.round(S.refN)),t=(n-1)*S.refEsp,a=(Math.min(S.L,S.Lm)-t)/2;return Array.from({length:n},(_,i)=>Math.round(a+i*S.refEsp))}
+function refCabe(){const p=posReforcos(),L=Math.min(S.L,S.Lm);return p[0]-S.refLarg/2>=150&&p[p.length-1]+S.refLarg/2<=L-150}
+/* espessura de uma passada de roving (mm): fios × 2200 tex ÷ banda ÷ vidro 2540 kg/m³ ÷ 50% de vidro no laminado */
+const passadaMM=()=>S.fios*2.2e-3/Math.max(0.02,S.banda/1000)/2540/0.5*1000;
+function refInfo(){const el=document.getElementById('refInfo');if(!el)return;if(!S.refOn||S.tipo!=='auto'){el.textContent='';return}
+  el.textContent=(refCabe()?'':'⚠ não cabe · ')+posReforcos().length+' reforço(s) em '+posReforcos().join(', ')+' mm · '+S.refLarg+' mm de largura · '+S.refVoltas+' voltas · ≈ '+(S.refVoltas*passadaMM()).toFixed(1).replace('.',',')+' mm no centro, afinando nas bordas'}
 function anelGeo(ro,ri,esp){const sh=new THREE.Shape();sh.absarc(0,0,ro,0,Math.PI*2,false);const h=new THREE.Path();h.absarc(0,0,ri,0,Math.PI*2,true);sh.holes.push(h);return new THREE.ExtrudeGeometry(sh,{depth:esp,bevelEnabled:false,curveSegments:96})}
 function canvasTex(w,h,draw,rep){const cv=document.createElement('canvas');cv.width=w;cv.height=h;draw(cv.getContext('2d'),w,h);const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;if(rep){t.wrapS=THREE.RepeatWrapping;t.repeat.set(rep,1)}return t}
 const clear=g=>{while(g.children.length){const c=g.children.pop();c.traverse(o=>{if(o.geometry)o.geometry.dispose()})}};
@@ -283,21 +310,22 @@ const clear=g=>{while(g.children.length){const c=g.children.pop();c.traverse(o=>
 function desenhoPronto(r,l){return (c,W,Hc)=>{
   const pxU=W/(Math.PI*2*r),pxV=Hc/l;
   if(S.tipo==='auto'){
-    c.fillStyle='#E6CF98';c.fillRect(0,0,W,Hc);
+    c.fillStyle='#a5631f';c.fillRect(0,0,W,Hc);
     const a=55*Math.PI/180,slope=(pxV/pxU)/Math.tan(a),bw=Math.max(0.05,S.banda/1000)*pxU,run=Hc/slope;
     for(const dir of[1,-1])for(let i=-Math.ceil(run/bw)-2;i<W/bw+Math.ceil(run/bw)+2;i++){const x0=i*bw;
-      c.lineWidth=bw*0.92;c.strokeStyle=dir>0?'rgba(255,255,255,.62)':'rgba(255,253,245,.48)';c.beginPath();c.moveTo(x0,0);c.lineTo(x0+dir*run,Hc);c.stroke();
-      c.setLineDash([9,6]);c.lineWidth=1.4;c.strokeStyle='rgba(150,112,48,.55)';for(const e of[-0.46,0.46]){c.beginPath();c.moveTo(x0+bw*e,0);c.lineTo(x0+bw*e+dir*run,Hc);c.stroke()}
-      c.setLineDash([]);c.lineWidth=0.8;c.strokeStyle='rgba(255,255,255,.7)';for(const e of[-0.25,0,0.25]){c.beginPath();c.moveTo(x0+bw*e,0);c.lineTo(x0+bw*e+dir*run,Hc);c.stroke()}}
-    for(const v of[0.04,0.25,0.5,0.75,0.96]){const y=v*Hc,h=0.25*pxV;c.fillStyle='rgba(255,255,255,.72)';c.fillRect(0,y-h/2,W,h);
-      c.strokeStyle='rgba(150,112,48,.45)';c.lineWidth=1;c.setLineDash([9,6]);for(let k=0;k<=h;k+=0.1*pxV){c.beginPath();c.moveTo(0,y-h/2+k);c.lineTo(W,y-h/2+k);c.stroke()}c.setLineDash([])}
+      c.lineWidth=bw*0.92;c.strokeStyle=dir>0?'rgba(196,128,52,.55)':'rgba(186,118,44,.5)';c.beginPath();c.moveTo(x0,0);c.lineTo(x0+dir*run,Hc);c.stroke();
+      c.setLineDash([9,6]);c.lineWidth=1.4;c.strokeStyle='rgba(110,60,16,.5)';for(const e of[-0.46,0.46]){c.beginPath();c.moveTo(x0+bw*e,0);c.lineTo(x0+bw*e+dir*run,Hc);c.stroke()}
+      c.setLineDash([]);c.lineWidth=0.8;c.strokeStyle='rgba(222,160,84,.45)';for(const e of[-0.25,0,0.25]){c.beginPath();c.moveTo(x0+bw*e,0);c.lineTo(x0+bw*e+dir*run,Hc);c.stroke()}}
+    const bw0=Math.max(0.02,S.banda/1000),fx0=[[bw0/2,bw0],[l-bw0/2,bw0],...(S.refOn?posReforcos().map(p=>[p/1000,S.refLarg/1000]):[])];
+    for(const[xm,wd]of fx0){const y=(1-xm/l)*Hc,h=wd*pxV;c.fillStyle='rgba(140,80,22,.55)';c.fillRect(0,y-h/2,W,h);
+      c.strokeStyle='rgba(110,60,16,.45)';c.lineWidth=1;c.setLineDash([9,6]);for(let k=0;k<=h;k+=0.1*pxV){c.beginPath();c.moveTo(0,y-h/2+k);c.lineTo(W,y-h/2+k);c.stroke()}c.setLineDash([])}
   }else{
-    c.fillStyle='#E9D6A8';c.fillRect(0,0,W,Hc);
+    c.fillStyle='#a86a26';c.fillRect(0,0,W,Hc);
     const lw=S.larg/1000,pas=Math.max(0.05,(S.larg-S.sob)/1000);let i=0;
     for(let x=0;x<l;x+=pas,i++){const y0=Hc-(x+lw)*pxV,h=lw*pxV;
-      c.fillStyle=i%2?'rgba(255,255,255,.78)':'rgba(250,246,236,.85)';c.fillRect(0,y0,W,h);
-      c.strokeStyle='rgba(205,190,160,.35)';c.lineWidth=1;for(let k=0;k<W;k+=6){c.beginPath();c.moveTo(k,y0);c.lineTo(k+h*0.15,y0+h);c.stroke()}
-      c.setLineDash([10,6]);c.strokeStyle='rgba(140,100,40,.6)';c.lineWidth=1.6;c.beginPath();c.moveTo(0,y0);c.lineTo(W,y0);c.stroke();c.setLineDash([]);}
+      c.fillStyle=i%2?'rgba(188,120,46,.6)':'rgba(176,110,40,.62)';c.fillRect(0,y0,W,h);
+      c.strokeStyle='rgba(232,176,104,.25)';c.lineWidth=1;for(let k=0;k<W;k+=6){c.beginPath();c.moveTo(k,y0);c.lineTo(k+h*0.15,y0+h);c.stroke()}
+      c.setLineDash([10,6]);c.strokeStyle='rgba(96,52,14,.6)';c.lineWidth=1.6;c.beginPath();c.moveTo(0,y0);c.lineTo(W,y0);c.stroke();c.setLineDash([]);}
   }};}
 
 let car,band,feed=[],drops=[],labs=[],D={};
@@ -311,11 +339,11 @@ function build(){
   const H=Math.max(Rm+S.fol/1000,1.55),TY=Math.max(0.1,Math.min(0.4,H-1.44)),Z0=Rm+0.85,ZC=Z0+3.0;
   const xs0=-Lm/2,xh=xs0-0.35,xEnd=Lm/2+0.35,xt=xs0+l+0.35,xc=xs0+l/2;
   D={semi,Rm,Lm,r,l,H,TY,Z0,ZC,xs0,xh,xEnd,xt,xc};
-  D.w=semi?0.6:(4*Math.PI+1.15*Math.max(0.02,S.banda/1000)/r)/24; /* rad/s do mandril na simulação */
+  D.plano=plano(); /* roteiro da bobinagem e rad/s do mandril (D.wm) */
   rot.position.set(0,H,0);
 
   /* tanque */
-  const tOut=M(0xcfc8b8,.35,0,{side:THREE.FrontSide}),tIn=M(0x9a9da1,.8,0,{side:THREE.BackSide}),tEdge=M(0xD9C9A6,.6,0,{side:THREE.DoubleSide});
+  const tOut=M(0xeeece6,.3,0,{side:THREE.FrontSide}),tIn=M(0x9a9da1,.8,0,{side:THREE.BackSide}),tEdge=M(0xD9C9A6,.6,0,{side:THREE.DoubleSide});
   clipMats=[tOut,tIn,tEdge];
   NM('Tanque – casca externa');const tk=add(G.tanque,new THREE.CylinderGeometry(r,r,l,96,1,true),tOut,xc,0,0);tk.rotation.z=-Math.PI/2;
   NM('Tanque – parede interna');const ti=add(G.tanque,new THREE.CylinderGeometry(r-0.018,r-0.018,l,96,1,true),tIn,xc,0,0);ti.rotation.z=-Math.PI/2;
@@ -425,7 +453,7 @@ function build(){
   if(!semi){
     TAG='pente';NM('Pente de entrada');box(car,0.84,0.06,0.06,mt.lar,0,top+0.045,Z0+0.3);for(let i=0;i<9;i++)cyl(car,0.012,0.07,mt.branco,-0.36+i*0.09,top+0.11,Z0+0.3);
     NM('Pente da bandeja');for(let i=0;i<=24;i++)cyl(car,0.004,0.06,mt.branco,-(w/2-0.01)+i*((w-0.02)/24),T1[0]+0.035,T1[1]-0.01);
-    const fibM=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.85}),wet=new THREE.LineBasicMaterial({color:0xE2BE7E});
+    const fibM=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.85}),wet=new THREE.LineBasicMaterial({color:0xB36B27});
     for(let i=0;i<24;i++){const xs=-(w/2-0.02)+i*((w-0.04)/23),xcb=xs*0.53;
       const dry=[V(xs,top+0.07,Z0+0.3)];arc(dry,xs,zE,yE,rE+0.002,70,180,5);dry.push(V(xs,by+0.14,zE-rE-0.002));
       {const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(dry),fibM);ln.userData.nome='Fios de roving no carro';car.add(ln)}
@@ -443,8 +471,8 @@ function build(){
   TAG='gotas';NM('Gotas de resina');for(let i=0;i<5;i++)drops.push(add(car,new THREE.SphereGeometry(0.012,8,6),mt.gota,-w/2+0.1+i*(w-0.2)/4,1.3+dH,zN));
   TAG='';D.T1=T1;D.T0=T0;D.w=w;D.hw=hw;D.cb=cb;D.rl=rl;D.by=by;D.top=top;D.zN=zN;D.mid=mid;
 
-  const bTex=semi?canvasTex(64,64,(c)=>{c.fillStyle='#fffdf6';c.fillRect(0,0,64,64);c.strokeStyle='rgba(190,170,130,.4)';for(let i=-64;i<64;i+=6){c.beginPath();c.moveTo(i,0);c.lineTo(i+64,64);c.stroke();c.beginPath();c.moveTo(i+64,0);c.lineTo(i,64);c.stroke()}})
-    :canvasTex(64,8,(c)=>{c.fillStyle='#fff';c.fillRect(0,0,64,8);c.fillStyle='rgba(170,140,90,.5)';for(let i=0;i<64;i+=5)c.fillRect(i,0,1,8)});
+  const bTex=semi?canvasTex(64,64,(c)=>{c.fillStyle='#b06a26';c.fillRect(0,0,64,64);c.strokeStyle='rgba(190,170,130,.4)';for(let i=-64;i<64;i+=6){c.beginPath();c.moveTo(i,0);c.lineTo(i+64,64);c.stroke();c.beginPath();c.moveTo(i+64,0);c.lineTo(i,64);c.stroke()}})
+    :canvasTex(64,8,(c)=>{c.fillStyle='#b8722c';c.fillRect(0,0,64,8);c.fillStyle='rgba(230,168,92,.6)';for(let i=0;i<64;i+=5)c.fillRect(i,0,1,8)});
   band=new THREE.Mesh(new THREE.BoxGeometry(semi?S.larg/1000:w*0.53,0.004,1),M(0xffffff,.6,0,{map:bTex,transparent:true,opacity:.95}));band.userData.nome='Faixa até o tanque';scene.add(band);band.visible=vis.carro;
 
   /* gaiola de rovings (só automática) */
@@ -522,14 +550,26 @@ function go(v,inst){curView=v;const [p,t]=VW[v];if(inst){camera.position.set(...
 document.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.v)));
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let anim=!reduce;$('bAnim').classList.toggle('on',anim);
-$('bAnim').addEventListener('click',e=>{anim=!anim;e.currentTarget.classList.toggle('on',anim)});
-function marcaVel(){document.querySelectorAll('#bobBar [data-vel]').forEach(b=>b.classList.toggle('on',+b.dataset.vel===WB.vel))}
-document.querySelectorAll('#bobBar [data-vel]').forEach(b=>b.addEventListener('click',()=>{WB.vel=+b.dataset.vel;marcaVel();if(!anim)$('bAnim').click()}));marcaVel();
+function marcaAnim(){$('bAnim').classList.toggle('on',anim);$('dRoda').textContent=anim?'⏸ Pausar':'▶ Rodar';$('dRoda').classList.toggle('on',!anim)}
+$('bAnim').addEventListener('click',()=>{anim=!anim;marcaAnim()});$('dRoda').addEventListener('click',()=>{anim=!anim;marcaAnim()});marcaAnim();
+function marcaVel(){document.querySelectorAll('#dock [data-vel]').forEach(b=>b.classList.toggle('on',+b.dataset.vel===WB.vel))}
+document.querySelectorAll('#dock [data-vel]').forEach(b=>b.addEventListener('click',()=>{WB.vel=+b.dataset.vel;marcaVel();if(!anim)$('bAnim').click()}));marcaVel();
 $('bBobZ').addEventListener('click',()=>{bobZera();if(!anim)$('bAnim').click()});$('bBobP').addEventListener('click',bobPronto);
 function setCut(on){cutOn=on;clipMats.forEach(m=>{m.clippingPlanes=on?[clipPlane]:[];m.needsUpdate=true});if(clipMats[0]){clipMats[0].side=on?THREE.DoubleSide:THREE.FrontSide;clipMats[1].side=on?THREE.DoubleSide:THREE.BackSide}}
 $('bCut').addEventListener('click',e=>{setCut(!cutOn);e.currentTarget.classList.toggle('on',cutOn)});
 $('bTg').addEventListener('click',()=>{const o=$('barT').classList.toggle('closed');$('bTg').textContent=o?'☰':'✕';$('bTg').setAttribute('aria-expanded',!o)});
-$('bFull').addEventListener('click',()=>{const f=!vp.classList.contains('full');vp.classList.toggle('full',f);document.body.style.overflow=f?'hidden':'';$('bFull').textContent=f?'✕':'⛶';$('bFull').classList.toggle('on',f)});
+function telaCheia(f){const pc=$('palco');if(f===undefined)f=!pc.classList.contains('full');pc.classList.toggle('full',f);document.body.style.overflow=f||document.body.classList.contains('travada')?'hidden':'';
+  $('bFull').textContent=f?'✕':'⛶';$('bFull').classList.toggle('on',f);$('dFull').textContent=f?'✕ Sair da tela cheia':'⛶ Tela cheia';$('dFull').classList.toggle('on',f);setTimeout(size,50)}
+$('bFull').addEventListener('click',()=>telaCheia());$('dFull').addEventListener('click',()=>telaCheia());
+/* travar a tela: a página não rola enquanto mexe no 3D */
+const semRolar=e=>{if(!e.target.closest('.dock,.nav ul,#list'))e.preventDefault()};
+function travaTela(on){document.body.classList.toggle('travada',on);$('dTrava').classList.toggle('on',on);$('dTrava').textContent=on?'🔓 Destravar tela':'🔒 Travar tela';
+  if(on){$('palco').scrollIntoView({block:'start'});document.addEventListener('touchmove',semRolar,{passive:false});DC.aviso('Tela travada: a página não rola. Toque em Destravar para descer.')}
+  else document.removeEventListener('touchmove',semRolar,{passive:false});document.body.style.overflow=on||$('palco').classList.contains('full')?'hidden':''}
+$('dTrava').addEventListener('click',()=>travaTela(!document.body.classList.contains('travada')));
+$('dVoz').classList.toggle('on',DC.vozResposta);$('dVoz').addEventListener('click',()=>{DC.setVozResposta(!DC.vozResposta);$('dVoz').classList.toggle('on',DC.vozResposta);DC.aviso(DC.vozResposta?'Resposta em voz ligada.':'Resposta em voz desligada.')});
+$('dMic').addEventListener('click',()=>$('mic').click());
+$('dRecolhe').addEventListener('click',()=>{const m=$('dock').classList.toggle('min');try{localStorage.setItem('dc-dock-min',m?'1':'0')}catch(e){}setTimeout(size,30)});try{if(localStorage.getItem('dc-dock-min')==='1')$('dock').classList.add('min')}catch(e){}
 let showLab=true;$('bLab').addEventListener('click',e=>{showLab=!showLab;e.currentTarget.classList.toggle('on',showLab)});
 
 function size(){const w=vp.clientWidth,h=vp.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
@@ -568,18 +608,40 @@ function placeBand(){if(!band)return;const ex=car.position.x,P=new THREE.Vector3
 /* ===== bobinagem: a faixa que chega no tanque fica pintada na camada de fibra ===== */
 function iniBobina(r,l,xc){if(!WB.cv){WB.cv=document.createElement('canvas');WB.cv.width=WB.W;WB.cv.height=WB.H;WB.cx=WB.cv.getContext('2d');
     WB.tex=new THREE.CanvasTexture(WB.cv);WB.tex.encoding=THREE.sRGBEncoding;WB.tex.anisotropy=8;
-    const pc=document.createElement('canvas');pc.width=pc.height=24;const q=pc.getContext('2d');q.strokeStyle='rgba(255,252,240,.55)';q.lineWidth=1.3;
+    const pc=document.createElement('canvas');pc.width=pc.height=24;const q=pc.getContext('2d');q.strokeStyle='rgba(236,180,110,.45)';q.lineWidth=1.3;
     for(const d of[-1,1])for(let i=-24;i<=48;i+=6){q.beginPath();q.moveTo(i,0);q.lineTo(i+d*24,24);q.stroke()}WB.trama=WB.cx.createPattern(pc,'repeat')}
   WB.r=r;WB.l=l;bobZera();
   WB.mat=M(0xffffff,.22,0,{map:WB.tex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});clipMats.push(WB.mat);
+  WB.refs=[];if(!D.semi&&S.refOn&&refCabe()){const tv=Math.max(S.refVoltas*passadaMM()/1000,0.006),Lr=S.refLarg/1000+0.06;
+    posReforcos().forEach((pm,i)=>{NM('Reforço '+(i+1)+' do tanque');const o=add(G.tanque,new THREE.BufferGeometry(),REFM,D.xs0+pm/1000,0,0);o.rotation.z=-Math.PI/2;o.castShadow=false;o.visible=false;WB.refs.push({o,p:-1,Lr,tv,r})})}
   NM('Fibra enrolada no tanque');WB.mesh=add(G.tanque,new THREE.CylinderGeometry(r+0.003,r+0.003,l,160,1,true),WB.mat,xc,0,0);WB.mesh.rotation.z=-Math.PI/2;WB.mesh.castShadow=false}
-function bobZera(){if(!WB.cx)return;WB.cx.clearRect(0,0,WB.W,WB.H);WB.prev=null;WB.cob=0;WB.sujo=true;mostraBob()}
-function bobPronto(){bobZera();desenhoPronto(WB.r,WB.l)(WB.cx,WB.W,WB.H);WB.cob=1;WB.sujo=true;mostraBob()}
+const REFM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.3,metalness:0,map:canvasTex(512,128,(c,W,H)=>{c.fillStyle='#7c4a1e';c.fillRect(0,0,W,H);for(let y=0;y<H;y+=3){c.fillStyle=`rgba(226,160,86,${.15+Math.random()*.3})`;c.fillRect(0,y,W,1.2)}})});
+function geoRef(Lr,r,t){const pts=[];for(let i=0;i<=32;i++){const y=-Lr/2+Lr*i/32,f=Math.pow(Math.cos(Math.PI*y/Lr),2);pts.push(new THREE.Vector2(r+0.003+t*f,y))}return new THREE.LatheGeometry(pts,120)}
+function atualizaRefs(forca){if(!WB.refs)return;WB.refs.forEach((R,i)=>{const p=WB.fim&&!forca?1:refProg(i);if(!forca&&Math.abs(p-R.p)<0.03&&!(p===1&&R.p<1))return;
+  R.p=p;R.o.visible=p>0;if(p>0){R.o.geometry.dispose();R.o.geometry=geoRef(R.Lr,R.r,R.tv*p)}})}
+function bobZera(){if(!WB.cx)return;WB.cx.clearRect(0,0,WB.W,WB.H);WB.prev=null;WB.cob=0;WB.fim=false;WB.si=0;WB.sujo=true;if(typeof tt!=='undefined')tt=0;atualizaRefs(true);mostraBob()}
+function bobPronto(){bobZera();desenhoPronto(WB.r,WB.l)(WB.cx,WB.W,WB.H);WB.cob=1;if(D.plano)tt=D.plano.T+0.01;WB.fim=true;WB.sujo=true;atualizaRefs(true);mostraBob()}
+/* roteiro da bobinagem automática: camada helicoidal (fecha o padrão) com paradas nas bordas,
+   depois os reforços, sem cortar o roving: anda até cada reforço e dá as voltas, oscilando cada vez menos (grosso no meio, fino nas bordas) */
+function plano(){if(D.semi){D.wm=0.6;return null}
+  const bw=Math.max(0.02,S.banda/1000),a=D.xs0+bw/2,b=D.xs0+D.l-bw/2,Tp=12,thd=0.6,dl=1.15*bw/D.r,w=(4*Math.PI+dl-2*thd)/(2*Tp);D.wm=w;
+  const Td=thd/w,Tf=2*Math.PI/w,nRT=Math.ceil(2*Math.PI/dl),sg=[];let rv=0;
+  const parada=x=>{rv++;sg.push({tipo:'borda',t:Td+(rv%3===0?Tf:0),x0:x,x1:x})};
+  for(let k=0;k<nRT;k++){sg.push({tipo:'helice',t:Tp,x0:a,x1:b,k});parada(b);sg.push({tipo:'helice',t:Tp,x0:b,x1:a,k});parada(a)}
+  let nref=0;if(S.refOn&&refCabe()){let xc=a;const ps=posReforcos();nref=ps.length;ps.forEach((pm,i)=>{const xr=D.xs0+pm/1000;
+    sg.push({tipo:'transito',t:Math.max(1,Math.abs(xr-xc)/0.45),x0:xc,x1:xr,i});sg.push({tipo:'reforco',t:Math.max(1,S.refVoltas)*2*Math.PI/w,xr,A:Math.max(0,(S.refLarg/1000-bw)/2),i});xc=xr})}
+  let t=0;sg.forEach(q=>{q.t0=t;t+=q.t});return{sg,T:t,nRT,nref}}
+function refProg(i){const P=D.plano;if(!P)return 0;const q=P.sg.find(x=>x.tipo==='reforco'&&x.i===i);return q?Math.max(0,Math.min(1,(tt-q.t0)/q.t)):0}
 function posCarro(){const a=D.xs0+0.1,b=D.xs0+D.l-0.1;
-  if(D.semi){const pas=Math.max(0.05,(S.larg-S.sob)/1000),n=Math.max(1,Math.ceil((D.l-S.larg/1000)/pas)+1),Th=2*Math.PI/D.w*1.06,k=Math.min(n-1,Math.floor(tt/Th)%(n+1));car.position.x=Math.min(b-S.larg/2000+0.1,D.xs0+S.larg/2000+k*pas)}
+  if(!D.semi&&D.plano){const P=D.plano;if(tt>=P.T){WB.fim=true;const q=P.sg[P.sg.length-1];car.position.x=q.tipo==='reforco'?q.xr:q.x1;WB.fase='bobinagem terminada';return}
+    WB.fim=false;let i=WB.si||0;if(!P.sg[i]||P.sg[i].t0>tt)i=0;while(i<P.sg.length-1&&P.sg[i].t0+P.sg[i].t<=tt)i++;WB.si=i;const q=P.sg[i],u=(tt-q.t0)/q.t;
+    if(q.tipo==='reforco'){const n=Math.max(1,S.refVoltas);car.position.x=q.xr+q.A*(1-u)*Math.sin(Math.PI*u*n);WB.fase='reforço '+(q.i+1)+'/'+P.nref+' · volta '+Math.min(n,Math.floor(u*n)+1)+' de '+n}
+    else{car.position.x=q.x0+(q.x1-q.x0)*u;WB.fase=q.tipo==='helice'?'camada helicoidal · ida e volta '+(q.k+1)+'/'+P.nRT:q.tipo==='borda'?'parada na borda':'indo para o reforço '+(q.i+1)}
+    return}
+  if(D.semi){const pas=Math.max(0.05,(S.larg-S.sob)/1000),n=Math.max(1,Math.ceil((D.l-S.larg/1000)/pas)+1),Th=2*Math.PI/D.wm*1.06,k=Math.min(n-1,Math.floor(tt/Th)%(n+1));car.position.x=Math.min(b-S.larg/2000+0.1,D.xs0+S.larg/2000+k*pas)}
   else{const ph=(tt/12)%2;car.position.x=a+(b-a)*(ph<1?ph:2-ph)}}
 /* tempo (s de simulação) para cobrir o tanque todo */
-function tempoBobina(){if(D.semi){const pas=Math.max(0.05,(S.larg-S.sob)/1000),n=Math.max(1,Math.ceil((D.l-S.larg/1000)/pas)+1);return n*2*Math.PI/D.w*1.06+1}
+function tempoBobina(){if(!D.semi&&D.plano)return D.plano.T+1;if(D.semi){const pas=Math.max(0.05,(S.larg-S.sob)/1000),n=Math.max(1,Math.ceil((D.l-S.larg/1000)/pas)+1);return n*2*Math.PI/D.wm*1.06+1}
   return Math.ceil(2*Math.PI/(1.15*Math.max(0.02,S.banda/1000)/D.r))*24*1.02}
 function pintaBobina(){if(!WB.mesh||!D.cont)return;const p=WB.mesh.worldToLocal(D.cont.clone()),W=WB.W,Hc=WB.H;
   let u=Math.atan2(p.x,p.z)/(2*Math.PI);u=(u%1+1)%1;const X=u*W,Y=(0.5-p.y/WB.l)*Hc;
@@ -590,12 +652,12 @@ function pintaBobina(){if(!WB.mesh||!D.cont)return;const p=WB.mesh.worldToLocal(
   for(const o of[-W,0,W]){if(Math.max(x0,x1)+o<-bw||Math.min(x0,x1)+o>W+bw)continue;
     const seg=(st,lw,k)=>{c.strokeStyle=st;c.lineWidth=lw;c.beginPath();c.moveTo(x0+o+nx*k,y0+ny*k);c.lineTo(x1+o+nx*k,y1+ny*k);c.stroke()};
     c.lineCap=semi?'butt':'round';
-    if(semi){seg('rgba(226,206,160,.6)',bw,0);seg(WB.trama,bw,0);seg('rgba(176,130,56,.22)',bw,0);seg('rgba(140,104,50,.5)',1.4,bw/2);seg('rgba(140,104,50,.5)',1.4,-bw/2)}
-    else{const nf=Math.max(1,Math.round(S.fios));seg('rgba(168,118,40,.5)',bw,0);
-      for(let i=0;i<nf;i++){const k=((i+.5)/nf-.5)*bw*.92;seg('rgba(250,226,170,.55)',Math.max(1,bw/nf*.4),k)}seg('rgba(110,74,22,.35)',1.2,bw*.48);seg('rgba(110,74,22,.35)',1.2,-bw*.48)}}
+    if(semi){seg('rgba(130,78,32,.66)',bw,0);seg(WB.trama,bw,0);seg('rgba(150,86,26,.2)',bw,0);seg('rgba(92,48,12,.6)',1.4,bw/2);seg('rgba(92,48,12,.6)',1.4,-bw/2)}
+    else{const nf=Math.max(1,Math.round(S.fios));seg('rgba(122,70,28,.62)',bw,0);
+      for(let i=0;i<nf;i++){const k=((i+.5)/nf-.5)*bw*.92;seg('rgba(206,150,88,.38)',Math.max(1,bw/nf*.4),k)}seg('rgba(96,50,12,.45)',1.2,bw*.48);seg('rgba(96,50,12,.45)',1.2,-bw*.48)}}
   WB.prev=[X,Y];WB.sujo=true}
 let bobT=0;const bobAmostra=document.createElement('canvas');bobAmostra.width=128;bobAmostra.height=64;
-function mostraBob(){const el=document.getElementById('stBob');if(el)el.textContent=WB.cob>=0.999?'tanque coberto':'coberto '+Math.round(WB.cob*100)+'%'}
+function mostraBob(){const el=document.getElementById('stBob');if(!el)return;if(!D.semi&&D.plano){el.textContent=WB.fim?'tanque pronto (camada, bordas e reforços)':(WB.fase||'')+' · coberto '+Math.round(WB.cob*100)+'%';return}el.textContent=WB.cob>=0.999?'tanque coberto':'coberto '+Math.round(WB.cob*100)+'%'}
 function medeBob(){const c=bobAmostra.getContext('2d');c.clearRect(0,0,128,64);c.drawImage(WB.cv,0,0,128,64);const d=c.getImageData(0,0,128,64).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>70)n++;WB.cob=n/(128*64);mostraBob()}
 function placeFeed(){const cx=car.position.x;feed.forEach(l=>{const a=l.geometry.attributes.position,u=l.userData;a.setXYZ(a.count-1,cx-0.315+(u.i%8)*0.09,D.top+0.11,D.Z0+0.3);a.needsUpdate=true})}
 
@@ -603,8 +665,8 @@ const tmp=new THREE.Vector3();let last=performance.now(),tt=0;
 function loop(now){
   const dt=Math.min((now-last)/1000,0.05);last=now;
   if(anim){const sim=WB.alvo?Math.max(0,WB.alvo(now)-tt):dt*WB.vel,n=Math.min(2000,Math.max(1,Math.ceil(sim/0.03))),h=sim/n;
-    for(let i=0;i<n;i++){tt+=h;rot.rotation.x-=h*D.w;posCarro();if(WB.on&&WB.cob<0.999&&vis.carro&&!apagado(band)){rot.updateMatrixWorld(true);placeBand();pintaBobina()}}
-    if(WB.sujo){WB.tex.needsUpdate=true;WB.sujo=false}if(now-bobT>1000){bobT=now;medeBob()}}
+    for(let i=0;i<n;i++){tt+=h;rot.rotation.x-=h*D.wm;posCarro();if(WB.on&&(D.semi?WB.cob<0.999:!WB.fim)&&vis.carro&&!apagado(band)){rot.updateMatrixWorld(true);placeBand();pintaBobina()}}
+    if(WB.sujo){WB.tex.needsUpdate=true;WB.sujo=false}if(now-bobT>1000){bobT=now;medeBob()}atualizaRefs()}
   placeBand();placeFeed();
   drops.forEach((d,i)=>{const k=((tt*0.9+i*0.23)%1);d.position.y=D.by+0.2-k*0.06;d.visible=(anim||k<.5)&&!apagado(d)});
   if(tw){const k=Math.min((now-tw.s)/650,1),e=k<.5?2*k*k:1-((-2*k+2)**2)/2;camera.position.lerpVectors(tw.p0,tw.p1,e);controls.target.lerpVectors(tw.t0,tw.t1,e);if(k>=1)tw=null}
@@ -621,11 +683,11 @@ function loop(now){
 let VID=null,GRAV=null;
 const slugCli=()=>S.cli?DC.slug(S.cli)+'_':'';
 async function salvaArq(nome,blob,st){const r=await DC.salvar(nome,blob);st.className='st'+(r.ok?'':' err');st.textContent=r.msg}
-function iniciaGrav(st){let g;try{g=DC.gravador(renderer.domElement)}catch(e){st.className='st err';st.textContent=e.message;return null}
-  return{async parar(){const b=await g.parar();await salvaArq(nomeF()+'_video.'+g.ext,b,st)}}}
+function iniciaGrav(st){let g;try{g=DC.gravador(renderer.domElement)}catch(e){st.className='st err';st.textContent=e.message;DC.aviso(e.message,'err');return null}
+  return{g,async parar(){const b=await g.parar();await salvaArq(nomeF()+'_video.'+g.ext,b,st);DC.aviso(st.textContent,st.className.includes('err')?'err':'')}}}
 $('bVidB').addEventListener('click',async()=>{if(VID||GRAV)return;const st=$('stVid');st.className='st';
-  vp.scrollIntoView({behavior:'smooth',block:'center'});if(!vis.carro)aplicaVis({carro:true});go('iso',true);await new Promise(r=>setTimeout(r,450));
-  bobZera();tt=0;const seg=+$('vDur').value||20,vel0=WB.vel,Tb=tempoBobina();WB.vel=Math.max(1,Tb/(seg*0.92));
+  $('palco').scrollIntoView({behavior:'smooth',block:'start'});if(!vis.carro)aplicaVis({carro:true});go('iso',true);await new Promise(r=>setTimeout(r,450));
+  bobZera();tt=0;if(!anim){anim=true;marcaAnim()}const seg=+$('vDur').value||20,vel0=WB.vel,Tb=tempoBobina();DC.aviso('Gravando o vídeo da bobinagem ('+seg+' s)…');WB.vel=Math.max(1,Tb/(seg*0.92));
   const g=iniciaGrav(st);if(!g){WB.vel=vel0;return}const wasAnim=anim;anim=true;$('bVidB').style.opacity=.5;
   const tg=new THREE.Vector3(D.xc,D.H*0.8,0),off=camera.position.clone().sub(controls.target),rad=Math.hypot(off.x,off.z),a0=Math.atan2(off.z,off.x),y0=off.y,t0=performance.now();WB.alvo=now=>Math.min(1,(now-t0)/(seg*920))*Tb;
   await new Promise(ok=>{VID=now=>{const k=Math.min(1,(now-t0)/(seg*1000)),e=k<.5?2*k*k:1-((-2*k+2)**2)/2,a=a0+e*Math.PI*0.45,z=1-0.18*Math.sin(k*Math.PI);
@@ -639,10 +701,17 @@ $('bVid').addEventListener('click',async()=>{if(VID||GRAV)return;const st=$('stV
   await new Promise(ok=>{VID=now=>{const k=Math.min(1,(now-t0)/(seg*1000)),e=k<.5?2*k*k:1-((-2*k+2)**2)/2,a=a0+e*2*Math.PI;camera.position.set(tg.x+rad*Math.cos(a),tg.y+y0,tg.z+rad*Math.sin(a));camera.lookAt(tg);
     st.textContent='Gravando… '+Math.ceil(seg*(1-k))+' s';if(k>=1){VID=null;ok()}}});
   anim=wasAnim;$('bVid').style.opacity=1;controls.update();await g.parar()});
-$('bVidM').addEventListener('click',async()=>{const st=$('stVid'),b=$('bVidM');
-  if(GRAV){const g=GRAV;GRAV=null;clearInterval(b._t);b.classList.remove('rec');b.textContent='● Gravar com câmera livre';st.textContent='Salvando…';await g.parar();return}
-  if(VID)return;vp.scrollIntoView({behavior:'smooth',block:'center'});const g=iniciaGrav(st);if(!g)return;GRAV=g;const t0=Date.now();
-  b.classList.add('rec');b.textContent='■ Parar e salvar';b._t=setInterval(()=>{st.className='st';st.textContent='Gravando com câmera livre… '+Math.round((Date.now()-t0)/1000)+' s · gire e aproxime no 3D'},500)});
+/* gravação com câmera livre: ● Gravar · ⏸ Pausar/▶ Continuar · ■ Parar e salvar (barra abaixo do 3D) */
+let gravT=null,gravS=0,gravU=0;
+function marcaGrav(){const on=!!GRAV,p=on&&GRAV.g.pausado;$('dGrava').classList.toggle('rec',on&&!p);$('dGrava').textContent=on?(p?'● Pausado':'● Gravando'):'● Gravar';$('dPausa').disabled=!on;$('dSalva').disabled=!on;$('dPausa').textContent=p?'▶ Continuar':'⏸ Pausar';
+  $('bVidM').classList.toggle('rec',on);$('bVidM').textContent=on?'■ Parar e salvar':'● Gravar com câmera livre';
+  const seg=Math.round((gravS+(on&&!p?Date.now()-gravU:0))/1000);$('dTempo').textContent=on?(p?'pausado · ':'gravando · ')+Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0'):''}
+function gravaInicia(){if(GRAV||VID)return;const st=$('stVid'),g=iniciaGrav(st);if(!g)return;GRAV=g;gravS=0;gravU=Date.now();clearInterval(gravT);gravT=setInterval(marcaGrav,500);marcaGrav();DC.aviso('Gravando. Gire e aproxime no 3D; ⏸ pausa, ■ salva.')}
+function gravaPausa(){if(!GRAV)return;if(GRAV.g.pausado){GRAV.g.continuar();gravU=Date.now()}else{GRAV.g.pausar();gravS+=Date.now()-gravU}marcaGrav()}
+async function gravaSalva(){if(!GRAV)return;const g=GRAV;GRAV=null;clearInterval(gravT);marcaGrav();$('stVid').textContent='Salvando…';DC.aviso('Salvando o vídeo…','',0);await g.parar()}
+$('dGrava').addEventListener('click',()=>{if(GRAV)gravaPausa();else gravaInicia()});$('dPausa').addEventListener('click',gravaPausa);$('dSalva').addEventListener('click',gravaSalva);
+$('bVidM').addEventListener('click',()=>{if(GRAV)gravaSalva();else{$('palco').scrollIntoView({behavior:'smooth',block:'start'});gravaInicia()}});
+$('dAuto').addEventListener('click',()=>$('bVidB').click());
 
 /* folha de projeto: vistas montada, explodida, detalhes e lista de peças */
 const FW=3508,FH=2480,MG=70;let FOLHAS=[];
@@ -962,7 +1031,7 @@ function materiais(){const mm=v=>Math.round(v*1000),semi=S.tipo==='semi',auto=!s
   if(S.carroM!=='manual')el.push(['trilhos','Fim de curso + sensor de home do carro','3']);
   const area=Math.PI*Math.min(S.D,S.Dm)/1000*Math.min(S.L,S.Lm)/1000;
   const cp=semi?[['geral',S.mat+' · largura '+S.larg+' mm · '+fx(area*S.larg/Math.max(1,S.larg-S.sob),1)+' m² por camada (com sobreposição)','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']]
-    :[['geral','Roving direto 2200 tex · '+S.fios+' fios · banda '+S.banda+' mm · bobina ~18 kg (gaiola: 36 bobinas) [CONFIRMAR]','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']];
+    :[['geral','Roving direto 2200 tex · '+S.fios+' fios · banda '+S.banda+' mm · bobina ~18 kg (gaiola: 36 bobinas) [CONFIRMAR]','conforme camadas'],...(S.refOn?[['geral','Reforços do tanque: '+posReforcos().length+' × '+S.refLarg+' mm a cada '+S.refEsp+' mm (em '+posReforcos().join(', ')+' mm) · '+S.refVoltas+' voltas · ≈ '+(S.refVoltas*passadaMM()).toFixed(1).replace('.',',')+' mm no centro, afinando nas bordas','no final da bobinagem']]:[]),['geral','Resina (calcular no app de cálculo de material)','—']];
   return{est,ch,mec,ac,el,cp}}
 function materialSecoes(esc){const M=materiais(),f=r=>!esc||esc==='tudo'||r[0]===esc||(r[0]==='geral'&&esc==='tudo');const S2=[];
   const grp={};M.est.filter(f).forEach(([sc,pf,len,q,d])=>{const k=perfNome(pf);(grp[k]=grp[k]||{pf,lens:[],ds:new Set()});for(let i=0;i<q;i++)grp[k].lens.push(len);grp[k].ds.add(d)});
@@ -991,29 +1060,30 @@ $('bSalvarP').addEventListener('click',()=>{const L=listaProj();L.unshift({S:JSO
 mostraProj();
 
 /* editor */
-const campos=[['iD','D'],['iL','L'],['iDm','Dm'],['iLm','Lm'],['iFol','fol'],['iFios','fios'],['iBanda','banda'],['iLarg','larg'],['iSob','sob'],['iTen','ten'],['iPeso','peso'],['iRpm','rpm'],['iVc','vc'],['iMod','mod'],['iZ','z']];
-const lim={ten:[1,500],peso:[50,10000],rpm:[0.5,60],vc:[100,120000],mod:[1,8],z:[10,60],D:[1000,3500],L:[1000,6000],Dm:[1000,3500],Lm:[1000,6000],fol:[200,1500],fios:[1,16],banda:[20,500],larg:[100,2000],sob:[0,500]};
-function preenche(){regras();$('iCmd').value=S.cmdT;$('iMand').value=S.mand;$('iCarro').value=S.carroM;$('iProj').value=S.proj||'';{const o=document.getElementById('optGai');if(o)o.hidden=S.tipo==='semi'}campos.forEach(([id,k])=>$(id).value=S[k]);$('iMat').value=S.mat;$('iCli').value=S.cli;
+const campos=[['iRefN','refN'],['iRefEsp','refEsp'],['iRefLarg','refLarg'],['iRefV','refVoltas'],['iD','D'],['iL','L'],['iDm','Dm'],['iLm','Lm'],['iFol','fol'],['iFios','fios'],['iBanda','banda'],['iLarg','larg'],['iSob','sob'],['iTen','ten'],['iPeso','peso'],['iRpm','rpm'],['iVc','vc'],['iMod','mod'],['iZ','z']];
+const lim={refN:[1,12],refEsp:[300,6000],refLarg:[50,600],refVoltas:[1,60],ten:[1,500],peso:[50,10000],rpm:[0.5,60],vc:[100,120000],mod:[1,8],z:[10,60],D:[1000,3500],L:[1000,6000],Dm:[1000,3500],Lm:[1000,6000],fol:[200,1500],fios:[1,16],banda:[20,500],larg:[100,2000],sob:[0,500]};
+function preenche(){regras();$('iRefOn').value=S.refOn?'1':'0';$('iCmd').value=S.cmdT;$('iMand').value=S.mand;$('iCarro').value=S.carroM;$('iProj').value=S.proj||'';{const o=document.getElementById('optGai');if(o)o.hidden=S.tipo==='semi'}campos.forEach(([id,k])=>$(id).value=S[k]);$('iMat').value=S.mat;$('iCli').value=S.cli;
   $('tAuto').classList.toggle('on',S.tipo==='auto');$('tSemi').classList.toggle('on',S.tipo==='semi');$('secAuto').hidden=S.tipo!=='auto';$('secSemi').hidden=S.tipo!=='semi'}
 function valida(){const av=[];for(const k in lim){const[a,b]=lim[k];if(!(S[k]>=a&&S[k]<=b))av.push(k)}
-  if(S.D>S.Dm)av.push('D');if(S.L>S.Lm)av.push('L');if(S.sob>=S.larg)av.push('sob');return av}
+  if(S.D>S.Dm)av.push('D');if(S.L>S.Lm)av.push('L');if(S.sob>=S.larg)av.push('sob');if(S.tipo==='auto'&&S.refOn&&!refCabe())av.push('ref');return av}
 let tmr=null;
 function aplicar(){const av=valida(),st=$('stEd');
-  if(av.length){st.className='st err';st.textContent='Confira: '+[...new Set(av)].map(k=>({D:'diâmetro (1000 a 3500, até o máximo da máquina)',L:'comprimento (1000 a 6000, até o máximo da máquina)',Dm:'diâmetro máximo (1000 a 3500)',Lm:'comprimento máximo (1000 a 6000)',fol:'folga (200 a 1500)',fios:'nº de fios (1 a 16)',banda:'banda (20 a 500)',larg:'largura do tecido (100 a 2000)',sob:'sobreposição (menor que a largura)'}[k])).join(' · ');return}
+  if(av.length){st.className='st err';st.textContent='Confira: '+[...new Set(av)].map(k=>({D:'diâmetro (1000 a 3500, até o máximo da máquina)',L:'comprimento (1000 a 6000, até o máximo da máquina)',Dm:'diâmetro máximo (1000 a 3500)',Lm:'comprimento máximo (1000 a 6000)',fol:'folga (200 a 1500)',fios:'nº de fios (1 a 16)',banda:'banda (20 a 500)',larg:'largura do tecido (100 a 2000)',sob:'sobreposição (menor que a largura)',refN:'quantidade de reforços (1 a 12)',refEsp:'distância entre reforços (300 a 6000)',refLarg:'largura do reforço (50 a 600)',refVoltas:'voltas do reforço (1 a 60)',ref:'reforços: não cabem no meio do tanque (diminua a quantidade ou a distância; reforço não vai na borda)'}[k])).join(' · ');return}
   st.className='st';st.textContent='';salvar();build()}
 campos.forEach(([id,k])=>$(id).addEventListener('input',()=>{const v=parseFloat($(id).value.replace(',','.'));if(isFinite(v)){S[k]=v;clearTimeout(tmr);tmr=setTimeout(aplicar,350)}}));
 $('iMat').addEventListener('change',()=>{S.mat=$('iMat').value;aplicar()});
+$('iRefOn').addEventListener('change',()=>{S.refOn=$('iRefOn').value==='1';aplicar()});
 $('iCli').addEventListener('input',()=>{S.cli=$('iCli').value;salvar();atualizaTexto()});
 $('tAuto').addEventListener('click',()=>{S.tipo='auto';if(S.cmdT==='timer')S.cmdT='clp';if(S.carroM==='manual')S.carroM='passo';preenche();aplicar()});
 ['iCmd','iMand','iCarro'].forEach(id=>$(id).addEventListener('change',()=>{S.cmdT=$('iCmd').value;S.mand=$('iMand').value;S.carroM=$('iCarro').value;if(S.cmdT==='timer')S.tipo='semi';S.pEsc=S.redEsc=S.tqEsc=0;preenche();aplicar()}));
 $('tSemi').addEventListener('click',()=>{S.tipo='semi';S.pEsc=S.redEsc=S.tqEsc=0;preenche();aplicar()});
 
-function atualizaTexto(){try{montaComp();montaMat()}catch(e){console.log(e)}const semi=S.tipo==='semi';{const g=document.getElementById('selGai');if(g)g.hidden=semi}
+function atualizaTexto(){try{montaComp();montaMat()}catch(e){console.log(e)}refInfo();const semi=S.tipo==='semi';{const g=document.getElementById('selGai');if(g)g.hidden=semi}
   $('ttl').textContent='Filamentadora '+(semi?'semiautomática':'automática')+' · tanque Ø '+S.D+' × '+S.L+' mm'+(S.cli?' · '+S.cli:'');
   $('fTit').textContent='Ficha da máquina'+(S.cli?' · '+S.cli:'');
   const pas=S.larg-S.sob,nf=pas>0?Math.ceil((S.L-S.sob)/pas):0;
   $('faixas').textContent=semi&&nf?'Largura útil '+pas+' mm · '+nf+' faixas no comprimento · cada volta ≈ '+(Math.PI*S.D/1000).toFixed(2)+' m de tecido':'';
-  const cards=[['Tanque',['Diâmetro '+S.D+' mm','Comprimento '+S.L+' mm','Cilindro de placas PRFV com barreira química','Reforço '+(semi?'com '+S.mat.toLowerCase()+' em faixas de '+S.larg+' mm':'com roving: paralelo, cruzado e pontos de reforço')]],
+  const cards=[['Tanque',['Diâmetro '+S.D+' mm','Comprimento '+S.L+' mm','Cilindro de placas PRFV com barreira química','Reforço '+(semi?'com '+S.mat.toLowerCase()+' em faixas de '+S.larg+' mm':'com roving: camada cruzada, paradas nas bordas'+(S.refOn?' e '+posReforcos().length+' reforço(s) de '+S.refLarg+' mm a cada '+S.refEsp+' mm, '+S.refVoltas+' voltas':''))]],
     ['Máquina',['Diâmetro máximo '+S.Dm+' mm · comprimento máximo '+S.Lm+' mm','Base única com trilhos do cabeçote fixo ao apoio móvel','Apoio móvel com berço de roletes, travado no comprimento do tanque','Trilhos do carro elevados, presos à base nas duas pontas']],
     ['Mandril',['Eixo em tubo passante com gabaritos internos (anéis e raios)','Motorredutor com corrente, fora da projeção do tanque',semi?'Liga/desliga com timer por faixa':'Encoder no eixo do mandril']],
     ['Carro',semi?['Carro empurrado à mão nas guias, com trava de posição','Rolo de tecido de '+S.larg+' mm no topo','Banheira com rolo de imersão e espremedor de 2 rolos','Sobreposição de '+S.sob+' mm entre faixas ('+nf+' faixas)']:['Torre sobre trilhos com rodas de PU, guias e antitombamento','Motor de passo de malha fechada, pinhão na cremalheira em calha','Pente, banheira, espremedor de 2 rolos e bandeja articulada','Segue o encoder do mandril (ângulo do fio garantido)']],
@@ -1031,7 +1101,12 @@ function comando(txt){const t=norm(txt),f=[];
   const pega=(re,k,nome,cv=true)=>{const m=t.match(new RegExp(re+'\\D{0,20}?'+N));if(m){S[k]=cv?numMM(m[1],m[2]):Math.round(parseFloat(m[1].replace(',','.')));f.push(nome+' '+S[k]+(cv?' mm':''));return true}return false};
   pega('diametro (?:maximo|da maquina)','Dm','diâmetro máximo')||pega('diametro','D','diâmetro');
   pega('comprimento (?:maximo|da maquina)','Lm','comprimento máximo')||pega('comprimento','L','comprimento');
-  pega('largura','larg','largura');pega('sobrepos','sob','sobreposição');pega('folga','fol','folga');pega('banda','banda','banda');
+  if(/largura do reforco/.test(t))pega('largura do reforco','refLarg','largura do reforço');else pega('largura','larg','largura');
+  if(/sem reforco/.test(t)){S.refOn=false;f.push('sem reforço')}
+  {const m=t.match(/(\d+)\s*reforcos?/);if(m){S.refN=+m[1];S.refOn=true;f.push(S.refN+(S.refN>1?' reforços':' reforço'))}}
+  {const m=t.match(new RegExp('reforco\\D{0,30}?'+N+'\\s*(?:em|e)\\s*'+N));if(m){S.refEsp=numMM(m[3],m[4]||m[2]);S.refOn=true;f.push('reforço a cada '+S.refEsp+' mm')}
+   else{const m2=t.match(new RegExp('(?:a cada|distancia(?: entre (?:os )?reforcos)?)\\D{0,6}'+N));if(m2&&/reforco/.test(t)){S.refEsp=numMM(m2[1],m2[2]);S.refOn=true;f.push('reforço a cada '+S.refEsp+' mm')}}}
+  {const m=t.match(/(\d+)\s*voltas/);if(m){S.refVoltas=+m[1];f.push(S.refVoltas+' voltas no reforço')}}pega('sobrepos','sob','sobreposição');pega('folga','fol','folga');pega('banda','banda','banda');
   const mf=t.match(/(\d+)\s*fios/);if(mf){S.fios=+mf[1];f.push(S.fios+' fios')}
   const mp=t.match(/(?:tanque|cliente)\s+(?:de\s+)?([a-z][a-z ]{2,30})$/);
   if(!f.length&&!/diametro|comprimento/.test(t)){const mxy=t.match(N+'\\s*(?:por|x)\\s*'+N);if(mxy){S.D=numMM(mxy[1],mxy[2]);S.L=numMM(mxy[3],mxy[4]);f.push('tanque '+S.D+' × '+S.L+' mm')}}
@@ -1045,7 +1120,7 @@ function comandoPecas(txt){const t=DC.norm(txt).trim().replace(/[.!]+$/,'');
   m=t.match(/^(?:mostra|mostrar|volta|voltar|reaparece)\s+(?:(?:a|o|as|os|todos os|todas as)\s+)?(.+)$/);
   if(m&&S.apag.length){const ns=DC.achaNomes([m[1]],S.apag);if(!ns.length)return null;mostraNomes(ns);return 'Mostrei: '+(ns.length<=3?ns.join(', '):ns.length+' peças ('+m[1]+')')}
   return null}
-function logMsg(t){const d=document.createElement('div');d.textContent=t;$('log').prepend(d)}
+function logMsg(t,err){const d=document.createElement('div');d.textContent=t;$('log').prepend(d);DC.aviso(t,err?'err':'');DC.falar(t.replace(/^Feito: /,'Feito. ').replace(/ · /g,', '))}
 /* assistente Claude: entende pedido livre e devolve alterações */
 let SAMP=null,ocup=false;DC.recursos().then(r=>{SAMP=r.sample});
 const NOMES={tanque:'tanque',mandril:'mandril e gabaritos',estrutura:'base com trilhos e cabeçote fixo',apoio:'apoio móvel',acion:'motorredutor, corrente e encoder',trilhos:'trilhos do carro',carro:'carro (torre, banheira, rolos, bandeja, rolo de tecido ou fios)',creel:'gaiola de rovings',painel:'painel de comando',prot:'proteções (calha e capa do eixo)'};
@@ -1060,10 +1135,10 @@ function mostraAnex(){$('anexos').innerHTML='';ANEX.forEach((a,i)=>{const d=docu
 $('arq').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';const st=$('stCmd');st.className='st';
   for(const f of fs){try{ANEX.push(...await DC.lerAnexos([f],t=>{st.textContent=t}));if(/Lendo/.test(st.textContent))st.textContent=''}catch(err){st.className='st err';st.textContent='Não consegui ler '+f.name}}
   ANEX=ANEX.slice(0,6);mostraAnex();if(ANEX.length)st.textContent='Anexo pronto: diga o que quer e aperte Aplicar.'});
-async function perguntaClaude(txt){const st=$('stCmd');ocup=true;$('bCmd').style.opacity=.5;st.className='st';st.textContent='Pensando…';
+async function perguntaClaude(txt){const st=$('stCmd');ocup=true;$('bCmd').style.opacity=.5;st.className='st';st.textContent='Pensando…';DC.aviso('Entendi: “'+(txt||'anexo')+'” · pensando…','ouv',0);
   const prompt=`Você controla um visualizador 3D de uma filamentadora de tanques de PRFV da D. Compósitos. O usuário fala por voz, em português, às vezes dirigindo.
 Responda SOMENTE um JSON: {"fala":"1 ou 2 frases curtas do que fez","estado":{campos a mudar} ou null,"visiveis":{chave:true/false} ou null,"enquadrar":"carro"|"tanque"|"acionamento"|"tudo"|null,"vista":"iso"|"frente"|"topo"|"lado"|null,"animar":true/false/null,"corte":true/false/null,"rotulos":true/false/null,"apagar":["nome da peça", ...] ou null,"mostrar":["nome da peça", ...] ou null,"restaurar":true/null}
-Campos do estado (mm): tipo ("auto" = automática com roving, "semi" = semiautomática com tecido/manta), D diâmetro do tanque 1000-3500, L comprimento do tanque 1000-6000, Dm diâmetro máximo da máquina 1000-3500 (>= D), Lm comprimento máximo 1000-6000 (>= L), fol folga do tanque ao chão 200-1500, fios 1-16, banda 20-500 (largura da banda de roving), mat ("Tecido biaxial 1808","Tecido biaxial 2408","Faixa de tecido","Manta"), larg largura do tecido/manta 100-2000, sob sobreposição 0-500 (< larg), cli nome do cliente, proj nome do projeto, cmdT comando ("clp","ddcs4","ddcs3","timer"), mand mandril ("motorredutor","servo"), carroM carro ("passo","servo","manual"), ten tensão por fio N, peso kg do tanque com gabaritos, rpm rotação máx do mandril, vc velocidade máx do carro mm/min.
+Campos do estado (mm): tipo ("auto" = automática com roving, "semi" = semiautomática com tecido/manta), D diâmetro do tanque 1000-3500, L comprimento do tanque 1000-6000, Dm diâmetro máximo da máquina 1000-3500 (>= D), Lm comprimento máximo 1000-6000 (>= L), fol folga do tanque ao chão 200-1500, fios 1-16, banda 20-500 (largura da banda de roving), mat ("Tecido biaxial 1808","Tecido biaxial 2408","Faixa de tecido","Manta"), larg largura do tecido/manta 100-2000, sob sobreposição 0-500 (< larg), cli nome do cliente, proj nome do projeto, cmdT comando ("clp","ddcs4","ddcs3","timer"), mand mandril ("motorredutor","servo"), carroM carro ("passo","servo","manual"), refOn reforços do tanque true/false, refN quantidade de reforços 1-12, refEsp distância entre reforços mm 300-6000, refLarg largura do reforço mm (100, 200, 300 ou 400), refVoltas voltas em cada reforço 1-60 (os reforços ficam centralizados e nunca na borda; são feitos no final da bobinagem), ten tensão por fio N, peso kg do tanque com gabaritos, rpm rotação máx do mandril, vc velocidade máx do carro mm/min.
 Manta ou tecido implica tipo "semi". Números ditos em metros viram mm (2,5 = 2500).
 Componentes (chaves de "visiveis"): ${Object.entries(NOMES).map(([k,v])=>k+' = '+v).join('; ')}.
 "Só o carrinho" = deixe visível só carro e trilhos, e enquadre "carro". "Mostra tudo" = todos true e enquadrar "tudo".
@@ -1075,7 +1150,7 @@ VISÍVEIS AGORA: ${JSON.stringify(vis)}
 PEDIDO: ${txt||'Tire as medidas do anexo e ajuste a máquina.'}${ANEX.length?'\nANEXOS: '+ANEX.length+' imagem(ns) (foto, desenho ou PDF do cliente). Tire deles as medidas e o tipo (tanque, tecido, largura etc.); o que não der para ler, pergunte na fala.':''}`;
   try{let op={modelTier:'default',cache:false};try{if(ANEX.length&&(await SAMP.limits()).images)op.images=ANEX.map(a=>a.blob)}catch(e){}
     const r=await SAMP(prompt,op);ANEX=[];mostraAnex();let raw=r.text.trim().replace(/^```(json)?/,'').replace(/```$/,'');const j=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1));
-    if(j.estado){const ok=['tipo','D','L','Dm','Lm','fol','fios','banda','mat','larg','sob','cli','cmdT','mand','carroM','ten','peso','rpm','vc','proj'];for(const k of ok)if(k in j.estado)S[k]=j.estado[k];preenche();aplicar()}
+    if(j.estado){const ok=['refOn','refN','refEsp','refLarg','refVoltas','tipo','D','L','Dm','Lm','fol','fios','banda','mat','larg','sob','cli','cmdT','mand','carroM','ten','peso','rpm','vc','proj'];for(const k of ok)if(k in j.estado)S[k]=j.estado[k];preenche();aplicar()}
     if(j.visiveis)aplicaVis(j.visiveis);
     if(typeof j.animar==='boolean'){anim=j.animar;$('bAnim').classList.toggle('on',anim)}
     if(typeof j.corte==='boolean'){setCut(j.corte);$('bCut').classList.toggle('on',cutOn)}
@@ -1085,21 +1160,21 @@ PEDIDO: ${txt||'Tire as medidas do anexo e ajuste a máquina.'}${ANEX.length?'\n
     if(Array.isArray(j.apagar))apagaNomes(DC.achaNomes(j.apagar,nomesPecas()));
     if(j.vista&&VW[j.vista])go(j.vista);
     if(j.enquadrar)setTimeout(()=>enquadrar(j.enquadrar),60);
-    logMsg(String(j.fala||'Feito.'));st.textContent='';$('cmd').value='';vp.scrollIntoView({behavior:'smooth',block:'center'})}
-  catch(e){st.className='st err';st.textContent=e&&e.code==='rate_limited'?'Muitos pedidos seguidos, espere um pouco.':e&&e.code==='not_granted'?'Assistente indisponível no momento.':'Não consegui entender a resposta. Tente de novo com outras palavras.'}
+    logMsg(String(j.fala||'Feito.'));st.textContent='';$('cmd').value=''}
+  catch(e){st.className='st err';st.textContent=e&&e.code==='rate_limited'?'Muitos pedidos seguidos, espere um pouco.':e&&e.code==='not_granted'?'Assistente indisponível no momento.':e&&e.code==='sem_internet'?'Sem internet para falar com o assistente.':'Não consegui entender a resposta. Tente de novo com outras palavras.';DC.aviso(st.textContent,'err');DC.falar(st.textContent)}
   ocup=false;$('bCmd').style.opacity=1}
 $('bCmd').addEventListener('click',()=>{if(ocup)return;const txt=$('cmd').value.trim(),st=$('stCmd');if(ANEX.length&&SAMP){perguntaClaude(txt);return}if(!txt){st.textContent='Fale ou escreva um comando.';return}
   {const rp=comandoPecas(txt);if(rp){st.className='st';st.textContent='';logMsg(rp);$('cmd').value='';return}}
   const antes=JSON.stringify(S),pal=txt.split(/\s+/).length,livre=/\b(so|só|somente|apenas|tira|tirar|esconde|mostra|mostrar|isola|sem|deixa|aproxima|foca|zoom|corte|vista)\b/i.test(norm(txt));
   if(SAMP&&(livre||pal>12)){S=JSON.parse(antes);perguntaClaude(txt);return}
   const f=comando(txt);
-  if(!f.length){S=JSON.parse(antes);if(SAMP){perguntaClaude(txt);return}st.className='st err';st.textContent='Não entendi. Ex.: "diâmetro 2500", "semiautomática tecido 2408", "sobreposição 100".';return}
+  if(!f.length){S=JSON.parse(antes);if(SAMP){perguntaClaude(txt);return}st.className='st err';st.textContent='Não entendi “'+txt+'”. Ex.: "diâmetro 2500", "3 reforços de 1,5 em 1,5 metro", "semiautomática tecido 2408".';DC.aviso(st.textContent,'err');DC.falar('Não entendi. Pode repetir?');return}
   st.className='st';st.textContent='';logMsg('Feito: '+f.join(' · '));$('cmd').value='';preenche();aplicar()});
-DC.ditado($('cmd'),{mic:$('mic'),rotulo:['🎤 Falar','■ Parar'],aviso:t=>{$('stCmd').textContent=t},onFim:()=>{if($('cmd').value.trim())$('bCmd').click()}});
+DC.ditado($('cmd'),{mic:$('mic'),rotulo:['🎤 Falar','■ Parar'],aviso:t=>{$('stCmd').textContent=t;DC.aviso(t)},ouvindo:t=>{DC.aviso(t?'🎤 '+t:'🎤 Ouvindo… fale o comando','ouv',0);$('dMic').classList.add('on');$('dMic').textContent='■ Ouvindo…'},parou:()=>{$('dMic').classList.remove('on');$('dMic').textContent='🎤 Falar comando'},onFim:()=>{if($('cmd').value.trim())$('bCmd').click()}}).then(d=>{if(!d)$('dMic').addEventListener('click',()=>DC.aviso('Este navegador não tem reconhecimento de voz: use o microfone do teclado no campo Comando.','err'))});
 
 preenche();build();go('iso',true);requestAnimationFrame(loop);
 /* acesso para testes automáticos (não usado pelo app) */
-window.DCF={camera,controls,get D(){return D},get car(){return car},get S(){return S},set S(v){S=v},build,nomesPecas,apagaNomes,mostraNomes,comandoPecas,pecas3D,gerarFolhas,get FOLHAS(){return FOLHAS},G,KEYS,get band(){return band},get feed(){return feed},calc,materiais,comando,preenche,aplicar};
+window.DCF={simula(t1,h){h=h||0.05;for(let t=tt;t<t1;t+=h){tt=t;rot.rotation.x=-D.wm*t;posCarro();rot.updateMatrixWorld(true);placeBand();pintaBobina()}tt=t1;WB.tex.needsUpdate=true;medeBob();return WB.cob},get tt(){return tt},set tt(v){tt=v},WB,camera,controls,get D(){return D},get car(){return car},get S(){return S},set S(v){S=v},build,nomesPecas,apagaNomes,mostraNomes,comandoPecas,pecas3D,gerarFolhas,get FOLHAS(){return FOLHAS},G,KEYS,get band(){return band},get feed(){return feed},calc,materiais,comando,preenche,aplicar};
 }
 }
 </script>
