@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Cálculo de Estruturas</title>
+<title>D. Compósitos Projetos de Estruturas</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Estruturas">
+<meta name="apple-mobile-web-app-title" content="D. Compósitos Projetos">
 <meta name="theme-color" content="#1b1e21">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="dc-ponte.js"></script>
+<script src="dc-nucleo.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root{--bg:#1b1e21;--card:#202326;--line:#33373c;--tx:#e8e9ea;--mut:#9aa0a6;--or:#e3924a;--ok:#6fbf8a;--gr:#8a9099}
+:root{--bg:#1b1e21;--card:#202326;--line:#33373c;--tx:#e8e9ea;--mut:#9aa0a6;--or:#F98202;--ok:#6fbf8a;--gr:#8a9099}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 'IBM Plex Sans',system-ui,sans-serif}
 .wrap{max-width:900px;margin:0 auto;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:calc(14px + env(safe-area-inset-bottom))}
@@ -76,7 +78,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 #bFalar.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .topo{display:flex;flex-direction:column;gap:2px;padding:4px 4px 14px;border-left:4px solid var(--or);padding-left:12px;margin-bottom:12px}.topo b{font:700 24px 'Barlow Condensed';letter-spacing:2px}.topo span{font:12px 'IBM Plex Mono';color:var(--mut)}
 .det{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px}.det summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--or)}
-.vtools{position:absolute;right:10px;top:58px;z-index:2;display:flex;flex-direction:column;gap:6px}.vtools button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:#2a2d31e8;color:#fff;font-size:18px}.vtools button.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
+.vtools{position:absolute;right:10px;top:52px;z-index:2;display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:6px;background:#2a2d31e0;padding:5px;border-radius:10px}.vtools.closed{display:none}.vtools button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:#2a2d31e8;color:#fff;font-size:18px}.vtools button.on{background:var(--or);color:#1b1e21;border-color:var(--or)}
 .chopts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 -4px;font-size:13px;color:var(--mut)}.chopts .chip{padding:6px 10px}.chopts .chip.on{background:var(--or);color:#1b1e21;border-color:var(--or)}.chopts input{width:70px;padding:6px;background:#15171a;border:1px solid var(--line);border-radius:6px;color:var(--tx);font:500 14px 'IBM Plex Mono'}
 .selbox{margin:12px -16px -16px;padding:12px 16px 16px;border-top:1px solid var(--line);background:#25282c;border-radius:0 0 14px 14px}
 .selbox .inf{font:13px 'IBM Plex Mono';color:var(--tx);margin-bottom:10px}.selbox .inf b{color:var(--or)}
@@ -101,18 +103,38 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 .saved span.x{color:var(--mut);padding:0 6px;cursor:pointer}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--or);border-top-color:transparent;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
-</style></head><body><div class="wrap">
-<div class="topo"><b>CÁLCULO DE ESTRUTURAS</b><span>Estruturas metálicas para compósitos · definições, medidas e lista de corte</span></div>
+#inicio h1{font:700 34px/1.1 'Barlow Condensed',sans-serif;margin:6px 0 4px}
+.ini{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px}
+.ini .it{background:#17191c;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;min-height:92px;display:flex;flex-direction:column;gap:4px}
+.ini .it b{font:600 16px 'IBM Plex Sans'}.ini .it span{font-size:12px;color:var(--mut)}
+.ini .it.dest{border-color:var(--or);background:#2a2018}
+.ini .it.breve{opacity:.55;border-style:dashed;position:relative}.ini .it.breve .emb{position:absolute;top:8px;right:10px;font:600 10px 'IBM Plex Sans';color:var(--or);letter-spacing:.06em;text-transform:uppercase;font-style:normal}
+.ini .it.pisca{opacity:.9;border-color:var(--or)}.iniSep{grid-column:1/-1;margin-top:10px;font:600 12px 'IBM Plex Sans';color:var(--mut);letter-spacing:.08em;text-transform:uppercase}
+.viewer.full{position:fixed;inset:0;height:100dvh;margin:0;border-radius:0;z-index:80;background:#fff}
+.vbtn button{padding:6px 0;font-size:12px}
+.vtools button{width:38px;height:38px;font-size:16px}
+</style></head><body>
+<div class="wrap" id="inicio">
+  <div class="topo"><b><span style="color:var(--or);font:inherit">D.</span> COMPÓSITOS · PROJETOS DE ESTRUTURAS</b><span>Estruturas, gabaritos, moldes, máquinas · 3D, vídeo, folha de projeto e lista de corte</span></div>
+  <h1>O que vamos fazer?</h1>
+  <div class="sub">Escolha um modelo ou comece um projeto novo falando, escrevendo ou mandando foto/PDF.</div>
+  <div class="ini" id="iniCards"></div>
+  <div id="iniCont"></div>
+  <h2 style="margin-top:22px">Meus projetos</h2>
+  <div class="saved" id="iniSalvos"></div>
+</div>
+<div class="wrap" id="app" style="display:none">
+<div class="topo" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px"><div><b><span style="color:var(--or);font:inherit">D.</span> COMPÓSITOS</b><br><span>Projetos de Estruturas</span></div><div class="btn" id="bInicio" style="padding:10px 14px">⌂ Início</div></div>
 
 <div class="card">
-  <h1 id="tit">Cálculo de Estruturas</h1>
+  <h1 id="tit">Projetos de Estruturas</h1>
   <div class="sub" id="sub">—</div>
   <div class="badge" id="badge">OK</div>
   <div class="viewer" id="viewer">
-    <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button></div>
-    <div class="vtools"><button id="bMao" title="Arrastar a vista com um dedo">✋</button><button id="bMais">＋</button><button id="bMenos">－</button><button id="bCentro" title="Ver tudo">⤢</button><button id="bLapis" title="Desenhar linhas">✏️</button></div>
+    <div class="vbtn"><button data-v="3d" class="on">3D</button><button data-v="planta">Planta</button><button data-v="lateral">Lateral</button><button data-v="frente">Frente</button><button id="bChapa" style="flex:0 0 58px">Chapa</button><button id="bLinhas" style="flex:0 0 58px">Linhas</button><button id="bTg" style="flex:0 0 42px" aria-label="Ferramentas">☰</button></div>
+    <div class="vtools closed" id="vtools"><button id="bMao" title="Arrastar a vista com um dedo">✋</button><button id="bMais">＋</button><button id="bMenos">－</button><button id="bCentro" title="Ver tudo">⤢</button><button id="bLapis" title="Desenhar linhas">✏️</button><button id="bAnim" title="Animar" style="display:none">▶</button><button id="bFull" title="Tela cheia">⛶</button></div>
     <canvas id="ov" style="pointer-events:none;z-index:1"></canvas>
-    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque na peça para marcar/desmarcar · 2 dedos movem · toque duplo aproxima · ✏️ desenha</div>
+    <div class="sub" id="dicaSel" style="position:absolute;top:52px;left:12px;right:60px;z-index:2;color:#555;font-size:11px">toque na peça para marcar · ☰ ferramentas</div>
     <div class="legend" id="legend"></div>
   </div>
   <div id="chapaOpts" class="chopts" style="display:none"></div>
@@ -122,7 +144,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 </div>
 
 <div class="card ask">
-  <h2>Comando de medidas</h2><div class="sub" style="margin:-4px 0 10px">Pra pedir peça nova (mão-francesa, reforço, outra forma…) use o <a href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or)">modo conversa</a>.</div>
+  <h2>Comando</h2><div class="sub" style="margin:-4px 0 10px">Fale ou escreva o que quer montar (estrutura, gabarito, molde, berço, torre, grade…). O assistente monta e você ajusta.</div>
   <div id="chat" class="chat" style="display:none"></div>
   <textarea id="pedido" placeholder="Ex.: piscina de 7 de comprimento, 3 de largura, 1,40 de profundidade, com 2 degraus e prainha de 1,60"></textarea>
   <div class="askrow">
@@ -139,14 +161,14 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 </div>
 
 <div class="card">
-  <h2>Defina as medidas</h2>
+  <h2>Configuração</h2>
   <div class="resumo" id="resumo"></div>
   <div id="perguntas"></div>
   <div id="params"></div>
 </div>
 
 <div class="card">
-  <h2>Perfis de ferro</h2>
+  <h2>Perfis e componentes</h2>
   <div class="swrow" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;flex-wrap:wrap;gap:6px"><span><b>Perfil em relação à linha (medida)</b><br><span class="sub" style="font-size:11px">gabarito por dentro: a medida é a de fora; por fora: a medida é a de dentro</span></span><select id="alinha" style="width:auto"><option value="centro">No centro da linha</option><option value="dentro">Por dentro da medida</option><option value="fora">Por fora da medida</option></select></div>
   <div class="swrow" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px"><span><b>Meia esquadria nos cantos</b><br><span class="sub" style="font-size:11px">corte 45° onde duas barras se encontram em L</span></span><label class="sw"><input type="checkbox" id="esqAuto"><span></span></label></div>
   <div id="perfis"></div>
@@ -154,29 +176,47 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
     <label class="f">Barra (mm)<input type="number" id="barra"></label>
     <label class="f">Perda corte (mm)<input type="number" id="kerf"></label>
   </div>
+  <div class="pgrp" style="margin-top:16px">Componentes (rodízios, rolamentos, motores, comando, compósito…)</div>
+  <div id="compL" class="saved"></div>
+  <div class="grid" style="margin-top:8px">
+    <label class="f">Seção<select id="cSec"><option>Mecânicos</option><option>Acionamento</option><option>Comando e elétrica</option><option>Compósito</option><option>Outros</option></select></label>
+    <label class="f">Item<input type="text" id="cNome" placeholder="Ex.: rodízio Ø100 com trava" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label>
+    <label class="f">Qtd<input type="text" id="cQtd" placeholder="4" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label>
+  </div>
+  <div class="row" style="grid-template-columns:1fr"><div class="btn" id="cAdd">+ Adicionar componente</div></div>
+  <div class="note">Dica: fale "coloca 6 rodízios de 100 com trava" no Comando que o assistente adiciona.</div>
 </div>
 
 <div class="card">
-  <h2>Resultado</h2>
-  <div class="kpi"><div><b id="kB">0</b><span>barras de 6 m</span></div><div><b id="kP">0</b><span>peças</span></div><div><b id="kK">0</b><span>kg de aço</span></div></div>
+  <h2>Lista de material</h2>
+  <div class="kpi"><div><b id="kB">0</b><span>varas de 6 m</span></div><div><b id="kP">0</b><span>peças</span></div><div><b id="kK">0</b><span>kg de aço</span></div></div>
   <div class="sub" id="area" style="margin-bottom:10px"></div><div id="tab"></div>
   <div class="note">Comprimentos pela linha de centro: desconte a espessura do perfil nas emendas. Peças curvas e dobradas pelo comprimento desenvolvido.</div>
-  <div class="row"><div class="btn" id="cpF">Copiar parâmetros Fusion</div><div class="btn out" id="cpL">Copiar lista de corte</div></div>
+  <div class="row"><div class="btn on" id="cpP" style="grid-column:1/-1">Copiar pedido de material (fornecedor / cliente)</div><div class="btn" id="cpF">Copiar parâmetros Fusion</div><div class="btn out" id="cpL">Copiar lista de corte</div></div>
   <textarea id="ta" readonly></textarea>
 </div>
 
 <div class="card">
-  <h2>Folha de projeto</h2>
-  <div class="sub">Planta, vistas cotadas, perspectiva, resumo de material e lista de corte. Folha A4 deitada.</div>
-  <div class="grid" style="margin-top:12px"><label class="f">Nome na folha (opcional)<input type="text" id="empresa" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label></div>
-  <div class="row" style="grid-template-columns:1fr"><div class="btn on" id="bFolha">Gerar folha de projeto</div></div>
+  <h2>Projeto (PDF e foto)</h2>
+  <div class="sub">Escolha o que vai: o projeto todo, uma parte ou uma peça. O PDF traz vistas cotadas, perspectiva, vista explodida, detalhe das peças e lista de material só do que você escolheu.</div>
+  <div class="grid" style="margin-top:12px"><label class="f">O que vai no projeto<select id="fEsc"></select></label><label class="f" id="lfPeca" style="display:none">Peça<select id="fPeca"></select></label></div>
+  <div class="grid" style="margin-top:12px"><label class="f">Nome na folha (opcional)<input type="text" id="empresa" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label><label class="f">Cliente (opcional)<input type="text" id="cliente" style="width:100%;padding:10px;background:#15171a;border:1px solid var(--line);border-radius:8px;color:var(--tx);font:500 15px 'IBM Plex Sans'"></label></div>
+  <div class="row"><div class="btn on" id="bFolha">Gerar projeto em PDF</div><div class="btn" id="bFoto">Salvar foto (PNG)</div></div>
   <div class="status" id="stFolha"></div>
   <div id="prevFolha" class="prev"></div>
-  <div class="row" id="acoesFolha" style="display:none"><div class="btn" id="bPDF">Salvar PDF</div><div class="btn out" id="bPNG">Salvar fotos (PNG)</div></div>
+  <div class="row" id="acoesFolha" style="display:none;grid-template-columns:1fr"><div class="btn" id="bPDF">Salvar PDF de novo</div></div>
 </div>
 
 <div class="card">
-  <h2>Meus modelos</h2>
+  <h2>Vídeo</h2>
+  <div class="sub">A câmera dá uma volta de 360° em torno do projeto que está na tela. Ligue "Chapa" antes, se quiser mostrar a peça.</div>
+  <div class="grid" style="margin-top:12px"><label class="f">Duração<select id="vDur"><option value="10">10 s</option><option value="20" selected>20 s</option><option value="30">30 s</option></select></label></div>
+  <div class="row" style="grid-template-columns:1fr 1fr"><div class="btn on" id="bVid">360° automático</div><div class="btn" id="bVidM">● Câmera livre</div></div><div class="sub" style="margin-top:6px">Câmera livre: aperte, gire e aproxime no 3D enquanto grava; aperte de novo para parar e salvar.</div>
+  <div class="status" id="stVid"></div>
+</div>
+
+<div class="card">
+  <h2>Meus projetos</h2>
   <div class="row" style="margin-top:0;grid-template-columns:1fr"><div class="btn" id="bSalvar">Salvar este modelo</div></div>
   <div class="saved" id="saved" style="margin-top:10px"></div>
   <div class="note">Ficam guardados neste aparelho.</div>
@@ -185,24 +225,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 </div>
 <script>
 // ===== núcleo: perfis, construção, corte =====
-function kgm(p){
-  let A;
-  if(p.tipo==='placa') return p.a*p.b*7.85/1000;
-  if(p.tipo==='red') A=Math.PI*(p.a-p.t)*p.t;
-  else if(p.tipo==='cant') A=p.t*(2*p.a-p.t);
-  else if(p.tipo==='chapa') A=p.a*p.t;
-  else if(p.tipo==='macico') A=Math.PI*p.a*p.a/4;
-  else A=2*p.t*(p.a+p.b)-4*p.t*p.t;
-  return A*7.85/1000;
-}
-function perfNome(p){
-  if(p.tipo==='placa') return 'Chapa '+p.a+'×'+p.b+' · esp. '+p.t;
-  if(p.tipo==='red') return 'Tubo redondo Ø'+p.a+'×'+p.t;
-  if(p.tipo==='cant') return 'Cantoneira '+p.a+'×'+p.a+'×'+p.t;
-  if(p.tipo==='chapa') return 'Barra chata '+p.a+'×'+p.t;
-  if(p.tipo==='macico') return 'Ferro redondo Ø'+p.a;
-  return (p.a===p.b?'Tubo quadrado ':'Tubo retangular ')+p.a+'×'+p.b+'×'+p.t;
-}
+const kgm=DC.kgm,perfNome=DC.perfNome;
 const r1=v=>Math.round(v);
 function divide(a,b,max){
   const n=Math.max(1,Math.ceil(Math.abs(b-a)/Math.max(1,max)-1e-9));
@@ -236,10 +259,17 @@ function construir(fn,P){
       const lu=Math.hypot(...u),lv=Math.hypot(...v);if(!lu||!lv)continue;
       const d=(u[0]*v[0]+u[1]*v[1]+u[2]*v[2])/(lu*lv);ang.push(r1(Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI));}
     M.push({pts,g,curva:true,nota:nota||('dobrada · '+ang.length+' dobra(s): '+ang.map(a=>a+'°').join(', '))});};
-  const PN=[];
-  const painel=(pts)=>{if(Array.isArray(pts)&&pts.length>=3&&pts.every(p=>Array.isArray(p)&&p.length===3&&p.every(isFinite)))PN.push(pts);};
+  const PN=[],PNN=[],PNL=[],X=[];let AN=null;
+  const okP=p=>Array.isArray(p)&&p.length===3&&p.every(v=>isFinite(v));
+  const painel=(pts,op)=>{if(Array.isArray(pts)&&pts.length>=3&&pts.every(okP)){const o=typeof op==='object'&&op?op:{nome:op};PN.push(pts);PNN.push(String(o.nome||''));PNL.push(o.lista!==false);}};
+  /* peças detalhadas: rolo (tubo + eixo com pontas), pino, chapa recortada (planificada na folha) */
+  const rolo=o=>{if(!o||!okP(o.a)||!okP(o.b))return;chk();const d=Math.max(5,+o.d||76.2);X.push({tipo:'rolo',a:o.a,b:o.b,d,eixo:Math.max(10,+o.eixo||Math.round(Math.max(20,d/3))),ponta:Math.max(0,o.ponta==null?60:+o.ponta),nome:String(o.nome||'rolo'),g:o.g||''});};
+  const pino=o=>{if(!o||!okP(o.a)||!okP(o.b))return;chk();X.push({tipo:'pino',a:o.a,b:o.b,d:Math.max(3,+o.d||20),nome:String(o.nome||'pino'),g:o.g||''});};
+  const chapa=o=>{if(!o||!Array.isArray(o.pts)||o.pts.length<3||!o.pts.every(okP))return;chk();X.push({tipo:'chapa',pts:o.pts,esp:Math.max(.5,+o.esp||6.35),nome:String(o.nome||'chapa'),g:o.g||''});};
+  /* animação: {tipo:'girar', eixo:[[x,y,z],[x,y,z]], grupos:['q',...], chapa:true, rpm} */
+  const animar=o=>{if(o&&Array.isArray(o.eixo)&&okP(o.eixo[0])&&okP(o.eixo[1]))AN={tipo:'girar',eixo:o.eixo,grupos:(o.grupos||[]).map(String),chapa:o.chapa!==false,extras:o.extras!==false,rpm:Math.max(.5,Math.min(60,+o.rpm||6))};};
   const perfil=id=>{const g=(MOD&&MOD.grupos||[]).find(x=>x.id===id)||(MOD&&MOD.grupos||[])[0];const p=g?g.perfil:{tipo:'ret',a:50,b:50,t:2};return {...p,w:p.tipo==='chapa'?p.t:p.a,h:p.tipo==='ret'?p.b:p.a};};
-  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil});
+  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil,rolo,pino,chapa,animar});
   // limpeza
   const seen=new Set(),out=[];
   for(const m of M){
@@ -250,16 +280,10 @@ function construir(fn,P){
       if(seen.has(k1)||seen.has(k2))continue;seen.add(k1);}
     out.push(m);
   }
-  out.paineis=PN;
+  PN.nomes=PNN;PN.lista=PNL;out.paineis=PN;out.extras=X.filter(x=>x.tipo!=='chapa'||DC.planificar(x.pts).area>1);out.anim=AN;
   return out;
 }
-function cortar(lens,barra,kerf){
-  const pcs=[];let emendas=0;
-  for(const l of lens){if(l>barra){const n=Math.floor(l/barra);emendas++;for(let i=0;i<n;i++)pcs.push(barra);const r=l-n*barra;if(r>0)pcs.push(r);}else pcs.push(l);}
-  pcs.sort((a,b)=>b-a);const bars=[];
-  for(const p of pcs){let ok=false;for(const b of bars){const k=b.pcs.length?kerf:0;if(b.livre>=p+k){b.livre-=p+k;b.pcs.push(p);ok=true;break;}}if(!ok)bars.push({livre:barra-p,pcs:[p]});}
-  return {bars,emendas};
-}
+const cortar=DC.cortar;
 
 function areaPainel(pts){let x=0,y=0,z=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];x+=a[1]*b[2]-a[2]*b[1];y+=a[2]*b[0]-a[0]*b[2];z+=a[0]*b[1]-a[1]*b[0];}return Math.hypot(x,y,z)/2;}
 
@@ -640,7 +664,7 @@ PR.capota={
     add([x,0,0],[x,0,P.pe],'b');add([x,P.L,0],[x,P.L,P.pe],'b');}
   add([0,0,0],[P.C,0,0],'b');add([0,P.L,0],[P.C,P.L,0],'b');add([0,0,0],[0,P.L,0],'b');add([P.C,0,0],[P.C,P.L,0],'b');
   {const m=24;for(let k=0;k<m;k++){const t0=(90+th-2*th*k/m)*Math.PI/180,t1=(90+th-2*th*(k+1)/m)*Math.PI/180;
-    const p=t=>[P.L/2+R*Math.cos(t),zc+R*Math.sin(t)],a=p(t0),b=p(t1);H.painel([[0,a[0],a[1]],[P.C,a[0],a[1]],[P.C,b[0],b[1]],[0,b[0],b[1]]]);}}
+    const p=t=>[P.L/2+R*Math.cos(t),zc+R*Math.sin(t)],a=p(t0),b=p(t1);H.painel([[0,a[0],a[1]],[P.C,a[0],a[1]],[P.C,b[0],b[1]],[0,b[0],b[1]]],'casca');}}
   const n=Math.max(2,P.nl);
   for(let k=0;k<n;k++){const t=(90+th-(2*th)*k/(n-1))*Math.PI/180,y=P.L/2+R*Math.cos(t),z=zc+R*Math.sin(t);add([0,y,z],[P.C,y,z],'l');}
  })};
@@ -720,17 +744,84 @@ PR.cilindro={
   if(P.eixo)add([-ext,0,z0],[C+ext,0,z0],'e','eixo');
   if(P.cav)for(const x of[-ext*0.6,C+ext*0.6]){const a=z0*0.6;add([x,-a,0],[x,0,z0],'s','perna do cavalete');add([x,a,0],[x,0,z0],'s','perna do cavalete');add([x,-a,0],[x,a,0],'s','pé do cavalete');}
   const n=36;for(let k=0;k<n;k++){const t0=k*2*Math.PI/n,t1=(k+1)*2*Math.PI/n,p=t=>[R*Math.cos(t),z0+R*Math.sin(t)],a=p(t0),b=p(t1);
-    painel([[0,a[0],a[1]],[C,a[0],a[1]],[C,b[0],b[1]],[0,b[0],b[1]]]);}
-  if(P.tampos)for(const x of[0,C])painel(Array.from({length:n},(_,k)=>{const t=k*2*Math.PI/n;return[x,R*Math.cos(t),z0+R*Math.sin(t)];}));
+    painel([[0,a[0],a[1]],[C,a[0],a[1]],[C,b[0],b[1]],[0,b[0],b[1]]],'casca');}
+  if(P.tampos)for(const x of[0,C])painel(Array.from({length:n},(_,k)=>{const t=k*2*Math.PI/n;return[x,R*Math.cos(t),z0+R*Math.sin(t)];}),'tampo');
+  if(P.eixo)H.animar({eixo:[[-ext,0,z0],[C+ext,0,z0]],grupos:['q','l','e'],chapa:true,rpm:4});
+ })};
+PR.filamentadora={
+ titulo:'Filamentadora de tanques',
+ resumo:'Filamentadora light: base com trilhos ligando o cabeçote fixo e o apoio móvel (cavaletes em A), eixo do mandril passante, gabaritos internos com raios, trilhos do carro elevados e presos à base nas duas pontas, carro em torre com banheira, rolos e bandeja. Automática: gaiola de rovings fixa. Semiautomática: rolo de tecido no carro, sem gaiola. Ligue "Chapa" para ver o tanque. Motores, redutor, corrente e CLP não entram na lista de aço.',
+ perguntas:['Diâmetro e comprimento máximos do tanque','Automática (roving) ou semiautomática (tecido)?','Perfil da base, dos cavaletes e da torre'],
+ grupos:[{id:'b',nome:'Base e trilhos do mandril',proprio:true,perfil:{tipo:'ret',a:100,b:50,t:3}},{id:'a',nome:'Cavaletes (A)',proprio:true,perfil:{tipo:'ret',a:80,b:80,t:3}},{id:'e',nome:'Eixo do mandril',proprio:true,perfil:{tipo:'red',a:219.1,b:219.1,t:6.35}},{id:'g',nome:'Gabaritos internos'},{id:'t',nome:'Trilhos do carro',proprio:true,perfil:{tipo:'ret',a:100,b:50,t:3}},{id:'c',nome:'Carro (torre)'},{id:'r',nome:'Rolos',proprio:true,perfil:{tipo:'red',a:76.2,b:76.2,t:3}},{id:'q',nome:'Gaiola de rovings',proprio:true,perfil:{tipo:'ret',a:40,b:40,t:2}}],
+ perfilPadrao:{tipo:'ret',a:50,b:50,t:3},
+ parametros:[
+  {id:'D',nome:'Diâmetro do tanque',tipo:'num',valor:3000,grupo:'Medidas'},
+  {id:'L',nome:'Comprimento do tanque',tipo:'num',valor:6000,grupo:'Medidas'},
+  {id:'semi',nome:'Semiautomática (tecido)',tipo:'bool',valor:false,grupo:'Semiautomática'},
+  {id:'mat',nome:'Material',tipo:'sel',valor:'Tecido biaxial 1808',opcoes:['Tecido biaxial 1808','Tecido biaxial 2408','Faixa de tecido','Manta'],grupo:'Semiautomática',se:'semi'},
+  {id:'largTec',nome:'Largura do tecido',tipo:'num',valor:1200,grupo:'Semiautomática',se:'semi'},
+  {id:'sobrep',nome:'Sobreposição',tipo:'num',valor:100,grupo:'Semiautomática',se:'semi'},
+  {id:'folga',nome:'Folga do tanque ao chão',tipo:'num',valor:500,grupo:'Estrutura'},
+  {id:'hTr',nome:'Altura dos trilhos do carro',tipo:'num',valor:400,grupo:'Estrutura'},
+  {id:'espPe',nome:'Vão entre pés do trilho',tipo:'num',valor:830,grupo:'Estrutura'},
+  {id:'nGab',nome:'Nº de gabaritos',tipo:'int',valor:5,grupo:'Estrutura'},
+  {id:'nRaio',nome:'Raios por gabarito',tipo:'int',valor:6,grupo:'Estrutura'}],
+ codigo:String(function(P,H){
+  const {add,arco,divide,painel}=H;
+  const R=P.D/2,L=P.L,Hx=R+P.folga,semi=!!P.semi,xa=-350,xb=L+350;
+  const xb0=-1000,xb1=L+1000;
+  for(const y of[-620,620])add([xb0,y,0],[xb1,y,0],'b','trilho da base');
+  for(const x of divide(xb0,xb1,900))add([x,-620,0],[x,620,0],'b','travessa da base');
+  const top=Hx-160;
+  const af=x=>{for(const sx of[-1,1])for(const sy of[-1,1])add([x+sx*280,sy*620,0],[x+sx*140,sy*200,top],'a','perna do cavalete');
+    for(const sy of[-1,1])add([x-140,sy*200,top],[x+140,sy*200,top],'a','topo do cavalete');for(const sx of[-1,1])add([x+sx*140,-200,top],[x+sx*140,200,top],'a','topo do cavalete');
+    const zm=top*0.4,f=0.4,dx=280-140*f,dy=620-420*f;for(const sy of[-1,1])add([x-dx,sy*dy,zm],[x+dx,sy*dy,zm],'a','travessa');for(const sx of[-1,1])add([x+sx*dx,-dy,zm],[x+sx*dx,dy,zm],'a','travessa');};
+  af(xa);af(xb);
+  add([xa-300,0,Hx],[xb+300,0,Hx],'e','eixo do mandril (tubo passante)');
+  const rg=R-60,xs=divide(0,L,L/Math.max(1,P.nGab-1));
+  for(const x of xs){arco({c:[x,0,Hx],r:rg,a0:0,a1:360,plano:'yz',g:'g',nota:'anel do gabarito R'+Math.round(rg)});
+    for(let k=0;k<P.nRaio;k++){const t=(k*360/P.nRaio+90)*Math.PI/180;add([x,0,Hx],[x,rg*Math.cos(t),Hx+rg*Math.sin(t)],'g','raio');}}
+  const Yc=R+850,Ht=P.hTr,x0=-800,x1=L+800;
+  for(const dy of[-300,300])add([x0,Yc+dy,Ht],[x1,Yc+dy,Ht],'t','trilho do carro');
+  for(const x of divide(x0,x1,P.espPe)){for(const dy of[-300,300])add([x,Yc+dy,0],[x,Yc+dy,Ht],'t','pé do trilho');add([x,Yc-300,Ht],[x,Yc+300,Ht],'t','travessa');}
+  for(const x of[x0,x1])add([x,-620,0],[x,Yc+300,0],'b','ligação base ↔ trilho do carro');
+  const cw=semi?Math.max(900,P.largTec+300):900,cx=L/2,ca=cx-cw/2,cb=cx+cw/2,y0=Yc-400,y1=Yc+400,zb=Ht+150,zt=semi?Hx+150:Hx+550;
+  const quadro=(z,n)=>{for(const y of[y0,y1])add([ca,y,z],[cb,y,z],'c',n);for(const x of[ca,cb])add([x,y0,z],[x,y1,z],'c',n);};
+  quadro(zb,'base do carro');
+  for(const x of[ca,cb])for(const y of[y0,y1])add([x,y,zb],[x,y,zt],'c','coluna da torre');
+  const zr=Math.max(zb+250,Hx-900);
+  for(const z of[...new Set([zr-20,Math.max(zr+450,Hx-300),zt].map(Math.round))])if(z>zb+50)quadro(z,'quadro da torre');
+  const bw=semi?P.largTec+100:700,bx0=cx-bw/2,bx1=cx+bw/2,by0=Yc-250,by1=Yc+250,bz=zr,bh=200;
+  const ch=(pts,nome)=>H.chapa({pts,esp:3,nome,g:'c'}),dR=H.perfil('r').a||76.2;
+  ch([[bx0,by0,bz],[bx1,by0,bz],[bx1,by1,bz],[bx0,by1,bz]],'banheira – fundo');
+  ch([[bx0,by0,bz],[bx1,by0,bz],[bx1,by0,bz+bh],[bx0,by0,bz+bh]],'banheira – parede');ch([[bx0,by1,bz],[bx1,by1,bz],[bx1,by1,bz+bh],[bx0,by1,bz+bh]],'banheira – parede');
+  ch([[bx0,by0,bz],[bx0,by1,bz],[bx0,by1,bz+bh],[bx0,by0,bz+bh]],'banheira – cabeceira');ch([[bx1,by0,bz],[bx1,by1,bz],[bx1,by1,bz+bh],[bx1,by0,bz+bh]],'banheira – cabeceira');
+  H.rolo({a:[bx0-50,Yc+220,bz+280],b:[bx1+50,Yc+220,bz+280],d:dR,nome:'de entrada',g:'r'});
+  H.rolo({a:[bx0-50,Yc+120,bz+80],b:[bx1+50,Yc+120,bz+80],d:dR,nome:'de imersão',g:'r'});
+  H.rolo({a:[bx0-50,Yc-190,bz+250],b:[bx1+50,Yc-190,bz+250],d:dR,nome:'espremedor de baixo',g:'r'});
+  H.rolo({a:[bx0-50,Yc-190,bz+330],b:[bx1+50,Yc-190,bz+330],d:dR,nome:'espremedor de cima (revestir de borracha)',g:'r'});
+  for(const x of[bx0-50,bx1+50])H.pino({a:[x,Yc-190,bz+250],b:[x,Yc-190,bz+420],d:16,nome:'fuso de aperto do espremedor',g:'r'});
+  const ty=R+160,tz=Hx-240;
+  ch([[bx0+20,by0-30,bz+270],[bx1-20,by0-30,bz+270],[bx1-20,ty,tz],[bx0+20,ty,tz]],'bandeja');
+  H.pino({a:[bx0-10,by0-30,bz+270],b:[bx1+10,by0-30,bz+270],d:25,nome:'articulação da bandeja',g:'c'});
+  for(const x of[ca,cb])for(const y of[y0,y1])H.chapa({pts:[[x-100,y-100,0],[x+100,y-100,0],[x+100,y+100,0],[x-100,y+100,0]].map(p=>[p[0],p[1],zb-40]),esp:6.35,nome:'chapa da roda do carro',g:'c'});
+  for(const x of[xa,xb])H.chapa({pts:[[x-200,-260,top],[x+200,-260,top],[x+200,260,top],[x-200,260,top]],esp:9.5,nome:'chapa do topo do cavalete (mancal)',g:'a'});
+  if(semi){for(const x of[ca,cb])add([x,Yc,zt],[x,Yc,zt+150],'c','suporte do rolo de tecido');H.rolo({a:[ca-100,Yc,zt+150],b:[cb+100,Yc,zt+150],d:dR,nome:'porta-rolo de tecido',g:'r'});}
+  else{const gy=Yc+3000,ga=cx-850,gb=cx+850;
+    for(const x of[ga,gb])for(const y of[gy-250,gy+250])add([x,y,0],[x,y,1900],'q','coluna da gaiola');
+    for(const z of[300,1000,1700,1900]){for(const y of[gy-250,gy+250])add([ga,y,z],[gb,y,z],'q','prateleira');for(const x of[ga,gb])add([x,gy-250,z],[x,gy+250,z],'q','prateleira');}}
+  const n=36;for(let k=0;k<n;k++){const t0=k*2*Math.PI/n,t1=(k+1)*2*Math.PI/n,p=t=>[R*Math.cos(t),Hx+R*Math.sin(t)],a=p(t0),b=p(t1);
+    painel([[0,a[0],a[1]],[L,a[0],a[1]],[L,b[0],b[1]],[0,b[0],b[1]]],{nome:'tanque',lista:false});}
+  H.animar({eixo:[[xa-300,0,Hx],[xb+300,0,Hx]],grupos:['e','g'],chapa:true,rpm:6});
  })};
 PR.branco={titulo:'Projeto em branco',resumo:'Desenhe as linhas com o lápis ✏️ (toque nos pontos ou digite comprimento e direção). Depois marque as linhas e escolha o perfil de cada uma.',perguntas:[],grupos:[{id:'sk',nome:'Linhas desenhadas'}],perfilPadrao:{tipo:'ret',a:50,b:50,t:2},parametros:[],codigo:'function(P,H){}'};
-const CHIPS=[['Em branco (desenhar)','branco','d'],['Piscina','piscina','g'],['Tanque retangular','tanque','g'],['Tanque cilíndrico','cilindro','g'],['Mesa','mesa','e'],['Berço de molde','molde','e'],['Escada','escada','e'],['Corrimão','corrimao','e'],['Capota em arco','capota','e']];
+const CHIPS=[['Em branco (desenhar)','branco','d'],['Piscina','piscina','g'],['Tanque retangular','tanque','g'],['Tanque cilíndrico','cilindro','g'],['Mesa','mesa','e'],['Berço de molde','molde','e'],['Escada','escada','e'],['Corrimão','corrimao','e'],['Capota em arco','capota','e'],['Filamentadora de tanques','filamentadora','m']];
 
 // ===== app =====
 const $=id=>document.getElementById(id);
 const PALETA=['#8a9099','#e3924a','#5d8fb8','#7fb87a','#c97fb8','#d4c35a','#6fc3c0'];
-const PRESETS={ret:[[20,20,1.5],[30,30,1.5],[30,30,2],[40,40,2],[50,50,2],[50,50,3],[50,30,2],[60,40,2],[80,40,2],[100,50,3]],
- red:[[25.4,0,1.5],[31.75,0,2],[38.1,0,2],[48.3,0,2.25],[60.3,0,2.65]],
+const PRESETS={ret:[[20,20,1.5],[30,30,1.5],[30,30,2],[40,40,2],[40,40,3],[50,50,2],[50,50,3],[60,60,3],[80,80,3],[100,100,3],[50,30,2],[60,40,2],[80,40,2],[100,50,3]],
+ red:[[25.4,0,1.5],[31.75,0,2],[38.1,0,2],[48.3,0,2.25],[60.3,0,2.65],[76.2,0,3],[114.3,0,4.5],[219.1,0,6.35],[273.1,0,9.27]],
  cant:[[25.4,0,3.17],[31.75,0,3.17],[38.1,0,3.17],[50.8,0,4.76]],
  chapa:[[25.4,0,4.76],[38.1,0,4.76],[50.8,0,6.35]],
  macico:[[8,0,0],[10,0,0],[12.5,0,0],[16,0,0]]};
@@ -751,7 +842,7 @@ function carregar(m,vals){
   montarUI();upd(true);
 }
 function montarUI(){
-  $('tit').textContent=MOD.nome||MOD.titulo;$('nomePeca').value=MOD.nome||'';
+  $('tit').textContent=MOD.nome||MOD.titulo;$('nomePeca').value=MOD.nome||'';if($('cliente'))$('cliente').value=MOD.cliente||'';
   $('resumo').textContent=MOD.resumo||'';
   $('perguntas').innerHTML=MOD.perguntas&&MOD.perguntas.length?`<div class="perg"><b>DEFINA AGORA</b><ul>${MOD.perguntas.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:'';
   const box=$('params');box.innerHTML='';let detE=null;
@@ -786,7 +877,7 @@ function montarUI(){
 function legenda(){$('legend').innerHTML=(CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`;
   $('lgCor').onclick=()=>{CORES=!CORES;store('dc-estr-cores',CORES);legenda();upd();};}
 function vis(){document.querySelectorAll('#params [data-se]').forEach(e=>{const s=e.dataset.se;e.style.display=!s||VAL[s]?'':'none';});}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const esc=DC.esc;
 function editorPerfil(p,onChange){
   const d=document.createElement('div');const pl=PRESETS[p.tipo]||[];
   d.innerHTML=`<div class="grid">
@@ -862,12 +953,43 @@ function caixaCortada(m,p,mat){
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
   const mt=mat.clone();mt.side=THREE.DoubleSide;return new THREE.Mesh(geo,mt);
 }
+/* ===== peças detalhadas no 3D: rolos, pinos e chapas recortadas ===== */
+const MAT_ACO=new THREE.MeshStandardMaterial({color:0xb4b8bc,roughness:.35,metalness:.7}),MAT_EIXO=new THREE.MeshStandardMaterial({color:0x6e7276,roughness:.4,metalness:.6}),MAT_CHP=new THREE.MeshStandardMaterial({color:0x9aa0a6,roughness:.55,metalness:.4,side:THREE.DoubleSide});
+function cilindro3(a,b,d,mat,tag){const A=P3(...a),B=P3(...b),dir=B.clone().sub(A),len=dir.length();if(len<1e-6)return null;
+  const o=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,1,24),mat);o.scale.set(d/1000,len,d/1000);o.position.copy(A).add(B).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+  o.castShadow=!LINHAS;o.userData.g=tag;group.add(o);return o;}
+function chapa3(x){const pts=x.pts,e=x.esp,a=pts[0],b=pts[1],c=pts[2],u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+  let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];const l=Math.hypot(...n)||1;n=n.map(q=>q/l*e);
+  const B=pts.map(p=>[p[0]+n[0],p[1]+n[1],p[2]+n[2]]),pos=[],lp=[],ad=q=>{const w=P3(...q);pos.push(w.x,w.y,w.z);},li=(p,q)=>{const A=P3(...p),Bq=P3(...q);lp.push(A.x,A.y,A.z,Bq.x,Bq.y,Bq.z);};
+  for(let i=1;i<pts.length-1;i++){ad(pts[0]);ad(pts[i]);ad(pts[i+1]);ad(B[0]);ad(B[i+1]);ad(B[i]);}
+  for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;ad(pts[i]);ad(pts[j]);ad(B[j]);ad(pts[i]);ad(B[j]);ad(B[i]);li(pts[i],pts[j]);li(B[i],B[j]);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo,MAT_CHP);m.castShadow=!LINHAS;m.userData.g=x.g;group.add(m);
+  const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));const ls=new THREE.LineSegments(lg,LMAT);ls.userData.g=x.g;group.add(ls);}
+function desenhaExtras(X){
+  for(const x of X){
+    if(x.tipo==='rolo'){const A=x.a,Bp=x.b,d=[Bp[0]-A[0],Bp[1]-A[1],Bp[2]-A[2]],L=Math.hypot(...d)||1,u=d.map(v=>v/L*x.ponta);
+      cilindro3(A,Bp,x.d,MAT_ACO,x.g);cilindro3(A.map((v,i)=>v-u[i]),Bp.map((v,i)=>v+u[i]),x.eixo,MAT_EIXO,x.g);}
+    else if(x.tipo==='pino')cilindro3(x.a,x.b,x.d,MAT_EIXO,x.g);
+    else if(x.tipo==='chapa')chapa3(x);
+    for(const q of(x.pts||[x.a,x.b])){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
+  }}
+/* ===== animação 3D (quando o projeto tem peça que gira: mandril, rolo…) ===== */
+let ANIM=store('dc-estr-anim')??true,ANIMP=null,animUlt=0;
+function montaAnim(M){const ang=ANIMP?ANIMP.ang:0;ANIMP=null;const a=M.anim;$('bAnim').style.display=a?'':'none';if(!a)return;
+  const A=P3(...a.eixo[0]),B=P3(...a.eixo[1]),gs=new Set(a.grupos),piv=new THREE.Group();piv.position.copy(A);
+  const extrasG=new Set((M.extras||[]).map(x=>x.g));
+  group.children.filter(c=>gs.has(c.userData.g)||(a.chapa&&c.userData.g==='__chapa')).forEach(c=>{group.remove(c);c.position.sub(A);piv.add(c);});
+  group.add(piv);ANIMP={piv,dir:B.clone().sub(A).normalize(),rpm:a.rpm,ang};piv.quaternion.setFromAxisAngle(ANIMP.dir,ang);}
+function passoAnim(now){if(ANIM&&ANIMP&&document.visibilityState==='visible'&&$('app').style.display!=='none'){const dt=Math.min(.1,(now-(animUlt||now))/1000);
+    ANIMP.ang=(ANIMP.ang+dt*ANIMP.rpm/60*2*Math.PI)%(2*Math.PI);ANIMP.piv.quaternion.setFromAxisAngle(ANIMP.dir,ANIMP.ang);render();}
+  animUlt=now;requestAnimationFrame(passoAnim);}
 function draw(M){
   scene.remove(group);group=new THREE.Group();
   R.setClearColor(0xffffff);LMAT.color.set(0x1b1c1e);
   const LCL=new THREE.LineBasicMaterial({color:0x1f2226});const up=new THREE.Vector3(0,1,0),mats={};PICK=[];
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
-  for(const m of M){
+  for(const m of M){const c0=group.children.length;
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=m.pf||g.perfil,sel=SEL.includes(chaveM(m));
     const mat=sel?SELMAT:mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x8a857a,roughness:.6,metalness:.15});
     for(let i=1;i<m.pts.length;i++){
@@ -885,7 +1007,9 @@ function draw(M){
       if(!round&&!m.curva){const eg=new THREE.LineSegments(EUB,sel?SELLIN:LMAT);eg.position.copy(mesh.position);eg.scale.copy(mesh.scale);eg.quaternion.copy(mesh.quaternion);group.add(eg);}
     }
     for(const q of m.pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
+    for(let i=c0;i<group.children.length;i++)group.children[i].userData.g=m.g;
   }
+  desenhaExtras(M.extras||[]);
   const PN=M.paineis||[];
   if(PN.length&&CHAPA&&LINHAS){const pos=[];for(const pts of PN)for(let i=0;i<pts.length;i++){const a=P3(...pts[i]),b=P3(...pts[(i+1)%pts.length]);pos.push(a.x,a.y,a.z,b.x,b.y,b.z);}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));group.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9aa0a8})));}
@@ -895,11 +1019,12 @@ function draw(M){
       for(let i=1;i<pts.length-1;i++){add3(pts[0]);add3(pts[i]);add3(pts[i+1]);add3(B[0]);add3(B[i+1]);add3(B[i]);}
       for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;add3(pts[i]);add3(pts[j]);add3(B[j]);add3(pts[i]);add3(B[j]);add3(B[i]);lin(pts[i],pts[j]);lin(B[i],B[j]);lin(pts[i],B[i]);}});
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
-    const cm=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:ch.cor==='branco'?0xf2f2ef:0x7d786e,roughness:.7,metalness:.1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1}));cm.castShadow=true;group.add(cm);
-    const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));group.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x1b1c1e})));}
+    const cm=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:ch.cor==='branco'?0xf2f2ef:0x7d786e,roughness:.7,metalness:.1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1}));cm.castShadow=true;cm.userData.g='__chapa';group.add(cm);
+    const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));const ls=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x1b1c1e}));ls.userData.g='__chapa';group.add(ls);}
   for(const pts of PN)for(const q of pts){bbox.x0=Math.min(bbox.x0,q[0]);bbox.x1=Math.max(bbox.x1,q[0]);bbox.y0=Math.min(bbox.y0,q[1]);bbox.y1=Math.max(bbox.y1,q[1]);bbox.z0=Math.min(bbox.z0,q[2]);bbox.z1=Math.max(bbox.z1,q[2]);}
   if(!M.length)bbox={x0:0,x1:1000,y0:0,y1:1000,z0:0,z1:1000};
   {const c=P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,0),r=Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,bbox.z1-bbox.z0)/1000;dl.position.set(c.x+r*.5,c.y+r*1.6,c.z+r*.8);dl.target.position.copy(c);const sc=dl.shadow.camera;sc.left=sc.bottom=-r;sc.right=sc.top=r;sc.near=.1;sc.far=r*5;sc.updateProjectionMatrix();}
+  montaAnim(M);
   scene.add(group);if(!ALVOFIXO)orb.tg.copy(P3((bbox.x0+bbox.x1)/2,(bbox.y0+bbox.y1)/2,(bbox.z0+bbox.z1)/2));
 }
 function fitR(){return Math.max(bbox.x1-bbox.x0,bbox.y1-bbox.y0,(bbox.z1-bbox.z0)*1.5)/1000*1.6+0.8;}
@@ -955,6 +1080,9 @@ $('bMenos').onclick=()=>{if(view==='3d')orb.r*=1.4;else oz/=1.4;render();};
 $('bCentro').onclick=()=>setView(view);
 $('bLapis').onclick=()=>{DESENHO=!DESENHO;$('bLapis').classList.toggle('on',DESENHO);if(DESENHO&&!LINHAS){LINHAS=true;$('bLinhas').classList.add('on');upd();}if(!DESENHO){PT0=null;marcaPonto();}painelDesenho();};
 $('bLinhas').classList.toggle('on',LINHAS);$('bLinhas').onclick=()=>{LINHAS=!LINHAS;store('dc-estr-linhas',LINHAS);$('bLinhas').classList.toggle('on',LINHAS);upd();};
+$('bAnim').classList.toggle('on',ANIM);$('bAnim').onclick=()=>{ANIM=!ANIM;store('dc-estr-anim',ANIM);$('bAnim').classList.toggle('on',ANIM);};requestAnimationFrame(passoAnim);
+$('bTg').onclick=()=>{const o=$('vtools').classList.toggle('closed');$('bTg').textContent=o?'☰':'✕';$('bTg').classList.toggle('on',!o);};
+$('bFull').onclick=()=>{const f=!vw.classList.contains('full');vw.classList.toggle('full',f);document.body.style.overflow=f?'hidden':'';$('bFull').classList.toggle('on',f);setTimeout(resize,30);};
 $('bChapa').onclick=()=>{CHAPA=!CHAPA;$('bChapa').classList.toggle('on',CHAPA);upd();};
 addEventListener('resize',resize);
 
@@ -1135,35 +1263,84 @@ function upd(reset){
   const gid=[...new Set(M.map(m=>m.g))],GN=id=>MOD.grupos.find(g=>g.id===id)||MOD.grupos[0];
   const stock={};
   for(const id of gid){const g=GN(id);for(const m of M.filter(m=>m.g===id)){const pp=m.pf||g.perfil,k=perfNome(pp);(stock[k]=stock[k]||{p:pp,lens:[]}).lens.push(m.lenCorte||m.len);}}
-  let tot=0,kg=0,emd=0,out='';
+  let tot=0,kg=0,emd=0,out='';const CAT={},PED=[];const catN=t=>({ret:'Tubos',red:'Tubos redondos',cant:'Cantoneiras',chapa:'Barras chatas',macico:'Ferro redondo',placa:'Chapas'}[t]||'Outros');
   for(const k in stock){const s=stock[k],r=s.p.tipo==='placa'?{bars:[],emendas:0}:cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);
     tot+=r.bars.length;kg+=q;emd+=r.emendas;const sob=r.bars.reduce((a,b)=>a+b.livre,0)/1000;
-    if(s.p.tipo==='placa'){out+=`<tr><td>${k}</td><td class="n">${s.lens.length} un</td><td class="n">–</td><td class="n">${q.toFixed(1)} kg</td></tr>`;continue;}
-    out+=`<tr><td>${k}</td><td class="n">${m.toFixed(1)} m</td><td class="n"><b style="color:var(--or)">${r.bars.length}</b></td><td class="n">${q.toFixed(0)} kg</td></tr><tr><td colspan="4" style="color:var(--mut);font-size:11px">sobra ${sob.toFixed(1)} m${r.emendas?` · ${r.emendas} peça(s) acima de ${CFG.barra/1000} m com emenda`:''}</td></tr>`;}
+    const cn=catN(s.p.tipo);CAT[cn]=(CAT[cn]||0)+q;
+    if(s.p.tipo==='placa'){out+=`<tr><td>${k}</td><td class="n"><b style="color:var(--or)">${s.lens.length}</b> un</td><td class="n">–</td><td class="n">${q.toFixed(1)} kg</td></tr>`;PED.push(`${k} — ${s.lens.length} un — ${q.toFixed(1)} kg`);continue;}
+    out+=`<tr><td>${k}</td><td class="n"><b style="color:var(--or)">${r.bars.length}</b> varas</td><td class="n">${m.toFixed(1)} m</td><td class="n">${q.toFixed(1)} kg</td></tr><tr><td colspan="4" style="color:var(--mut);font-size:11px">varas de ${CFG.barra/1000} m · sobra ${sob.toFixed(1)} m${r.emendas?` · ${r.emendas} peça(s) acima de ${CFG.barra/1000} m com emenda`:''}</td></tr>`;
+    PED.push(`${k} — ${r.bars.length} varas de ${CFG.barra/1000} m — ${q.toFixed(1)} kg`);}
+  const catRows=Object.entries(CAT).map(([c,v])=>`<tr><td>${c}</td><td class="n" colspan="3">${v.toFixed(1)} kg</td></tr>`).join('');
+  out+=`<tr><td colspan="4" style="padding-top:12px;color:var(--mut)">TOTAL POR TIPO</td></tr>${catRows}<tr><td><b>TOTAL GERAL</b></td><td class="n"><b>${tot}</b> varas</td><td></td><td class="n"><b style="color:var(--or)">${kg.toFixed(1)} kg</b></td></tr>`;
+  PED.push('','Total por tipo:',...Object.entries(CAT).map(([c,v])=>`${c}: ${v.toFixed(1)} kg`),`TOTAL: ${tot} varas de ${CFG.barra/1000} m · ${kg.toFixed(1)} kg de aço`);
   const cut={};let cl='';
   for(const id of gid){const c={};M.filter(m=>m.g===id).forEach(m=>{const k=(m.lenCorte||m.len)+'|'+(m.curva?m.nota:(m.notaEsq||(m.livre?m.nota:'')));c[k]=(c[k]||0)+1;});cut[id]=c;
     const g=GN(id);cl+=`<tr><td colspan="3" style="color:${g.cor};font-weight:600;padding-top:12px">${esc(g.nome)} · ${perfNome(g.perfil)}</td></tr>`;
     Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');if(g.perfil.tipo==='placa'){cl+=`<tr><td>${g.perfil.a}×${g.perfil.b} mm · esp. ${g.perfil.t}<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span></td><td class="n">${c[k]} un</td><td class="n">–</td></tr>`;return;}cl+=`<tr><td>${l} mm${n?`<br><span style="color:var(--mut);font-size:11px">${esc(n)}</span>`:''}</td><td class="n">${c[k]} un</td><td class="n">${(l*c[k]/1000).toFixed(1)} m</td></tr>`;});}
-  $('tab').innerHTML=`<table><tr><th>Perfil</th><th class="n">Metros</th><th class="n">Barras</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
+  $('tab').innerHTML=`<table><tr><th>Material</th><th class="n">Qtd</th><th class="n">Metros</th><th class="n">Peso</th></tr>${out}</table><h2 style="margin-top:18px">Lista de corte</h2><table><tr><th>Medida</th><th class="n">Qtd</th><th class="n">Total</th></tr>${cl}</table>`;
   const area=(M.paineis||[]).reduce((a,p)=>a+areaPainel(p),0)/1e6;
   $('area').textContent=area>0?`Área de chapa / molde: ${area.toFixed(1)} m² · espessura ${chapaCfg().esp} mm · ${chapaCfg().lado==='dentro'?'por dentro':'por fora'}`:'';$('bChapa').style.display=area>0?'':'none';
   $('kB').textContent=tot;$('kP').textContent=M.length;$('kK').textContent=Math.round(kg);
   const bd=$('badge');bd.textContent=emd?`${emd} EMENDA(S)`:'SEM EMENDA';bd.className='badge'+(emd?' warn':'');
-  LAST={M,cut,gid};painelSel();opcoesChapa();store('dc-estr-atual',{mod:MOD,val:VAL});
+  {const cs=compTodos();if(cs.length){const secs=[...new Set(cs.map(c=>c[0]))];$('tab').innerHTML+=secs.map(sc=>`<h2 style="margin-top:18px">${esc(sc)}</h2><table>${cs.filter(c=>c[0]===sc).map(c=>`<tr><td>${esc(c[1])}</td><td class="n">${esc(c[2])}</td></tr>`).join('')}</table>`).join('');PED.push('',...secs.flatMap(sc=>[sc.toUpperCase()+':',...cs.filter(c=>c[0]===sc).map(c=>c[1]+' — '+c[2])]));}}
+  LAST={M,cut,gid,PED};try{montaEsc();montaCompL();}catch(e){}painelSel();opcoesChapa();store('dc-estr-atual',{mod:MOD,val:VAL});
   if(reset)setView(view);else render();
 }
 function copiar(txt){const ta=$('ta');ta.style.display='block';ta.value=txt;ta.select();
   try{navigator.clipboard.writeText(txt).then(()=>flash('Copiado'),()=>flash('Selecionado — copie'));}catch(e){flash('Selecionado — copie');}}
 function flash(t){const b=$('badge'),o=b.textContent,c=b.className;b.textContent=t.toUpperCase();b.className='badge';setTimeout(()=>{b.textContent=o;b.className=c;},1400);}
-const slug=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+const slug=DC.slug;
 $('cpF').onclick=()=>{const L=[];
   for(const p of MOD.parametros){const v=VAL[p.id];if(p.tipo==='bool')continue;if(p.se&&!VAL[p.se])continue;
     L.push(`${slug((p.grupo&&p.grupo!=='Medidas'?p.grupo+'_':'')+p.nome)}\t${v}${p.tipo==='num'?' '+(p.un||'mm'):''}`);}
   for(const g of MOD.grupos){const p=g.perfil,n=slug(g.nome);L.push(`${n}_perfil_a\t${p.a} mm`);if(p.tipo==='ret')L.push(`${n}_perfil_b\t${p.b} mm`);if(p.tipo!=='macico')L.push(`${n}_perfil_esp\t${p.t} mm`);}
   copiar(L.join('\n'));};
+$('cpP').onclick=()=>{copiar('PEDIDO DE MATERIAL · '+(MOD.nome||MOD.titulo)+'\n'+(EMPRESA||'')+' · '+new Date().toLocaleDateString('pt-BR')+'\n\n'+(LAST.PED||[]).join('\n'));};
 $('cpL').onclick=()=>{let t=MOD.titulo+'\nGrupo;Perfil;Medida mm;Qtd;Obs\n';
   for(const id of LAST.gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],c=LAST.cut[id];Object.keys(c).sort((a,b)=>parseInt(b)-parseInt(a)).forEach(k=>{const[l,n]=k.split('|');t+=`${g.nome};${perfNome(g.perfil)};${l};${c[k]};${n}\n`;});}
   t+='\nBarras de '+CFG.barra+' mm: '+$('kB').textContent+' · Peso: '+$('kK').textContent+' kg';copiar(t);};
+
+// ===== componentes e lista de material universal =====
+function compAuto(){const L=[],v=VAL||{},area=(LAST.M&&LAST.M.paineis||[]).reduce((a,p)=>a+areaPainel(p),0)/1e6;
+  if(v.rod){const pernas=(LAST.M||[]).filter(m=>m.g==='p').length||4;L.push(['Mecânicos','Rodízio (altura '+(v.rodH||'')+' mm) [CONFIRMAR]',String(pernas)]);}
+  if(v.eixo&&MOD.preset==='cilindro')L.push(['Mecânicos','Mancal com rolamento para o eixo Ø'+((MOD.grupos.find(g=>g.id==='e')||{}).perfil||{}).a+' [CONFIRMAR]','2']);
+  for(const m of mecPlan()){if(m.tipo==='rolo'){L.push(['Mecânicos','Rolo '+m.nome+' · tubo Ø'+fmt(m.d)+' × '+m.L+' mm · eixo Ø'+fmt(m.eixo)+' com pontas de '+m.ponta+' mm',m.q+' un']);L.push(['Mecânicos','Mancal com rolamento para eixo Ø'+fmt(m.eixo)+' ('+m.nome+') [CONFIRMAR]',2*m.q+' un']);}
+    else L.push(['Mecânicos','Pino '+m.nome+' · Ø'+fmt(m.d)+' × '+m.L+' mm (aço 1045) [CONFIRMAR]',m.q+' un']);}
+  for(const c of chapasPlan())L.push(['Chapas',(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):'Chapeamento ')+c.nome+' · '+c.pl.larg+' × '+c.pl.alt+' · esp. '+fmt(c.esp)+(c.pl.desenvolvida?' (calandrar/emendar)':''),c.q+' un · '+fmt(c.m2)+' m² · '+fmt(c.kg)+' kg']);
+  if(area>0)L.push(['Compósito','Área de molde/chapa '+area.toFixed(1)+' m² (manta, tecido e resina: calcular no app de cálculo de material)','—']);
+  return L;}
+/* chapas: recortadas (H.chapa) + chapeamento (painéis) planificados, iguais juntas */
+function chapasPlan(M){M=M||LAST.M||[];const out=[],idx={},put=(k,o)=>{if(idx[k])idx[k].q++;else{idx[k]=Object.assign({q:1},o);out.push(idx[k]);}};
+  for(const x of(M.extras||[]))if(x.tipo==='chapa'){const pl=DC.planificar(x.pts);put('c|'+x.nome+'|'+x.esp+'|'+DC.assinaturaChapa(pl),{nome:x.nome,esp:x.esp,pl,tipo:'chapa'});}
+  const PN=M.paineis||[],NN=PN.nomes||[],LS=PN.lista||[];if(PN.length){const esp=+chapaCfg().esp||3,gr={};PN.forEach((p,i)=>{if(LS[i]===false)return;(gr[NN[i]||'']=gr[NN[i]||'']||[]).push(p);});
+    for(const nm in gr){const dv=nm?DC.desenvolver(gr[nm]):null;
+      if(dv){put('p|'+nm,{nome:nm+' (desenvolvida)',esp,pl:dv,tipo:'chapeamento'});continue;}
+      for(const p of gr[nm]){const pl=DC.planificar(p);if(pl.area<100)continue;put('p|'+nm+'|'+DC.assinaturaChapa(pl),{nome:nm||'Chapeamento',esp,pl,tipo:'chapeamento'});}}}
+  out.forEach(o=>{o.m2=o.pl.area/1e6*o.q;o.kg=DC.kgChapa(o.pl.area,o.esp)*o.q;});return out;}
+/* rolos e pinos iguais juntos */
+function mecPlan(M){M=M||LAST.M||[];const out=[],idx={};
+  for(const x of(M.extras||[])){if(x.tipo!=='rolo'&&x.tipo!=='pino')continue;const L=Math.round(Math.hypot(x.b[0]-x.a[0],x.b[1]-x.a[1],x.b[2]-x.a[2]));
+    const k=x.tipo+'|'+x.nome+'|'+x.d+'|'+L+'|'+(x.eixo||0)+'|'+(x.ponta||0);if(idx[k])idx[k].q++;else{idx[k]={tipo:x.tipo,nome:x.nome,d:x.d,L,eixo:x.eixo,ponta:x.ponta,q:1};out.push(idx[k]);}}
+  return out;}
+const fmt=v=>String(Math.round(v*10)/10).replace('.',',');
+function compTodos(){return[...compAuto(),...((MOD&&MOD.comp)||[]).map(c=>[c.sec,c.nome,c.qtd])];}
+function montaCompL(){const L=(MOD.comp||[]);$('compL').innerHTML=compAuto().map(c=>`<div><span>${esc(c[1])} · <b>${esc(c[2])}</b><br><span style="color:var(--mut);font-size:11px">${esc(c[0])} · automático</span></span></div>`).join('')+
+  L.map((c,i)=>`<div><span>${esc(c.nome)} · <b>${esc(c.qtd)}</b><br><span style="color:var(--mut);font-size:11px">${esc(c.sec)}</span></span><span class="x" data-c="${i}">✕</span></div>`).join('');
+  $('compL').querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{MOD.comp.splice(+e.dataset.c,1);upd();});}
+$('cAdd').onclick=()=>{const n=$('cNome').value.trim();if(!n)return;(MOD.comp=MOD.comp||[]).push({sec:$('cSec').value,nome:n,qtd:$('cQtd').value.trim()||'1'});$('cNome').value='';$('cQtd').value='';upd();};
+function secoesMaterial(){const out=[],st={};
+  for(const m of LAST.M||[]){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pp=m.pf||g.perfil,k=perfNome(pp);(st[k]=st[k]||{p:pp,lens:[]}).lens.push(m.lenCorte||m.len);}
+  const est=[],chp=[];for(const k in st){const s=st[k],m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);if(s.p.tipo==='placa')chp.push([k,s.lens.length+' un','',q]);else est.push([k,cortar(s.lens,CFG.barra,CFG.kerf).bars.length+' varas',m.toFixed(1)+' m',q]);}
+  for(const c of chapasPlan())chp.push([(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):'Chapeamento ')+c.nome+' '+c.pl.larg+'×'+c.pl.alt+' esp. '+fmt(c.esp),c.q+' un',fmt(c.m2)+' m²',c.kg]);
+  out.push(['Estrutura (tubos e perfis · varas de '+CFG.barra/1000+' m)',est]);if(chp.length)out.push(['Chapas',chp]);
+  for(const sec of['Mecânicos','Acionamento','Comando e elétrica','Compósito','Outros']){const r=compTodos().filter(c=>c[0]===sec).map(c=>[c[1],c[2],'',null]);if(r.length)out.push([sec,r]);}
+  return out;}
+function folhaMaterialIdx(n,tot){const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const c=cv.getContext('2d');cabecalho(c,n,tot);txt(c,'LISTA DE MATERIAL',MG+40,MG+80,40,'#222','left',true);
+  const col=[MG+40,MG+1500,MG+1800,FW-MG-60];let y=MG+170,tk=0;txt(c,'Item',col[0],y,26,'#888','left',true);txt(c,'Qtd',col[1],y,26,'#888','left',true);txt(c,'Metros',col[2],y,26,'#888','left',true);txt(c,'kg',col[3],y,26,'#888','right',true);y+=50;
+  for(const[t,rows]of secoesMaterial()){if(y>FH-MG-360)break;y+=10;txt(c,t,col[0],y,30,'#c05a10','left',true);y+=48;
+    for(const r of rows){if(y>FH-MG-330)break;txt(c,String(r[0]).slice(0,72),col[0],y,24,'#222');txt(c,String(r[1]),col[1],y,24,'#222','left',true);txt(c,String(r[2]),col[2],y,22,'#555');if(r[3]!=null){tk+=r[3];txt(c,r[3].toFixed(1),col[3],y,24,'#222','right');}
+      c.strokeStyle='#eee';c.lineWidth=1;c.beginPath();c.moveTo(col[0],y+12);c.lineTo(FW-MG-40,y+12);c.stroke();y+=40;}}
+  txt(c,'Total de aço: '+Math.round(tk)+' kg · componentes marcados [CONFIRMAR] são referência',MG+40,FH-MG-30,26,'#222','left',true);return cv;}
 
 // ===== meus modelos =====
 function listarSalvos(){const s=store('dc-estr-salvos')||[];
@@ -1173,17 +1350,17 @@ function listarSalvos(){const s=store('dc-estr-salvos')||[];
 $('bSalvar').onclick=()=>{const s=store('dc-estr-salvos')||[];s.unshift({mod:MOD,val:VAL,quando:new Date().toLocaleString('pt-BR')});store('dc-estr-salvos',s.slice(0,30));listarSalvos();flash('Salvo');};
 
 // ===== modelos prontos =====
-$('chips').innerHTML=CHIPS.filter(c=>c[2]==='d').map(([n,k])=>`<span class="chip" data-k="${k}" style="border-color:var(--or)">✏️ ${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('');
-$('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{carregar({...PR[c.dataset.k],preset:c.dataset.k});$('status').textContent='';});
+$('chips').innerHTML=CHIPS.filter(c=>c[2]==='d').map(([n,k])=>`<span class="chip" data-k="${k}" style="border-color:var(--or)">✏️ ${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">GABARITOS</div>'+CHIPS.filter(c=>c[2]==='g').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">ESTRUTURAS</div>'+CHIPS.filter(c=>c[2]==='e').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<div class="sub" style="width:100%;margin-top:8px">MÁQUINAS</div>'+CHIPS.filter(c=>c[2]==='m').map(([n,k])=>`<span class="chip" data-k="${k}">${n}</span>`).join('')+'<a class="chip" href="filamentadora.html" style="color:var(--tx);text-decoration:none">Filamentadora 3D · editável com animação</a>';
+$('chips').querySelectorAll('.chip[data-k]').forEach(c=>c.onclick=()=>{carregar({...PR[c.dataset.k],preset:c.dataset.k});$('status').textContent='';});
 
 // ===== folha de projeto =====
-let DL=null,FOLHAS=[],EMPRESA=store('dc-estr-empresa')??'D. Compósitos';
+let FOLHAS=[],EMPRESA=store('dc-estr-empresa')??'D. Compósitos';
 const FW=3508,FH=2480,MG=70;
 function proj(v,p){const[x,y,z]=p;
   if(v==='planta')return[x,-y];if(v==='lateral')return[x,-z];if(v==='frente')return[y,-z];
   return[(x-y)*0.866,(x+y)*0.5-z];}
 function escurece(hex){if(!CORES)return '#2b2e31';const n=parseInt(hex.slice(1),16),f=.62;return`rgb(${(n>>16&255)*f|0},${(n>>8&255)*f|0},${(n&255)*f|0})`;}
-function txt(c,t,x,y,sz,cor,al,bold){c.font=`${bold?'700 ':''}${sz}px 'IBM Plex Sans',Arial,sans-serif`;c.fillStyle=cor||'#222';c.textAlign=al||'left';c.fillText(t,x,y);}
+const txt=DC.txt;
 function cotaH(c,x1,x2,y,ref,t){c.strokeStyle='#c05a10';c.lineWidth=2;c.beginPath();c.moveTo(x1,y);c.lineTo(x2,y);
   for(const x of[x1,x2]){c.moveTo(x,ref);c.lineTo(x,y+(y>ref?12:-12));c.moveTo(x-10,y+10);c.lineTo(x+10,y-10);}c.stroke();
   if(Math.abs(x2-x1)>40)txt(c,t,(x1+x2)/2,y-10,26,'#c05a10','center',true);}
@@ -1193,7 +1370,7 @@ function cotaV(c,y1,y2,x,ref,t){c.strokeStyle='#c05a10';c.lineWidth=2;c.beginPat
 function unicos(vals,tol){vals=vals.sort((a,b)=>a-b);const o=[];for(const v of vals)if(!o.length||v-o[o.length-1]>tol)o.push(v);return o;}
 function desenhaVista(c,v,M,PN,bx,by,bw,bh,titulo){
   const segs=[];for(const m of M)for(let i=1;i<m.pts.length;i++)segs.push([proj(v,m.pts[i-1]),proj(v,m.pts[i]),m.g]);
-  const pts=segs.flatMap(s=>[s[0],s[1]]).concat(PN.flatMap(p=>p.map(q=>proj(v,q))));if(!pts.length)return;
+  const pts=segs.flatMap(s=>[s[0],s[1]]).concat(PN.flatMap(p=>p.map(q=>proj(v,q))),(M.extras||[]).flatMap(x=>(x.pts||[x.a,x.b]).map(q=>proj(v,q))));if(!pts.length)return;
   let u0=Math.min(...pts.map(p=>p[0])),u1=Math.max(...pts.map(p=>p[0])),v0=Math.min(...pts.map(p=>p[1])),v1=Math.max(...pts.map(p=>p[1]));
   const du=Math.max(u1-u0,1),dv=Math.max(v1-v0,1),iso=v==='iso';
   const k=Math.min((bw-(iso?80:300))/du,(bh-(iso?140:330))/dv);
@@ -1206,6 +1383,9 @@ function desenhaVista(c,v,M,PN,bx,by,bw,bh,titulo){
     for(const{p}of pp){c.beginPath();p.forEach((q,i)=>{const s=S(proj(v,q));i?c.lineTo(...s):c.moveTo(...s);});c.closePath();c.fill();c.stroke();}}
   for(const[a,b,g]of segs){const gr=MOD.grupos.find(x=>x.id===g)||MOD.grupos[0];c.strokeStyle=escurece(gr.cor);c.lineWidth=iso?2.5:3;
     c.beginPath();c.moveTo(...S(a));c.lineTo(...S(b));c.stroke();}
+  for(const x of(M.extras||[])){c.lineCap='round';
+    if(x.tipo==='chapa'){c.fillStyle='rgba(150,156,162,.45)';c.strokeStyle='#555';c.lineWidth=2;c.beginPath();x.pts.forEach((q,i)=>{const s2=S(proj(v,q));i?c.lineTo(...s2):c.moveTo(...s2);});c.closePath();c.fill();c.stroke();continue;}
+    c.strokeStyle=x.tipo==='rolo'?'rgba(120,126,132,.9)':'#444';c.lineWidth=Math.max(4,x.d*k);c.beginPath();c.moveTo(...S(proj(v,x.a)));c.lineTo(...S(proj(v,x.b)));c.stroke();c.lineCap='butt';}
   if(iso)return;
   const X0=S([u0,v0]),X1=S([u1,v1]);
   cotaH(c,X0[0],X1[0],X1[1]+90,X1[1]+10,Math.round(du)+'');
@@ -1216,24 +1396,72 @@ function desenhaVista(c,v,M,PN,bx,by,bw,bh,titulo){
   if(us.length>2&&us.length<=12)for(let i=0;i<us.length-1;i++)cotaH(c,S([us[i],0])[0],S([us[i+1],0])[0],X1[1]+45,X1[1]+10,Math.round(us[i+1]-us[i])+'');
   if(vs.length>2&&vs.length<=10)for(let i=0;i<vs.length-1;i++)cotaV(c,S([0,vs[i]])[1],S([0,vs[i+1]])[1],X0[0]-50,X0[0]-10,Math.round(vs[i+1]-vs[i])+'');
 }
-function cabecalho(c,folha,tot){
-  c.fillStyle='#fff';c.fillRect(0,0,FW,FH);c.strokeStyle='#222';c.lineWidth=4;c.strokeRect(MG,MG,FW-2*MG,FH-2*MG);
-  const TW=980,tx=FW-MG-TW,ty=FH-MG-260;c.lineWidth=3;c.strokeRect(tx,ty,TW,260);
-  c.fillStyle='#e3924a';c.fillRect(tx,ty,22,260);
-  txt(c,(EMPRESA||'').toUpperCase().slice(0,30),tx+50,ty+62,44,'#2b2e31','left',true);
-  txt(c,(MOD.nome||MOD.titulo).slice(0,44),tx+50,ty+120,32,'#222','left',true);
-  txt(c,'Medidas em mm · sem escala · aço',tx+50,ty+172,26,'#555');
-  txt(c,'Data: '+new Date().toLocaleDateString('pt-BR'),tx+50,ty+220,26,'#555');
-  txt(c,'Folha '+folha+'/'+tot,tx+TW-30,ty+220,28,'#222','right',true);
-}
+function cabecalho(c,folha,tot){DC.carimbo(c,{empresa:EMPRESA,projeto:MOD.nome||MOD.titulo,cliente:MOD.cliente||'',folha,total:tot});}
 function resumoPerfis(){const gid=LAST.gid,out=[],st={};
   for(const id of gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],k=perfNome(g.perfil);(st[k]=st[k]||{p:g.perfil,lens:[],grupos:[]}).lens.push(...LAST.M.filter(m=>m.g===id).map(m=>m.lenCorte||m.len));st[k].grupos.push(g.nome);}
   for(const k in st){const s=st[k],r=s.p.tipo==='placa'?{bars:[],emendas:0}:cortar(s.lens,CFG.barra,CFG.kerf),m=s.lens.reduce((a,b)=>a+b,0)/1000;out.push({k,g:s.grupos.join(', '),m,bar:r.bars.length,kg:m*kgm(s.p),em:r.emendas});}
   return out;}
+function pecasUnicas(M){const mp={};
+  for(const m of M){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pf=m.pf||g.perfil,L=m.lenCorte||m.len,k=g.id+'|'+perfNome(pf)+'|'+L+'|'+(m.curva?m.nota:(m.notaEsq||''));
+    if(!mp[k])mp[k]={g,pf,L,q:0,curva:!!m.curva,nota:m.curva?m.nota:(m.notaEsq||m.nota||''),cuts:m.cuts?[!!m.cuts[0],!!m.cuts[1]]:[false,false],ang:m.cuts?m.cuts.map(c=>c?Math.round(c.ang):0):[0,0]};mp[k].q++;}
+  return Object.values(mp).sort((a,b)=>a.g.nome.localeCompare(b.g.nome)||b.L-a.L);}
+function folhaExplodida(c,M,PN){const gs=[...new Set(M.map(m=>m.g))];const bb=[0,1,2].map(k=>{const v=M.flatMap(m=>m.pts.map(p=>p[k]));return Math.max(...v)-Math.min(...v)});
+  const gap=Math.max(...bb)*0.45,off=id=>gs.indexOf(id)*gap;const segs=[];
+  for(const m of M)for(let i=1;i<m.pts.length;i++){const a=m.pts[i-1],b=m.pts[i];segs.push([proj('iso',[a[0],a[1],a[2]+off(m.g)]),proj('iso',[b[0],b[1],b[2]+off(m.g)]),m.g]);}
+  const pts=segs.flatMap(s=>[s[0],s[1]]);if(!pts.length)return;const u0=Math.min(...pts.map(p=>p[0])),u1=Math.max(...pts.map(p=>p[0])),v0=Math.min(...pts.map(p=>p[1])),v1=Math.max(...pts.map(p=>p[1]));
+  const bx=MG+60,by=MG+140,bw=FW-2*MG-1300,bh=FH-2*MG-220,k=Math.min(bw/(u1-u0||1),bh/(v1-v0||1)),ox=bx+(bw-(u1-u0)*k)/2,oy=by+(bh-(v1-v0)*k)/2,S=p=>[ox+(p[0]-u0)*k,oy+(p[1]-v0)*k];
+  for(const[a,b,g]of segs){const gr=MOD.grupos.find(x=>x.id===g)||MOD.grupos[0];c.strokeStyle=gr.cor;c.lineWidth=4;c.beginPath();c.moveTo(...S(a));c.lineTo(...S(b));c.stroke();}
+  let ly=MG+200;txt(c,'PARTES',FW-MG-1180,ly,34,'#222','left',true);ly+=60;
+  gs.forEach(id=>{const gr=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],ss=segs.filter(s=>s[2]===id),cx=ss.reduce((a,s)=>a+s[0][0]+s[1][0],0)/(2*ss.length),cy=ss.reduce((a,s)=>a+s[0][1]+s[1][1],0)/(2*ss.length),P=S([cx,cy]);
+    c.fillStyle=gr.cor;c.beginPath();c.arc(P[0],P[1],16,0,7);c.fill();txt(c,String(gs.indexOf(id)+1),P[0],P[1]+9,24,'#fff','center',true);
+    c.fillStyle=gr.cor;c.fillRect(FW-MG-1180,ly-26,30,30);txt(c,(gs.indexOf(id)+1)+'. '+gr.nome+' · '+perfNome(gr.perfil),FW-MG-1130,ly,28,'#222');ly+=50;});}
+function cartaoPeca(c,x,y,w,h,n,p){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRect(x,y,w,h);
+  txt(c,'P'+n+' · '+p.g.nome.slice(0,30),x+18,y+40,28,'#222','left',true);txt(c,p.q+' un · '+perfNome(p.pf),x+18,y+78,22,'#c05a10','left',true);
+  if(p.nota)txt(c,p.nota.slice(0,48),x+18,y+110,19,'#777');
+  const L=w-220,hh=Math.max(26,Math.min(70,(p.pf.tipo==='ret'?p.pf.b:p.pf.a)*0.9)),bx=x+110,byy=y+h/2-hh/2+20;
+  c.fillStyle='rgba(180,184,188,.35)';c.strokeStyle='#2C2A2E';c.lineWidth=3;
+  if(p.curva){c.beginPath();c.arc(x+w/2,byy+h*0.55,h*0.45,Math.PI*1.15,Math.PI*1.85);c.lineWidth=hh*0.5;c.strokeStyle='rgba(140,144,150,.8)';c.stroke();c.lineWidth=3;}
+  else{const e0=p.cuts[0]?hh:0,e1=p.cuts[1]?hh:0;c.beginPath();c.moveTo(bx,byy+hh);c.lineTo(bx+e0,byy);c.lineTo(bx+L-e1,byy);c.lineTo(bx+L,byy+hh);c.closePath();c.fill();c.stroke();
+    if(p.cuts[0])txt(c,p.ang[0]+'°',bx+e0,byy-10,22,'#c05a10','center',true);if(p.cuts[1])txt(c,p.ang[1]+'°',bx+L-e1,byy-10,22,'#c05a10','center',true);}
+  const yy=byy+hh+50;c.strokeStyle='#c05a10';c.lineWidth=2;c.beginPath();c.moveTo(bx,yy);c.lineTo(bx+L,yy);c.moveTo(bx,byy+hh+8);c.lineTo(bx,yy+10);c.moveTo(bx+L,byy+hh+8);c.lineTo(bx+L,yy+10);c.stroke();
+  txt(c,p.L+' mm'+(p.curva?' (desenvolvido)':''),bx+L/2,yy+34,30,'#c05a10','center',true);}
+function cartaoChapa(c,x,y,w,h,n,ch){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRect(x,y,w,h);
+  txt(c,'C'+n+' · '+ch.nome.slice(0,44),x+18,y+40,28,'#222','left',true);
+  txt(c,ch.q+' un · esp. '+fmt(ch.esp)+' mm · '+(ch.pl.area/1e6).toFixed(2).replace('.',',')+' m² cada · '+fmt(DC.kgChapa(ch.pl.area,ch.esp))+' kg cada',x+18,y+78,22,'#c05a10','left',true);
+  if(ch.pl.desenvolvida)txt(c,'chapa desenvolvida (calandrar; emendar se passar da chapa comercial)',x+18,y+108,19,'#777');
+  DC.desenhaChapa(c,ch.pl,x,y+120,w,h-130);}
+function cartaoMec(c,x,y,w,h,n,m){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRect(x,y,w,h);
+  txt(c,(m.tipo==='rolo'?'R':'PI')+n+' · '+(m.tipo==='rolo'?'Rolo ':'Pino ')+m.nome.slice(0,44),x+18,y+40,28,'#222','left',true);
+  txt(c,m.q+' un · '+(m.tipo==='rolo'?'tubo Ø'+fmt(m.d)+' · eixo Ø'+fmt(m.eixo):'aço Ø'+fmt(m.d)),x+18,y+78,22,'#c05a10','left',true);
+  const pt=m.tipo==='rolo'?m.ponta:0,tot=m.L+2*pt,k=Math.min((w-200)/tot,(h-260)/Math.max(m.d,1),3),cx=x+w/2,cy=y+h/2+30,L=m.L*k,D=Math.max(14,m.d*k),E=Math.max(8,(m.eixo||0)*k);
+  c.fillStyle='rgba(180,184,188,.5)';c.strokeStyle='#2C2A2E';c.lineWidth=3;c.fillRect(cx-L/2,cy-D/2,L,D);c.strokeRect(cx-L/2,cy-D/2,L,D);
+  if(m.tipo==='rolo'){c.fillStyle='rgba(110,114,118,.6)';c.fillRect(cx-L/2-pt*k,cy-E/2,pt*k,E);c.fillRect(cx+L/2,cy-E/2,pt*k,E);c.strokeRect(cx-L/2-pt*k,cy-E/2,pt*k,E);c.strokeRect(cx+L/2,cy-E/2,pt*k,E);
+    c.setLineDash([16,8]);c.lineWidth=1.5;c.beginPath();c.moveTo(cx-L/2-pt*k-20,cy);c.lineTo(cx+L/2+pt*k+20,cy);c.stroke();c.setLineDash([]);
+    DC.cota(c,[cx-L/2-pt*k,cy+D/2],[cx+L/2+pt*k,cy+D/2],tot+' (total)',110);DC.cota(c,[cx+L/2,cy-E/2],[cx+L/2+pt*k,cy-E/2],pt+'',-60);}
+  DC.cota(c,[cx-L/2,cy+D/2],[cx+L/2,cy+D/2],m.L+'',50);txt(c,(m.tipo==='rolo'?'tubo ':'')+'Ø'+fmt(m.d),cx,cy-D/2-24,24,'#c05a10','center',true);
+  if(m.tipo==='rolo')txt(c,'eixo Ø'+fmt(m.eixo),cx-L/2-pt*k,cy-E/2-30,22,'#c05a10','left',true);}
+function montaEsc(){const e=$('fEsc'),v=e.value,gs=[...new Set((LAST.M||[]).map(m=>m.g))];
+  e.innerHTML='<option value="tudo">Projeto completo</option>'+gs.map(id=>{const g=MOD.grupos.find(x=>x.id===id);return `<option value="g:${id}">Só: ${esc(g?g.nome:id)}</option>`}).join('')+'<option value="peca">Só uma peça</option>';
+  if([...e.options].some(o=>o.value===v))e.value=v;const pu=pecasUnicas(LAST.M||[]);$('fPeca').innerHTML=pu.map((p,i)=>`<option value="${i}">P${i+1} · ${esc(p.g.nome)} · ${p.L} mm (${p.q} un)</option>`).join('')+
+    chapasPlan().map((ch,i)=>`<option value="c:${i}">C${i+1} · ${esc(ch.nome)} · ${ch.pl.larg}×${ch.pl.alt} (${ch.q} un)</option>`).join('')+mecPlan().map((m,i)=>`<option value="m:${i}">${m.tipo==='rolo'?'R':'PI'}${i+1} · ${m.tipo==='rolo'?'Rolo':'Pino'} ${esc(m.nome)} · ${m.L} mm (${m.q} un)</option>`).join('');$('lfPeca').style.display=e.value==='peca'?'':'none';}
+$('fEsc').onchange=()=>{$('lfPeca').style.display=$('fEsc').value==='peca'?'':'none';};
+$('fEsc').onfocus=montaEsc;
+function escopoM(){const v=$('fEsc').value||'tudo';if(!v.startsWith('g:'))return null;const id=v.slice(2),f=LAST.M.filter(m=>m.g===id);f.paineis=[];f.extras=(LAST.M.extras||[]).filter(x=>x.g===id);return{id,M:f};}
 function gerarFolhas(){
-  const M=LAST.M,PN=M.paineis||[];
+  const esc_=$('fEsc').value||'tudo';
+  if(esc_==='peca'&&/^[cm]:/.test($('fPeca').value)){const[t,i]=$('fPeca').value.split(':'),e=DC.folha({empresa:EMPRESA,projeto:MOD.nome||MOD.titulo,cliente:MOD.cliente||'',folha:1,total:1});
+    if(t==='c'){const ch=chapasPlan()[+i];txt(e,'CHAPA PLANIFICADA · '+ch.nome,MG+40,MG+80,40,'#222','left',true);cartaoChapa(e,MG+40,MG+140,FW-2*MG-80,FH-2*MG-480,+i+1,ch);}
+    else{const m=mecPlan()[+i];txt(e,(m.tipo==='rolo'?'ROLO · ':'PINO · ')+m.nome,MG+40,MG+80,40,'#222','left',true);cartaoMec(e,MG+40,MG+140,FW-2*MG-80,FH-2*MG-480,+i+1,m);}
+    return[e.canvas];}
+  if(esc_==='peca'){const pu=pecasUnicas(LAST.M),p=pu[+$('fPeca').value||0];const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const e=cv.getContext('2d');cabecalho(e,1,1);
+    txt(e,'PEÇA · '+p.g.nome+' · '+perfNome(p.pf),MG+40,MG+80,40,'#222','left',true);cartaoPeca(e,MG+40,MG+140,FW-2*MG-80,FH-2*MG-480,1,p);
+    txt(e,`Quantidade: ${p.q} un · medida de corte ${p.L} mm · ${(p.L*p.q/1000).toFixed(2)} m · ${(p.L*p.q/1000*kgm(p.pf)).toFixed(1)} kg`,MG+40,FH-MG-300,32,'#222','left',true);return[cv];}
+  const ES=escopoM(),gidSalvo=LAST.gid;if(ES)LAST.gid=[ES.id];
+  try{return gerarFolhas2(ES?ES.M:LAST.M);}finally{LAST.gid=gidSalvo;}}
+function gerarFolhas2(MM){
+  const M=MM,PN=M.paineis||[];const PU=pecasUnicas(M),NPF=Math.ceil(PU.length/12),CH=chapasPlan(M),MC=mecPlan(M),NCH=Math.ceil(CH.length/6),NMC=Math.ceil(MC.length/6),TOT=4+NPF+NCH+NMC;
   const c1=document.createElement('canvas');c1.width=FW;c1.height=FH;const c=c1.getContext('2d');
-  cabecalho(c,1,2);
+  cabecalho(c,1,TOT);
   const ax=MG+30,ay=MG+30,aw=2330,ah=FH-2*MG-60,cw=aw/2-15,ch=ah/2-15;
   desenhaVista(c,'planta',M,PN,ax,ay,cw,ch,'PLANTA');
   desenhaVista(c,'iso',M,PN,ax+cw+30,ay,cw,ch,'PERSPECTIVA');
@@ -1255,7 +1483,7 @@ function gerarFolhas(){
     txt(c,((p.grupo&&p.grupo!=='Medidas'?p.grupo+' · ':'')+p.nome).slice(0,40),rx,ry,24,'#444');txt(c,String(t),rx+rw,ry,24,'#222','right',true);ry+=36;}
   // folha 2: lista de corte
   const c2=document.createElement('canvas');c2.width=FW;c2.height=FH;const d=c2.getContext('2d');
-  cabecalho(d,2,2);txt(d,'LISTA DE CORTE',MG+40,MG+80,40,'#222','left',true);
+  cabecalho(d,2,TOT);txt(d,'LISTA DE CORTE',MG+40,MG+80,40,'#222','left',true);
   const linhas=[];
   for(const id of LAST.gid){const g=MOD.grupos.find(x=>x.id===id)||MOD.grupos[0],cc=LAST.cut[id];
     linhas.push({h:true,t:g.nome+' — '+perfNome(g.perfil),cor:escurece(g.cor)});
@@ -1273,30 +1501,58 @@ function gerarFolhas(){
     d.strokeStyle='#eee';d.lineWidth=1;d.beginPath();d.moveTo(x,y+12);d.lineTo(x+colW,y+12);d.stroke();y+=rowH;}
   if(cortado)txt(d,'(lista continua: use Copiar lista de corte no app)',MG+40,FH-MG-30,24,'#c05a10');
   if(!cortado)txt(d,`Comprimentos pela linha de centro: desconte a espessura do perfil nas emendas. Barras de ${CFG.barra} mm, perda de corte ${CFG.kerf} mm.`,MG+40,FH-MG-30,22,'#777');
-  return [c1,c2];
+  const out=[c1,c2];
+  {const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const e=cv.getContext('2d');cabecalho(e,3,TOT);txt(e,'VISTA EXPLODIDA (partes separadas por cor)',MG+40,MG+80,40,'#222','left',true);folhaExplodida(e,M,PN);out.push(cv);}
+  for(let i=0;i<PU.length;i+=12){const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const e=cv.getContext('2d');cabecalho(e,4+i/12,TOT);
+    txt(e,'DETALHE DAS PEÇAS ('+(i/12+1)+'/'+NPF+') · medida de corte, quantidade, perfil e ângulos · sem escala',MG+40,MG+80,36,'#222','left',true);
+    PU.slice(i,i+12).forEach((p,j)=>{const col=j%4,row=Math.floor(j/4),cw=(FW-2*MG-80-60)/4,chh=row<2?560:520;cartaoPeca(e,MG+40+col*(cw+20),MG+130+row*580,cw,chh,i+j+1,p);});out.push(cv);}
+  const grade=(L,tit,fn)=>{for(let i=0;i<L.length;i+=6){const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const e=cv.getContext('2d');cabecalho(e,out.length+1,TOT);
+    txt(e,tit+(L.length>6?' ('+(i/6+1)+'/'+Math.ceil(L.length/6)+')':'')+' · medidas em mm',MG+40,MG+80,36,'#222','left',true);
+    L.slice(i,i+6).forEach((x,j)=>{const col=j%3,row=Math.floor(j/3),cw=(FW-2*MG-80-40)/3,chh=row?760:880;fn(e,MG+40+col*(cw+20),MG+130+row*900,cw,row?Math.min(chh,FH-2*MG-130-900-300):chh,i+j+1,x);});out.push(cv);}};
+  grade(CH,'CHAPAS PLANIFICADAS (contorno de corte cotado)',cartaoChapa);
+  grade(MC,'ROLOS E PINOS',cartaoMec);
+  out.push(folhaMaterialIdx(TOT,TOT));
+  return out;
 }
-function nomeArq(){return slug(MOD.titulo||'projeto')+'_'+new Date().toISOString().slice(0,10);}
+function nomeArq(){return slug(MOD.nome||MOD.titulo||'projeto')+'_'+new Date().toISOString().slice(0,10);}
+$('cliente').oninput=()=>{MOD.cliente=$('cliente').value;store('dc-estr-atual',{mod:MOD,val:VAL});};
 $('empresa').value=EMPRESA;$('empresa').oninput=()=>{EMPRESA=$('empresa').value;store('dc-estr-empresa',EMPRESA);};
 $('bFolha').onclick=async()=>{const st=$('stFolha');st.className='status';st.innerHTML='<span class="spin"></span>Desenhando a folha…';
   await new Promise(r=>setTimeout(r,30));
   try{FOLHAS=gerarFolhas();const box=$('prevFolha');box.innerHTML='';
     for(const c of FOLHAS){const im=document.createElement('img');im.src=c.toDataURL('image/jpeg',0.9);box.appendChild(im);}
-    $('acoesFolha').style.display='';st.textContent='';}
+    $('acoesFolha').style.display='';st.textContent='';$('bPDF').click();}
   catch(e){st.className='status err';st.textContent='Erro: '+e.message;}};
-async function salvar(nome,data){const st=$('stFolha');
-  if(!DL){try{const u=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));const a=document.createElement('a');a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);st.textContent='Salvo: '+nome;}catch(e){st.textContent='Segure o dedo na imagem para salvar.';}return;}
-  try{await DL.save({filename:nome,data});st.textContent='Salvo: '+nome;}
-  catch(e){st.className='status err';st.textContent=e.code==='declined'?'Cancelado.':'Não salvou ('+(e.code||e.message)+'). Segure o dedo na imagem para salvar.';}}
-$('bPNG').onclick=async()=>{if(!FOLHAS.length)return;for(let i=0;i<FOLHAS.length;i++){await salvar(nomeArq()+'_folha'+(i+1)+'.png',await canvasBlob(FOLHAS[i],'image/png'));}};
+async function salvar(nome,data,st){st=st||$('stFolha');const r=await DC.salvar(nome,data instanceof Blob?data:new Blob([data]));st.className='status'+(r.ok?'':' err');st.textContent=r.msg;}
+$('bFoto').onclick=async()=>{const st=$('stFolha');st.className='status';const v=$('fEsc').value||'tudo';let cv;
+  if(v==='peca'){FOLHAS=gerarFolhas();cv=FOLHAS[0];}
+  else{const ES=escopoM();if(view!=='3d')setView('3d');if(ES)draw(ES.M);const sv=LINHAS;R.render(scene,cam);cv=document.createElement('canvas');cv.width=R.domElement.width;cv.height=R.domElement.height;cv.getContext('2d').drawImage(R.domElement,0,0);if(ES)draw(LAST.M);render();}
+  await salvar(nomeArq()+'_foto.png',await canvasBlob(cv,'image/png'));};
 $('bPDF').onclick=async()=>{if(!FOLHAS.length)return;const st=$('stFolha');st.className='status';st.innerHTML='<span class="spin"></span>Montando PDF…';
-  try{if(!window.jspdf)await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    FOLHAS.forEach((c,i)=>{if(i)pdf.addPage('a4','landscape');pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);});
-    st.textContent='';await salvar(nomeArq()+'.pdf',pdf.output('blob'));}
+  try{const b=await DC.pdf(FOLHAS);st.textContent='';await salvar(nomeArq()+'.pdf',b);}
   catch(e){st.className='status err';st.textContent='Erro no PDF: '+(e.message||e);}};
 
+// ===== vídeo 360° e câmera livre (gravador do núcleo) =====
+let GRAV=false,GRAVM=null;
+$('bVid').onclick=async()=>{if(GRAV||GRAVM)return;const st=$('stVid');st.className='status';
+  if(view!=='3d')setView('3d');vw.scrollIntoView({behavior:'smooth',block:'center'});await new Promise(r=>setTimeout(r,500));
+  let g;try{g=DC.gravador(R.domElement);}catch(e){st.className='status err';st.textContent=e.message;return;}
+  GRAV=true;$('bVid').style.opacity=.5;const seg=+$('vDur').value||20;
+  const th0=orb.th,ph0=orb.ph,t0=performance.now();orb.ph=Math.min(ph0,1.15);
+  await new Promise(ok=>{const passo=now=>{const k=Math.min(1,(now-t0)/(seg*1000));orb.th=th0+k*2*Math.PI;render();st.innerHTML='<span class="spin"></span>Gravando… '+Math.ceil(seg*(1-k))+' s';if(k<1)requestAnimationFrame(passo);else ok();};requestAnimationFrame(passo);});
+  const blob=await g.parar();orb.th=th0;orb.ph=ph0;render();GRAV=false;$('bVid').style.opacity=1;
+  await salvar(nomeArq()+'_video360.'+g.ext,blob,st);};
+$('bVidM').onclick=async()=>{const st=$('stVid'),b=$('bVidM');
+  if(GRAVM){const g=GRAVM;GRAVM=null;clearInterval(b._t);b.classList.remove('on');b.textContent='● Câmera livre';st.textContent='Salvando…';
+    await salvar(nomeArq()+'_video.'+g.ext,await g.parar(),st);return;}
+  if(GRAV)return;if(view!=='3d')setView('3d');vw.scrollIntoView({behavior:'smooth',block:'center'});
+  try{GRAVM=DC.gravador(R.domElement);}catch(e){st.className='status err';st.textContent=e.message;return;}
+  const t0=Date.now();b.classList.add('on');b.textContent='■ Parar e salvar';
+  const keep=setInterval(()=>{if(GRAVM)render();else clearInterval(keep);},120);
+  b._t=setInterval(()=>{st.className='status';st.textContent='Gravando… '+Math.round((Date.now()-t0)/1000)+' s · gire e aproxime no 3D';},500);};
+
 // ===== conversa de projeto =====
-const API=`Você gera estruturas metálicas (só ferro/aço) para um app de serralheria e moldes de fibra de vidro da D. Compósitos.
+const API=`Você gera estruturas metálicas (só ferro/aço) para um app de serralheria, máquinas e moldes de fibra de vidro da D. Compósitos: gabaritos, berços e gradeamentos de molde (com rodízios, reforço e virador), moldes escaláveis sobre trilho, berços de barco, capotas, palcos, torres, grades, corrimãos, mesas e bases de máquina.
 Responda SOMENTE um objeto JSON, sem texto fora dele, neste formato:
 {
  "titulo": "nome curto da estrutura",
@@ -1309,7 +1565,7 @@ Responda SOMENTE um objeto JSON, sem texto fora dele, neste formato:
                 {"id":"lados","nome":"Lados","tipo":"sel","valor":"2","opcoes":["1","2"],"grupo":"Guarda-corpo"}],
  "esqAuto": false,
  "perfilPadrao": {"tipo":"ret","a":50,"b":50,"t":2},
- "codigo": "function(P,H){ const {add,poli,arco,dobrada,divide,divPts}=H; ... }"
+ "codigo": "function(P,H){ const {add,poli,arco,dobrada,divide,divPts,painel,perfil,chapa,rolo,pino,animar}=H; ... }"
 }
 Regras:
 - Unidades em mm e graus. Eixos: x = comprimento, y = largura, z = altura (z=0 no chão).
@@ -1323,7 +1579,12 @@ Regras:
   dobrada([[x,y,z],...],grupoId,nota?) UMA peça dobrada (a lista de corte mostra os ângulos das dobras)
   divide(a,b,maxEsp) -> posições de a até b com espaçamento <= maxEsp (inclui as pontas)
   divPts([pontos],maxEsp) -> ordena pontos obrigatórios e completa com intermediários
-  painel([[x,y,z],...]) superfície plana (3+ pontos, em ordem) só para mostrar a peça/chapa por cima da estrutura e calcular a área em m² (não entra na lista de corte). Use para desenhar a forma da peça (fundo e paredes da piscina, tampo, casca da capota).
+  painel([[x,y,z],...]) superfície plana (3+ pontos, em ordem) só para mostrar a peça/chapa por cima da estrutura e calcular a área em m² (não entra na lista de corte). Use para desenhar a forma da peça (fundo e paredes da piscina, tampo, casca da capota). painel(pts,'nome') dá nome à superfície: faixas curvas com o mesmo nome (casca do cilindro/capota) saem DESENVOLVIDAS numa chapa só na folha de chapas planificadas; painel(pts,{nome,lista:false}) = só visual (ex.: o tanque na máquina), fora da lista de chapas.
+  chapa({pts:[[x,y,z],...],esp,nome,g}) chapa de aço RECORTADA (polígono plano, esp em mm): sapata, chapa de mancal, chapa de ligação, banheira, bandeja, aba. Sai na lista (Chapas: m² e kg) e PLANIFICADA com cotas na folha.
+  rolo({a:[x,y,z],b:[x,y,z],d,eixo,ponta,nome,g}) rolo (tubo Ø d de a até b, eixo Ø eixo com pontas de "ponta" mm): rolos de carro, esteira, berço de roletes, virador. Sai em Mecânicos com 2 mancais e numa folha de rolos e pinos cotada.
+  pino({a,b,d,nome,g}) pino/eixo maciço Ø d (articulação, trava, dobradiça, eixo de rodízio). Sai em Mecânicos e na folha de rolos e pinos.
+  animar({eixo:[[x,y,z],[x,y,z]],grupos:['id',...],chapa:true|false,rpm}) quando faz sentido mostrar movimento: os grupos listados (e a chapa/casca se chapa:true) GIRAM em volta do eixo no 3D (mandril, virador de molde, rolo). Só uma animação por modelo.
+  Use chapa/rolo/pino SÓ quando o projeto tiver esses itens de verdade (não invente peças).
 - Meia esquadria: se pedirem em TODOS os cantos/encontros em L, ponha "esqAuto": true no modelo; se for só em algumas peças, use {esq:true} nelas (as duas barras do encontro precisam terminar exatamente no mesmo ponto). Não precisa explicar na nota: o app escreve o ângulo e a medida da ponta longa.
 - MEDIDAS DE CORTE (padrão de serralharia): o usuário fala medidas EXTERNAS. Desenhe a linha de centro de cada perfil recuada meia largura (use H.perfil(grupoId) -> {a,b,t,w,h}; w = largura, h = altura). O app calcula sozinho a medida de corte: peça que termina encostada numa barra que passa é descontada (meia largura de cada lado); perna/montante vertical é inteira, as outras peças encostam nela; quadro em meia esquadria fica POR CIMA e a perna é soldada por baixo (perna = altura − altura do perfil do quadro). Para isso as pontas precisam se encontrar exatamente no mesmo ponto ou terminar sobre a linha de centro da barra que passa. Peças que encostam entre duas pernas devem ser trechos separados (perna no meio = duas peças, não uma que atravessa).
 - Linha de centro dos perfis. Barras não podem ter comprimento zero. Não duplique a mesma barra. Use loops; sem fetch, sem DOM, sem variáveis globais. Máximo ~1500 barras.
@@ -1335,38 +1596,32 @@ Regras:
 - Gabarito = estrutura de ferro com a medida externa da peça, que depois é plaqueada (chapeada) por cima: use painel() para a superfície plaqueada e coloque cantoneira nas arestas quando pedirem.`;
 const CONVERSA=`
 VOCÊ ESTÁ DENTRO DO APP, conversando com o serralheiro/projetista (ele fala por voz, às vezes dirigindo). A cada mensagem responda SOMENTE um JSON:
-{"fala":"...", "modelo": {modelo completo no formato acima} ou null, "valores": {"id": valor} ou null}
+{"fala":"...", "modelo": {modelo completo no formato acima} ou null, "valores": {"id": valor} ou null, "componentes": [{"sec":"Mecânicos|Acionamento|Comando e elétrica|Compósito|Outros","nome":"...","qtd":"..."}] ou null}
+- "componentes": itens que não são tubo (rodízios, rolamentos, motor, redutor, CLP, resina, manta...). Mande a lista COMPLETA quando o usuário pedir para pôr ou tirar algum; modelos de motor são referência e levam [CONFIRMAR].
 - "fala": 1 a 3 frases curtas em português do Brasil, fáceis de ouvir. Diga o que montou/mudou e faça UMA pergunta sobre o próximo detalhe que falta (ex.: "Vai ter reforço? Em X ou transversal? De cantoneira ou metalon?"). Não liste números longos.
 - Mudou a forma da estrutura, os grupos ou acrescentou peças (reforço, travessa, diagonal, escada...)? Mande "modelo" COMPLETO atualizado, mantendo tudo que não foi pedido para mudar (inclusive os valores atuais).
 - Só mudou medidas/opções que já existem como parâmetro? Mande só "valores" e "modelo": null.
 - Pergunta ou conversa sem mudança? "modelo": null e "valores": null.
 - Se não tem modelo atual, monte um do zero a partir do pedido.`;
 let sampler=null,ditado=null,falador=null,ocup=false,REC=false,ANEXOS=[],CHAT=store('dc-estr-chat')||[],FALAR=!!store('dc-estr-falar');
-const norm=t=>String(t).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const norm=DC.norm;
 function addChat(quem,txt){CHAT.push({q:quem,t:txt});CHAT=CHAT.slice(-30);store('dc-estr-chat',CHAT);mostrarChat();}
 function mostrarChat(){const c=$('chat');c.style.display=CHAT.length?'':'none';
   c.innerHTML=CHAT.map(m=>`<div class="msg ${m.q}">${esc(m.t)}</div>`).join('');c.scrollTop=c.scrollHeight;}
 function micTeclado(){$('pedido').focus();$('status').className='status';$('status').textContent='Toque no microfone do teclado do celular e fale.';}
 $('mic').onclick=micTeclado;
 (async()=>{
-  try{sampler=await window.claude?.use('sample');}catch(e){}
+  const RS=await DC.recursos();sampler=RS.sample;falador=RS.tts;
   if(sampler){try{const lm=await sampler.limits();if(!lm||!lm.images)$('anx').style.display='none';}catch(e){}}
   else{$('anx').style.display='none';$('status').textContent='Comandos de medida: "profundidade 1,40", "piso da escada 350", "tira a prainha"…';}
-  try{ditado=await window.claude?.use('dictation');}catch(e){}
-  if(ditado){let base='';
-    ditado.onPartial(({text})=>{$('pedido').value=base+text;});
-    ditado.onFinal(({text})=>{base=base+text+' ';$('pedido').value=base;});
-    ditado.onState(({state})=>{REC=state==='listening';$('mic').classList.toggle('rec',REC);});
-    $('mic').onclick=()=>{if(REC){ditado.stop().catch(()=>{});return;}falador&&falador.stop&&falador.stop();base=$('pedido').value?$('pedido').value+' ':'';ditado.start().catch(e=>{if(e&&e.code==='not_granted'){ditado=null;$('mic').onclick=micTeclado;micTeclado();}});};}
-  try{falador=await window.claude?.use('tts');}catch(e){}
+  ditado=await DC.ditado($('pedido'),{mic:$('mic'),antes:()=>{falador&&falador.stop&&falador.stop();},aviso:t=>{$('status').className='status';$('status').textContent=t;}});
   if(falador){const b=$('bFalar');b.style.display='';b.classList.toggle('on',FALAR);
     b.onclick=()=>{FALAR=!FALAR;store('dc-estr-falar',FALAR);b.classList.toggle('on',FALAR);if(!FALAR)falador.stop();};}
-  try{DL=await window.claude?.use('downloads');}catch(e){}
 })();
 function falar(t){if(falador&&FALAR)falador.speak(t,{language:'pt-BR'}).catch(()=>{});}
 
 // --- comando por frase (sem IA) ---
-const TIPOS_TXT=[[/cilindr/,'cilindro'],[/\btanque\b/,'tanque'],[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
+const TIPOS_TXT=[[/filament|enroladeira/,'filamentadora'],[/cilindr/,'cilindro'],[/\btanque\b/,'tanque'],[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
 function comandoLocal(txt){
   let t=norm(txt).trim();if(!t||!MOD||NOVO)return null;
   t=t.replace(/(\d)\s*x\s*(\d)/g,'$1 por $2').replace(/\b(purinha|prainha|praia|prainhas)\b/g,'prainha').replace(/(\d+)\s+(escadas?|degraus?|degrais)/g,'$1 degraus').replace(/\bfundo\b/g,'profundidade').replace(/\bcomprido\b/g,'comprimento');
@@ -1417,17 +1672,16 @@ function comandoLocal(txt){
 }
 
 // --- enviar ---
-function lerJSON(t){let raw=t.trim().replace(/^```(json)?/,'').replace(/```$/,'').trim();const i0=raw.indexOf('{'),i1=raw.lastIndexOf('}');return JSON.parse(raw.slice(i0,i1+1));}
+const lerJSON=DC.lerJSON;
 async function enviar(){
   if(ocup)return;const txt=$('pedido').value.trim(),st=$('status');
   if(!txt&&!ANEXOS.length){st.textContent='Escreva, fale ou mande um PDF/foto.';return;}
   if(txt&&!ANEXOS.length&&(!sampler||txt.split(/\s+/).length<=10)){const r=comandoLocal(txt);if(r){addChat('eu',txt);addChat('app',r);$('pedido').value='';st.textContent='';return;}}
-  if(!sampler){st.className='status err';st.innerHTML='Esse pedido precisa do modo conversa. <a id="lkConv" href="https://claude.ai/artifact/U29uU5zDnhEd9J8LboN7Nx" style="color:var(--or);font-weight:600">Abrir o modo conversa</a> (seu texto vai copiado, é só colar lá).';
-    const lk=$('lkConv');lk.onclick=()=>{try{navigator.clipboard.writeText(txt);}catch(e){}};return;}
+  if(!sampler){st.className='status err';st.textContent='O assistente está sem conexão agora. Para medidas, use frases curtas como "comprimento 6 metros" ou "tira a prainha".';return;}
   ocup=true;$('bEnviar').style.opacity=.5;st.className='status';st.innerHTML='<span class="spin"></span>Montando a estrutura…';
   addChat('eu',(txt||'(projeto anexado)')+(ANEXOS.length?' 📎'+ANEXOS.length:''));$('pedido').value='';
   let prompt=API+'\n'+CONVERSA+'\n\n';
-  if(MOD&&!NOVO){const atual={titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,proprio:!!g.proprio,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),esqAuto:!!MOD.esqAuto,perfilPadrao:MOD.perfilPadrao,codigo:MOD.codigo};
+  if(MOD&&!NOVO){const atual={comp:MOD.comp||[],titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,proprio:!!g.proprio,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),esqAuto:!!MOD.esqAuto,perfilPadrao:MOD.perfilPadrao,codigo:MOD.codigo};
     prompt+='MODELO ATUAL NA TELA:\n'+JSON.stringify(atual)+'\n\n';}
   else prompt+='MODELO ATUAL: nenhum.\n\n';
   const hist=CHAT.slice(-13,-1).map(m=>(m.q==='eu'?'Usuário: ':m.q==='cl'?'Você: ':'App: ')+m.t).join('\n');
@@ -1443,6 +1697,7 @@ async function enviar(){
       const r=await sampler(msgs,op),j=lerJSON(r.text);
       if(j.modelo){validar(j.modelo);j.modelo.deClaude=true;delete j.modelo.preset;carregar(j.modelo);}
       else if(j.valores&&MOD){for(const k in j.valores)if(MOD.parametros.some(p=>p.id===k))VAL[k]=j.valores[k];montarUI();upd();}
+      if(Array.isArray(j.componentes)&&MOD){MOD.comp=j.componentes.filter(c=>c&&c.nome).map(c=>({sec:String(c.sec||'Outros'),nome:String(c.nome),qtd:String(c.qtd||'1')}));upd();}
       const f=j.fala||(j.modelo?'Montei. Confere as medidas.':'Ok.');addChat('cl',f);falar(f);
       ANEXOS=[];mostrarAnexos();st.textContent='';break;
     }catch(e){
@@ -1466,24 +1721,10 @@ $('pedido').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&matc
 $('bNovoProj').onclick=()=>{CHAT=[];store('dc-estr-chat',CHAT);mostrarChat();NOVO=true;$('status').className='status';$('status').textContent='Projeto novo: diga o que quer montar.';$('pedido').focus();};
 
 // --- anexos (PDF / foto) ---
-function carregaScript(src){return new Promise((ok,err)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>err(new Error('não carregou '+src.split('/').pop()));document.head.appendChild(s);});}
-async function libPDF(){if(window.pdfjsLib)return window.pdfjsLib;const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-  await carregaScript(B+'pdf.worker.min.js');await carregaScript(B+'pdf.min.js');window.pdfjsLib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js';return window.pdfjsLib;}
-function canvasBlob(c,t,q){return new Promise(r=>c.toBlob(r,t||'image/jpeg',q||0.85));}
-async function reduzir(blob){const img=await createImageBitmap(blob);const k=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);return canvasBlob(c);}
-$('arq').onchange=async e=>{const fs=[...e.target.files];e.target.value='';const st=$('status');st.className='status';
-  for(const f of fs){
-    try{
-      if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){st.innerHTML='<span class="spin"></span>Lendo PDF…';
-        const lib=await libPDF(),doc=await lib.getDocument({data:await f.arrayBuffer()}).promise,n=Math.min(doc.numPages,4);
-        for(let i=1;i<=n;i++){const pg=await doc.getPage(i),v0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:Math.min(3,1600/Math.max(v0.width,v0.height))});
-          const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);
-          await pg.render({canvasContext:cx,viewport:vp}).promise;ANEXOS.push({nome:f.name+' p.'+i,blob:await canvasBlob(c)});}
-        st.textContent=doc.numPages>4?'PDF com '+doc.numPages+' páginas: vou mandar as 4 primeiras.':'';
-      }else if(f.type.startsWith('image/')){ANEXOS.push({nome:f.name,blob:await reduzir(f)});st.textContent='';}
-      else st.textContent='Mande PDF ou foto.';
-    }catch(err){st.className='status err';st.textContent='Não consegui ler '+f.name+': '+(err.message||err);}
-  }
+const canvasBlob=DC.canvasBlob;
+$('arq').onchange=async e=>{const fs=[...e.target.files];e.target.value='';const st=$('status');st.className='status';st.textContent='';
+  for(const f of fs){try{ANEXOS.push(...await DC.lerAnexos([f],t=>{st.innerHTML=/Lendo/.test(t)?'<span class="spin"></span>'+t:t;}));if(/Lendo/.test(st.textContent))st.textContent='';}
+    catch(err){st.className='status err';st.textContent='Não consegui ler '+f.name+': '+(err.message||err);}}
   if(ANEXOS.length>6){ANEXOS=ANEXOS.slice(0,6);st.textContent='Máximo 6 imagens.';}
   mostrarAnexos();if(ANEXOS.length&&!st.textContent)st.textContent='Anexo pronto. Diga o que quer (ou deixe vazio) e aperte Enviar.';};
 function mostrarAnexos(){$('anexos').innerHTML=ANEXOS.map((a,i)=>`<span class="anx-t"><img src="${URL.createObjectURL(a.blob)}">${esc(a.nome.slice(0,18))}<span data-i="${i}">✕</span></span>`).join('');
@@ -1492,13 +1733,22 @@ mostrarChat();
 
 // ===== início =====
 resize();listarSalvos();
+function mostrarInicio(v){$('inicio').style.display=v?'':'none';$('app').style.display=v?'none':'';if(!v)setTimeout(()=>{resize();setView('3d');},30);else{iniMontar();scrollTo({top:0});}}
+function iniMontar(){DC.cartoesInicio($('iniCards'),t=>{
+    if(t.id==='livre'){mostrarInicio(false);$('bNovoProj').click();setTimeout(()=>$('pedido').scrollIntoView({behavior:'smooth',block:'center'}),80);return;}
+    if(t.preset&&PR[t.preset]){carregar({...PR[t.preset],preset:t.preset});mostrarInicio(false);}});
+  $('iniCont').innerHTML=MOD?`<div class="it dest" id="iniC" style="margin-top:12px;background:#2a2018;border:1px solid var(--or);border-radius:12px;padding:14px;cursor:pointer"><b>Continuar: ${esc(MOD.nome||MOD.titulo)}</b></div>`:'';
+  if($('iniC'))$('iniC').onclick=()=>mostrarInicio(false);
+  const sv=store('dc-estr-salvos')||[];$('iniSalvos').innerHTML=sv.length?sv.map((x,i)=>`<div><span data-i="${i}" style="cursor:pointer;flex:1">${esc(x.mod.nome||x.mod.titulo)}<br><span style="color:var(--mut);font-size:11px">${esc(x.quando)}</span></span></div>`).join(''):'<span class="sub">Nenhum salvo ainda. Use "Salvar este modelo" dentro do projeto.</span>';
+  $('iniSalvos').querySelectorAll('[data-i]').forEach(e=>e.onclick=()=>{const x=sv[+e.dataset.i],k=presetDe(x.mod);if(k&&!x.mod.deClaude)carregar(doPreset(k,x.mod),x.val);else carregar(x.mod,x.val);mostrarInicio(false);});}
+$('bInicio').onclick=()=>mostrarInicio(true);
 const at=store('dc-estr-atual');
 function presetDe(m){if(m.preset&&PR[m.preset])return m.preset;const t=norm(m.titulo||'');
   if(m.codigo&&Object.values(PR).some(x=>x.codigo===m.codigo))return Object.keys(PR).find(k=>PR[k].codigo===m.codigo);
-  for(const[re,k]of[[/cilindr/,'cilindro'],[/tanque/,'tanque'],[/piscina/,'piscina'],[/^mesa/,'mesa'],[/berco|molde/,'molde'],[/corrimao/,'corrimao'],[/capota|arco/,'capota'],[/escada/,'escada']])if(re.test(t)&&/^(gabarito|mesa|estrutura|escada|corrimao)/.test(t))return k;return null;}
+  for(const[re,k]of[[/filament/,'filamentadora'],[/cilindr/,'cilindro'],[/tanque/,'tanque'],[/piscina/,'piscina'],[/^mesa/,'mesa'],[/berco|molde/,'molde'],[/corrimao/,'corrimao'],[/capota|arco/,'capota'],[/escada/,'escada']])if(re.test(t)&&/^(gabarito|mesa|estrutura|escada|corrimao|filament)/.test(t))return k;return null;}
 function doPreset(k,old){const m={...clone(PR[k]),preset:k};if(old){m.ajustes=old.ajustes;m.nome=old.nome;m.esqAuto=old.esqAuto;if(old.perfilPadrao)m.perfilPadrao=old.perfilPadrao;
     const og=old.grupos||[];m.grupos=m.grupos.map(g=>{const o=og.find(x=>x.id===g.id);return o&&o.proprio?{...g,proprio:true,perfil:o.perfil}:g;}).concat(og.filter(o=>!m.grupos.some(g=>g.id===o.id)&&['ch','rf','mf'].includes(o.id)));}return m;}
 try{if(at&&at.mod){const k=presetDe(at.mod);if(at.val&&!store('dc-estr-v2')){delete at.val.aresta;delete at.val.base;delete at.val.par;store('dc-estr-v2',1);}if(k&&!at.mod.deClaude)carregar(doPreset(k,at.mod),at.val);else carregar(at.mod,at.val);}else carregar({...PR.piscina,preset:'piscina'});}catch(e){carregar({...PR.piscina,preset:'piscina'});}
-setView('3d');
+setView('3d');mostrarInicio(true);
 
 </script><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});</script></body></html>
