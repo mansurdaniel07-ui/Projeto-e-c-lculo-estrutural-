@@ -477,23 +477,23 @@ function build(){
 
   /* painel CLP + IHM (ou liga/desliga + timer) */
   const pn=new THREE.Group();pn.position.set(xh-1.4,0,1.8);pn.rotation.y=0.55;G.painel.add(pn);
-  NM('Painel – coluna');box(pn,0.12,0.45,0.12,mt.preto,0,0.225,0);NM('Painel – pé');box(pn,0.4,0.02,0.4,mt.preto,0,0.01,0);NM('Painel – caixa');box(pn,0.6,1.2,0.35,mt.graf,0,1.05,0);
+  NM('Painel – coluna');box(pn,0.12,0.68,0.12,mt.preto,0,0.34,0);NM('Painel – pé');box(pn,0.4,0.02,0.4,mt.preto,0,0.01,0);NM('Painel – caixa');box(pn,0.6,1.2,0.35,mt.graf,0,1.28,0);
   const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.44,0.3),new THREE.MeshBasicMaterial({map:canvasTex(440,300,(c,W,Hh)=>{c.fillStyle='#16181b';c.fillRect(0,0,W,Hh);c.fillStyle='#F98202';c.fillRect(0,0,W,54);
     c.fillStyle='#1d1c1f';c.font='600 26px Barlow,sans-serif';c.fillText('D. Compósitos Filamento',16,36);c.fillStyle='#e9e7e4';c.font='22px Barlow,sans-serif';
     const ls=semi?['Tanque Ø '+S.D+' × '+S.L+' mm',S.mat+' · '+S.larg+' mm','Timer da faixa 02:30']:['Tanque Ø '+S.D+' × '+S.L+' mm','Etapa: cruzado 55°',S.fios+' fios · banda '+S.banda+' mm'];
     ls.forEach((s,i)=>c.fillText(s,16,98+i*36));c.fillStyle='#3a3c40';c.fillRect(16,214,W-32,14);c.fillStyle='#F98202';c.fillRect(16,214,(W-32)*.62,14);
     c.fillStyle='#3F7A57';c.fillRect(16,246,150,42);c.fillStyle='#55585d';c.fillRect(182,246,150,42);c.fillStyle='#fff';c.font='600 20px Barlow,sans-serif';c.fillText(semi?'LIGA':'INICIAR',semi?66:52,274);c.fillText(semi?'DESLIGA':'PAUSA',semi?210:222,274)}),toneMapped:false}));
-  scr.position.set(0,1.32,0.176);scr.userData.nome=semi?'Painel – timer':'Painel – IHM';pn.add(scr);
+  scr.position.set(0,1.55,0.176);scr.userData.nome=semi?'Painel – timer':'Painel – IHM';pn.add(scr);
   const lg=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.1),new THREE.MeshBasicMaterial({map:canvasTex(500,100,(c,W,Hh)=>{c.fillStyle='#2C2A2E';c.fillRect(0,0,W,Hh);c.fillStyle='#F98202';c.font='700 58px "Barlow Semi Condensed",sans-serif';c.fillText('D. Compósitos',14,72)}),toneMapped:false}));
-  lg.position.set(0,0.62,0.176);lg.userData.nome='Painel – placa D. Compósitos';pn.add(lg);
-  NM('Painel – botão de emergência');cyl(pn,0.06,0.012,mt.yel,0.18,0.95,0.18,'z');cyl(pn,0.04,0.05,mt.red,0.18,0.95,0.2,'z');NM('Painel – botão liga');cyl(pn,0.025,0.03,mt.verde,-0.17,0.95,0.185,'z');NM('Painel – botão desliga');cyl(pn,0.025,0.03,mt.lar,-0.05,0.95,0.185,'z');NM('');
+  lg.position.set(0,0.85,0.176);lg.userData.nome='Painel – placa D. Compósitos';pn.add(lg);
+  NM('Painel – botão de emergência');cyl(pn,0.06,0.012,mt.yel,0.18,1.18,0.18,'z');cyl(pn,0.04,0.05,mt.red,0.18,1.18,0.2,'z');NM('Painel – botão liga');cyl(pn,0.025,0.03,mt.verde,-0.17,1.18,0.185,'z');NM('Painel – botão desliga');cyl(pn,0.025,0.03,mt.lar,-0.05,1.18,0.185,'z');NM('');
 
   KEYS.forEach(k=>G[k].visible=vis[k]);
   /* rótulos */
   labs=[['tanque',()=>V(xc,H+r+0.25,0),'Tanque Ø '+S.D+' × '+S.L+' mm'],['acion',()=>V(xm,0.7,0.3),'Motorredutor + corrente'],
     ['apoio',()=>V(xt,H+0.3,0),'Apoio móvel'],['carro',()=>V(car.position.x,top+0.35,Z0+0.3),semi?'Rolo de tecido':'Carro com pente'],
     ['carro',()=>V(car.position.x+w/2,by+0.2,Z0),'Banheira'],['carro',()=>V(car.position.x-w/2,by+0.55,Z0-0.2),'Espremedor de 2 rolos'],
-    ['estrutura',()=>V(xc+l/4,0.15,-0.62),'Trilho guia do mandril'],['painel',()=>V(xh-1.4,1.85,1.8),semi?'Liga/desliga + timer':'CLP + IHM']];
+    ['estrutura',()=>V(xc+l/4,0.15,-0.62),'Trilho guia do mandril'],['painel',()=>V(xh-1.4,2.08,1.8),semi?'Liga/desliga + timer':'CLP + IHM']];
   if(!semi){labs.push(['acion',()=>V(xh-0.5,H+0.18,0),'Encoder'],['creel',()=>V(xc,2.45,ZC),'Gaiola de rovings 2200 tex (fixa)'],['prot',()=>V(xEnd,TY+0.4,RZ+0.2),'Calha da cremalheira'])}
   else labs.push(['trilhos',()=>V(xs0,TY+0.35,Z0+0.3),'Trava de posição das faixas']);
   $('labels').innerHTML=labs.map((x,i)=>`<div class="lb" id="lb${i}">${x[2]}</div>`).join('');
