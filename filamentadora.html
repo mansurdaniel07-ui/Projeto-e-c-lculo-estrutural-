@@ -269,6 +269,12 @@ function aFrame(g,x,top,m,pre){const bx=0.28,tx=0.14,bz=0.62,tz=0.2;let n=0;
   [top*0.31,top*0.68].forEach((y,iy)=>{const f=y/top,dx=bx+(tx-bx)*f,dz=bz+(tz-bz)*f,nv=iy?'de cima':'de baixo';
     [-1,1].forEach((sz,i)=>{NM(pre+' – travessa '+nv+' lado '+LADO[i]);box(g,2*dx,0.06,0.06,m,x,y,sz*dz)});[-1,1].forEach((sx,i)=>{NM(pre+' – travessa '+nv+' frente '+(i+1));box(g,0.06,0.06,2*dz,m,x+sx*dx,y,0)})});
   NM(pre+' – chapa do topo');box(g,0.4,0.03,0.52,m,x,top+0.015,0)}
+const BOB=(()=>{const lado=canvasTex(512,256,(c,W,H)=>{c.fillStyle='#f3eee2';c.fillRect(0,0,W,H);
+    for(let k=0;k<2600;k++){const y=Math.random()*H,x=Math.random()*W,d=Math.random()<.5?1:-1;c.strokeStyle=`rgba(${190+Math.random()*40|0},${180+Math.random()*40|0},${150+Math.random()*40|0},.35)`;c.lineWidth=.8;c.beginPath();c.moveTo(x,y);c.lineTo(x+d*26,y+9);c.stroke()}
+    c.fillStyle='rgba(0,0,0,.05)';for(let y=0;y<H;y+=16)c.fillRect(0,y,W,1)});
+  const topo=canvasTex(256,256,(c,W)=>{c.fillStyle='#efe9dc';c.fillRect(0,0,W,W);for(let r=128;r>66;r-=3){c.strokeStyle=`rgba(170,155,120,${.12+Math.random()*.18})`;c.lineWidth=1;c.beginPath();c.arc(128,128,r,0,7);c.stroke()}
+    const g=c.createRadialGradient(128,128,20,128,128,66);g.addColorStop(0,'#2a2622');g.addColorStop(1,'#6b6152');c.fillStyle=g;c.beginPath();c.arc(128,128,66,0,7);c.fill()});
+  const ml=new THREE.MeshStandardMaterial({map:lado,roughness:.85,metalness:0}),mt2=new THREE.MeshStandardMaterial({map:topo,roughness:.9,metalness:0});return{mat:[ml,mt2,mt2]}})();
 function anelGeo(ro,ri,esp){const sh=new THREE.Shape();sh.absarc(0,0,ro,0,Math.PI*2,false);const h=new THREE.Path();h.absarc(0,0,ri,0,Math.PI*2,true);sh.holes.push(h);return new THREE.ExtrudeGeometry(sh,{depth:esp,bevelEnabled:false,curveSegments:96})}
 function canvasTex(w,h,draw,rep){const cv=document.createElement('canvas');cv.width=w;cv.height=h;draw(cv.getContext('2d'),w,h);const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;if(rep){t.wrapS=THREE.RepeatWrapping;t.repeat.set(rep,1)}return t}
 const clear=g=>{while(g.children.length){const c=g.children.pop();c.traverse(o=>{if(o.geometry)o.geometry.dispose()})}};
@@ -442,15 +448,32 @@ function build(){
   band=new THREE.Mesh(new THREE.BoxGeometry(semi?S.larg/1000:w*0.53,0.004,1),M(0xffffff,.6,0,{map:bTex,transparent:true,opacity:.95}));band.userData.nome='Faixa até o tanque';scene.add(band);band.visible=vis.carro;
 
   /* gaiola de rovings (só automática) */
-  if(!semi){const cx=xc;
-    {let nc=0;for(const x of[-0.85,0.85])for(const dz of[-0.25,0.25]){NM('Gaiola – coluna '+(++nc));box(G.creel,0.06,1.9,0.06,mt.preto,cx+x,0.95,ZC+dz);NM('Gaiola – sapata '+nc);box(G.creel,0.16,0.012,0.16,mt.preto,cx+x,0.006,ZC+dz);NM('Gaiola – coluna '+nc);solda(G.creel,[cx+x,0.016,ZC+dz],[0,1,0],0.06)}}
-    [0.3,1.0,1.7].forEach((y,i)=>{NM('Gaiola – prateleira '+(i+1));box(G.creel,1.76,0.04,0.56,mt.graf,cx,y,ZC)});
-    NM('Gaiola – guia dos fios');box(G.creel,1.76,0.05,0.05,mt.lar,cx,1.92,ZC-0.25);
-    const fibM=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.8});
-    const nf=Math.max(1,Math.min(16,Math.round(S.fios)));
-    for(let i=0;i<nf;i++){const row=i<8?0:1,col=i%8,x=cx-0.7+col*0.2,y=(row?1.02:0.32);
-      NM('Gaiola – bobina de roving '+(i+1));cyl(G.creel,0.09,0.24,mt.branco,x,y+0.12,ZC,'y',24);cyl(G.creel,0.03,0.245,mt.lar,x,y+0.12,ZC,'y',12);
-      const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(x,y+0.25,ZC),V(x,1.94,ZC-0.25),V(0,0,0)]),fibM);ln.userData={x,y:y+0.25,i,n:nf,cx,nome:'Fio '+(i+1)+' da gaiola ao carro'};scene.add(ln);feed.push(ln)}}
+  if(!semi){const cx=xc,BW=0.96,BD=0.34,HT=2.12,PR=[0.12,0.8,1.48],RB=0.145,HB=0.26,cols=6,pas=0.3,zF=ZC-BD,zG=ZC-BD-0.75,yG=HT-0.02;
+    /* estrutura: 4 colunas, 3 prateleiras, quadro do topo */
+    {let nc=0;for(const x of[-BW,BW])for(const dz of[-BD,BD]){NM('Gaiola – coluna '+(++nc));box(G.creel,0.06,HT,0.06,mt.preto,cx+x,HT/2,ZC+dz);NM('Gaiola – sapata '+nc);box(G.creel,0.16,0.012,0.16,mt.preto,cx+x,0.006,ZC+dz);NM('Gaiola – coluna '+nc);solda(G.creel,[cx+x,0.016,ZC+dz],[0,1,0],0.06)}}
+    PR.forEach((y,i)=>{NM('Gaiola – prateleira '+(i+1));box(G.creel,2*BW,0.03,2*BD+0.06,mt.graf,cx,y,ZC);
+      [-BD,BD].forEach((dz,k)=>{NM('Gaiola – prateleira '+(i+1)+' – travessa '+(k?'de trás':'da frente'));box(G.creel,2*BW,0.05,0.05,mt.preto,cx,y-0.04,ZC+dz)})});
+    [-BD,BD].forEach((dz,k)=>{NM('Gaiola – topo '+(k?'de trás':'da frente'));box(G.creel,2*BW+0.06,0.05,0.05,mt.preto,cx,HT-0.025,ZC+dz)});
+    [-BW,BW].forEach((x,k)=>{NM('Gaiola – topo lateral '+(k+1));box(G.creel,0.05,0.05,2*BD,mt.preto,cx+x,HT-0.025,ZC)});
+    /* bobinas de roving 2200 tex (desenrola por dentro): prateleiras cheias */
+    const nf=Math.max(1,Math.min(16,Math.round(S.fios))),ativa=[];let nb=0;
+    PR.slice().reverse().forEach((y,ip)=>{for(const row of[0,1])for(let c=0;c<cols;c++){nb++;const x=cx-(cols-1)*pas/2+c*pas,z=ZC+(row?0.165:-0.165),yb=y+0.015+HB/2;
+      NM('Gaiola – bobina de roving 2200 tex '+nb);const b=add(G.creel,new THREE.CylinderGeometry(RB,RB,HB,40),BOB.mat,x,yb,z);b.rotation.y=(nb*1.7)%6.28;
+      if(row===0&&ativa.length<nf)ativa.push({x,y:yb+HB/2,z,yEye:y+0.48+(ip===0?0:0)})}});
+    /* barra de olhais na frente de cada prateleira (guia de saída) */
+    PR.forEach((y,i)=>{const ye=y+0.48;if(ye>HT-0.1)return;NM('Gaiola – guia de saída prateleira '+(i+1));box(G.creel,2*BW,0.03,0.03,mt.aco,cx,ye,zF-0.12);
+      [-BW,BW].forEach(x=>box(G.creel,0.03,0.03,0.12,mt.aco,cx+x,ye,zF-0.06));
+      for(let c=0;c<cols;c++){NM('Gaiola – olhal de cerâmica '+(i+1)+'.'+(c+1));const o=add(G.creel,new THREE.TorusGeometry(0.016,0.005,8,20),mt.branco,cx-(cols-1)*pas/2+c*pas,ye+0.02,zF-0.12);o.rotation.x=Math.PI/2}});
+    /* braço guia para fora da gaiola, com placa de olhais */
+    NM('Gaiola – braço guia');box(G.creel,0.05,0.05,zF-zG,mt.preto,cx,yG,(zF+zG)/2);solda(G.creel,[cx,yG,zF-0.004],[0,0,-1],0.05);
+    NM('Gaiola – mão-francesa do braço');beam(G.creel,[cx,HT-0.45,zF],[cx,yG-0.02,(zF+zG)/2],0.04,mt.preto);
+    NM('Gaiola – placa de olhais');box(G.creel,0.8,0.12,0.012,mt.aco,cx,yG-0.07,zG);
+    const xg=i=>cx+((i+0.5)/nf-0.5)*0.7;
+    for(let i=0;i<nf;i++){NM('Gaiola – olhal da placa '+(i+1));const o=add(G.creel,new THREE.TorusGeometry(0.014,0.005,8,20),mt.branco,xg(i),yG-0.07,zG-0.008)}
+    /* fios: centro da bobina → olhal da prateleira → placa do braço → carro */
+    const fibM=new THREE.LineBasicMaterial({color:0xfff6e0,transparent:true,opacity:.9});
+    ativa.forEach((a,i)=>{const pts=[V(a.x,a.y-0.05,a.z),V(a.x,a.y+0.02,a.z),V(a.x,a.yEye+0.02,zF-0.12),V(xg(i),yG-0.07,zG),V(0,0,0)];
+      const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),fibM);ln.userData={i,n:nf,cx,nome:'Fio '+(i+1)+' da gaiola ao carro'};scene.add(ln);feed.push(ln)})}
 
   /* painel CLP + IHM (ou liga/desliga + timer) */
   const pn=new THREE.Group();pn.position.set(xh-1.4,0,1.8);pn.rotation.y=0.55;G.painel.add(pn);
@@ -471,7 +494,7 @@ function build(){
     ['apoio',()=>V(xt,H+0.3,0),'Apoio móvel'],['carro',()=>V(car.position.x,top+0.35,Z0+0.3),semi?'Rolo de tecido':'Carro com pente'],
     ['carro',()=>V(car.position.x+w/2,by+0.2,Z0),'Banheira'],['carro',()=>V(car.position.x-w/2,by+0.55,Z0-0.2),'Espremedor de 2 rolos'],
     ['estrutura',()=>V(xc+l/4,0.15,-0.62),'Trilho guia do mandril'],['painel',()=>V(xh-1.4,1.85,1.8),semi?'Liga/desliga + timer':'CLP + IHM']];
-  if(!semi){labs.push(['acion',()=>V(xh-0.5,H+0.18,0),'Encoder'],['creel',()=>V(xc,2.2,ZC),'Gaiola de rovings (fixa)'],['prot',()=>V(xEnd,TY+0.4,RZ+0.2),'Calha da cremalheira'])}
+  if(!semi){labs.push(['acion',()=>V(xh-0.5,H+0.18,0),'Encoder'],['creel',()=>V(xc,2.45,ZC),'Gaiola de rovings 2200 tex (fixa)'],['prot',()=>V(xEnd,TY+0.4,RZ+0.2),'Calha da cremalheira'])}
   else labs.push(['trilhos',()=>V(xs0,TY+0.35,Z0+0.3),'Trava de posição das faixas']);
   $('labels').innerHTML=labs.map((x,i)=>`<div class="lb" id="lb${i}">${x[2]}</div>`).join('');
   montarNav();views();aplicaApag();atualizaTexto();
@@ -574,7 +597,7 @@ function pintaBobina(){if(!WB.mesh||!D.cont)return;const p=WB.mesh.worldToLocal(
 let bobT=0;const bobAmostra=document.createElement('canvas');bobAmostra.width=128;bobAmostra.height=64;
 function mostraBob(){const el=document.getElementById('stBob');if(el)el.textContent=WB.cob>=0.999?'tanque coberto':'coberto '+Math.round(WB.cob*100)+'%'}
 function medeBob(){const c=bobAmostra.getContext('2d');c.clearRect(0,0,128,64);c.drawImage(WB.cv,0,0,128,64);const d=c.getImageData(0,0,128,64).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>70)n++;WB.cob=n/(128*64);mostraBob()}
-function placeFeed(){const cx=car.position.x;feed.forEach(l=>{const a=l.geometry.attributes.position,u=l.userData;a.setXYZ(2,cx-0.315+(u.i%8)*0.09,D.top+0.11,D.Z0+0.3);a.needsUpdate=true})}
+function placeFeed(){const cx=car.position.x;feed.forEach(l=>{const a=l.geometry.attributes.position,u=l.userData;a.setXYZ(a.count-1,cx-0.315+(u.i%8)*0.09,D.top+0.11,D.Z0+0.3);a.needsUpdate=true})}
 
 const tmp=new THREE.Vector3();let last=performance.now(),tt=0;
 function loop(now){
@@ -686,7 +709,7 @@ function listaPecas(){const mm=v=>Math.round(v*1000),semi=D.semi,L=[];
   L.push(['Espremedor (rolo aço + rolo borracha)',2,'Ø 90 × '+mm(D.w-0.08)+' mm','placas com fuso de regulagem']);
   L.push(['Bandeja articulada (chapa com bordas)',1,mm(D.w)+' × '+mm(Math.hypot(D.T1[0]-(D.by+0.27),D.T1[1]-(D.Z0-0.28)))+' mm','dobradiça + 2 braços reguláveis']);
   if(!semi){L.push(['Pente de entrada / pente de saída',2,'','']);L.push(['Motor de passo malha fechada + pinhão',1,'','']);
-    L.push(['GAIOLA DE ROVINGS']);L.push(['Gaiola fixa (colunas + prateleiras)',1,'1760 × 560 × 1900 mm','']);L.push(['Bobinas de roving',S.fios,'','tex a confirmar'])}
+    L.push(['GAIOLA DE ROVINGS']);L.push(['Gaiola fixa (colunas + prateleiras)',1,'1760 × 560 × 1900 mm','']);L.push(['Bobinas de roving 2200 tex (Ø290 × 260, ~18 kg) — gaiola cheia',36,S.fios+' em uso','[CONFIRMAR]'])}
   else{L.push(['Suporte e eixo do rolo de tecido',1,mm(2*Math.max(0.38,D.w/2+0.1)+0.1)+' mm','']);L.push(['Trava de posição do carro',1,'','pino'])}
   L.push(['COMANDO']);L.push([semi?'Painel liga/desliga + timer':'Painel CLP Delta + IHM',1,'','emergência física']);
   return L}
@@ -759,10 +782,12 @@ function pecasTrilhos(){const mm=v=>Math.round(v*1000),P=[],semi=D.semi,LR=mm(D.
   else P.push({nome:'Furos de trava no trilho de trás',qtd:Math.ceil((S.L-S.sob)/Math.max(1,S.larg-S.sob)),mat:'furo Ø32 na barra a cada passo da faixa',sh:[['r',0,0,3*(S.larg-S.sob)+200,40],...[0,1,2,3].map(i=>['c',100+i*(S.larg-S.sob),20,16]),['d',100,40,100+(S.larg-S.sob),40,40,(S.larg-S.sob)+' (largura − sobreposição)']]});
   return P}
 function pecasGaiola(){const P=[];
-  P.push({nome:'Coluna da gaiola',qtd:4,mat:'tubo 60×60×2',sh:[['r',0,0,60,1900],['d',60,0,60,1900,50,'1900']]});
-  P.push({nome:'Prateleira',qtd:3,mat:'chapa 3 mm com abas',sh:[['r',0,0,1760,560],['d',0,0,1760,0,-40,'1760'],['d',1760,0,1760,560,50,'560']]});
-  P.push({nome:'Barra guia dos fios (topo)',qtd:1,mat:'tubo 50×50 · furos Ø20 com bucha',sh:[['r',0,0,1760,50],...Array.from({length:8},(_,i)=>['c',180+i*200,25,10]),['d',0,0,1760,0,-40,'1760'],['t',880,120,'1 furo por fio, a cada 200']]});
-  P.push({nome:'Pino da bobina',qtd:S.fios,mat:'tubo Ø40 soldado na prateleira',sh:[['r',0,0,40,250],['d',0,0,40,0,-40,'Ø40'],['d',40,0,40,250,40,'250']]});
+  P.push({nome:'Coluna da gaiola',qtd:4,mat:'tubo 60×60×2',sh:[['r',0,0,60,2120],['d',60,0,60,2120,50,'2120']]});
+  P.push({nome:'Prateleira',qtd:3,mat:'chapa 3 mm com abas',sh:[['r',0,0,1920,740],['d',0,0,1920,0,-40,'1920'],['d',1920,0,1920,740,50,'740']]});
+  P.push({nome:'Travessa de prateleira e topo',qtd:8,mat:'tubo 50×50×2',sh:[['r',0,0,1920,50],['d',0,0,1920,0,-40,'1920']]});
+  P.push({nome:'Guia de saída (barra de olhais)',qtd:3,mat:'tubo inox 30×30 · 6 olhais de cerâmica a cada 300',sh:[['r',0,0,1920,30],...Array.from({length:6},(_,i)=>['c',210+i*300,15,10]),['d',0,0,1920,0,-40,'1920'],['t',960,110,'1 olhal por bobina, a cada 300']]});
+  P.push({nome:'Braço guia (para fora da gaiola)',qtd:1,mat:'tubo 50×50×2 + mão-francesa 40×40',sh:[['r',0,0,750,50],['d',0,0,750,0,-40,'750']]});
+  P.push({nome:'Placa de olhais do braço',qtd:1,mat:'chapa inox 2 mm · '+S.fios+' olhais',sh:[['r',0,0,800,120],...Array.from({length:Math.min(16,S.fios)},(_,i)=>['c',50+(i+0.5)*700/Math.min(16,S.fios),60,10]),['d',0,0,800,0,-40,'800'],['d',800,0,800,120,40,'120']]});
   return P}
 function desenhaPeca(c,x,y,Wc,Hc,n,p){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRect(x,y,Wc,Hc);
   tx(c,n+' · '+p.nome,x+20,y+44,30,'#222','left',true);tx(c,'Qtd: '+p.qtd,x+20,y+84,24,'#c05a10','left',true);tx(c,p.mat.slice(0,64),x+20,y+118,22,'#666');
@@ -937,7 +962,7 @@ function materiais(){const mm=v=>Math.round(v*1000),semi=S.tipo==='semi',auto=!s
   if(S.carroM!=='manual')el.push(['trilhos','Fim de curso + sensor de home do carro','3']);
   const area=Math.PI*Math.min(S.D,S.Dm)/1000*Math.min(S.L,S.Lm)/1000;
   const cp=semi?[['geral',S.mat+' · largura '+S.larg+' mm · '+fx(area*S.larg/Math.max(1,S.larg-S.sob),1)+' m² por camada (com sobreposição)','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']]
-    :[['geral','Roving '+S.fios+' fios · banda '+S.banda+' mm (tex [CONFIRMAR])','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']];
+    :[['geral','Roving direto 2200 tex · '+S.fios+' fios · banda '+S.banda+' mm · bobina ~18 kg (gaiola: 36 bobinas) [CONFIRMAR]','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']];
   return{est,ch,mec,ac,el,cp}}
 function materialSecoes(esc){const M=materiais(),f=r=>!esc||esc==='tudo'||r[0]===esc||(r[0]==='geral'&&esc==='tudo');const S2=[];
   const grp={};M.est.filter(f).forEach(([sc,pf,len,q,d])=>{const k=perfNome(pf);(grp[k]=grp[k]||{pf,lens:[],ds:new Set()});for(let i=0;i<q;i++)grp[k].lens.push(len);grp[k].ds.add(d)});
