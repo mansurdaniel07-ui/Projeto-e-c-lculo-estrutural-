@@ -459,9 +459,9 @@ function esquadrias(M){
 const PR={};
 PR.piscina={
  titulo:'Gabarito · piscina modular',
- resumo:'Gabarito para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima), feito de MÓDULOS RETANGULARES PARAFUSADOS: frente, costa, laterais (meio, escada, prainha), fundo e espelhos dos degraus. Cada módulo é um quadro fechado; os vizinhos encostam e parafusam, e dá para desmontar um por um. A forma (prainha, escada, banco, hidro) é definida nos cartões.',
+ resumo:'Gabarito para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima), feito de QUADROS RETANGULARES PARAFUSADOS: frente, costa, laterais (meio, escada, prainha), espelhos dos degraus e reforços do meio (quadros verticais). Em cima, amarração com perfis soltos parafusados. As medidas digitadas são as externas; o app desconta os perfis. A forma (prainha, escada, banco, hidro) é definida nos cartões.',
  perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento dos quadros e das longarinas'],
- grupos:[{id:'p',nome:'Paredes (frente, costa, laterais)'},{id:'f',nome:'Fundo'},{id:'d',nome:'Espelhos (degraus e desníveis)'},{id:'r',nome:'Reforços do meio (quadros verticais)'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ grupos:[{id:'p',nome:'Paredes (frente, costa, laterais)'},{id:'f',nome:'Amarração do topo (perfis parafusados)'},{id:'d',nome:'Espelhos (degraus e desníveis)'},{id:'r',nome:'Reforços do meio (quadros verticais)'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:10000,grupo:'Medidas'},
@@ -570,7 +570,10 @@ PR.piscina={
   for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){if(usado[i][j])continue;const d=D[i][j];let j1=j;while(j1+1<ny&&!usado[i][j1+1]&&D[i][j1+1]===d)j1++;
     let i1=i;while(i1+1<nx){let ok=true;for(let q=j;q<=j1;q++)if(usado[i1+1][q]||D[i1+1][q]!==d)ok=false;if(!ok)break;i1++}
     for(let a=i;a<=i1;a++)for(let q=j;q<=j1;q++)usado[a][q]=true;
-    const px=partes(cx[i],cx[i1+1]);for(const[x0,x1]of px)for(const[y0,y1]of partes(cy[j],cy[j1+1]))hori('Fundo – '+nomeReg((x0+x1)/2,(y0+y1)/2),x0,x1,y0,y1,d);
+    const px=partes(cx[i],cx[i1+1]);
+    /* amarração do topo: perfis soltos ao longo do comprimento, de um quadro transversal ao próximo, parafusados no topo deles */
+    const za=d-ft/2,ys=divPts([Math.max(cy[j],pw/2),Math.min(cy[j1+1],W-pw/2)],P.travY);
+    for(const[x0,x1]of px)for(const y of ys){add([x0,y,za],[x1,y,za],'f','amarração',{bloco:'amarr',livre:true});furos+=(y<=pw||y>=W-pw)?2*nPar(x1-x0):4}
     /* emendas do teto sem espelho embaixo: entre partes do mesmo retângulo e na borda dele quando o vizinho tem a mesma profundidade */
     px.slice(1).forEach(([x0])=>emendas.push([x0,cy[j],cy[j1+1],d]));
     if(i1+1<nx){let q=j;while(q<=j1){if(D[i1+1][q]!==d){q++;continue}let e=q;while(e+1<=j1&&D[i1+1][e+1]===d)e++;emendas.push([cx[i1+1],cy[q],cy[e+1],d]);q=e+1}}}
@@ -579,6 +582,7 @@ PR.piscina={
   /* nomes: numera só o que se repete; registra cada módulo */
   const tot={},seq={};MODS.forEach(m=>tot[m.nome]=(tot[m.nome]||0)+1);
   MODS.forEach(m=>{const nm=tot[m.nome]>1?m.nome+' '+(seq[m.nome]=(seq[m.nome]||0)+1):m.nome;H.bloco(m.id,[],nm+' ('+m.med+')',m.dir)});
+  H.bloco('amarr',[],'Amarração do topo (perfis soltos)',[0,0,1]);
   H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm)',Math.ceil(furos/2)+' un');
   const xs=divPts([0,L],P.travY);
   if(P.borda){const b=P.bLarg;
