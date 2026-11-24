@@ -245,7 +245,7 @@ function divPts(points,max){
 function construir(fn,P){
   const M=[];
   const chk=()=>{ if(M.length>5000) throw new Error('Peças demais (>5000). Aumente os espaçamentos.'); };
-  const add=(a,b,g,nota,op)=>{chk();M.push({pts:[a,b],g,nota:nota||'',esq:op&&op.esq,livre:!!(op&&op.livre)});};
+  const add=(a,b,g,nota,op)=>{chk();M.push({pts:[a,b],g,nota:nota||'',esq:op&&op.esq,livre:!!(op&&op.livre),bloco:(op&&op.bloco)||''});};
   const poli=(pts,g,fechado)=>{for(let i=0;i<pts.length-1;i++)add(pts[i],pts[i+1],g);if(fechado)add(pts[pts.length-1],pts[0],g);};
   const ptsArco=(c,r,a0,a1,plano,seg)=>{
     const n=seg||Math.max(8,Math.ceil(Math.abs(a1-a0)/6));const out=[];
@@ -271,8 +271,9 @@ function construir(fn,P){
   /* animação: {tipo:'girar', eixo:[[x,y,z],[x,y,z]], grupos:['q',...], chapa:true, rpm} */
   const animar=o=>{if(o&&Array.isArray(o.eixo)&&okP(o.eixo[0])&&okP(o.eixo[1]))AN={tipo:'girar',eixo:o.eixo,grupos:(o.grupos||[]).map(String),chapa:o.chapa!==false,extras:o.extras!==false,rpm:Math.max(.5,Math.min(60,+o.rpm||6))};};
   const perfil=id=>{const g=(MOD&&MOD.grupos||[]).find(x=>x.id===id)||(MOD&&MOD.grupos||[])[0];const p=g?g.perfil:{tipo:'ret',a:50,b:50,t:2};return {...p,w:p.tipo==='chapa'?p.t:p.a,h:p.tipo==='ret'?p.b:p.a};};
-  const BL=[];const bloco=(uid,rects)=>{if(uid&&Array.isArray(rects))BL.push({uid,rects:rects.filter(q=>Array.isArray(q)&&q.length===4&&q.every(isFinite))})};
-  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil,rolo,pino,chapa,animar,bloco});
+  const BL=[],IT=[];const bloco=(uid,rects,nome,dir)=>{if(uid)BL.push({uid,rects:(rects||[]).filter(q=>Array.isArray(q)&&q.length===4&&q.every(isFinite)),nome:nome?String(nome):'',dir:Array.isArray(dir)?dir:null})};
+  const item=(sec,nome,qtd)=>IT.push([String(sec),String(nome),String(qtd)]);
+  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil,rolo,pino,chapa,animar,bloco,item});
   // limpeza
   const seen=new Set(),out=[];
   for(const m of M){
@@ -283,7 +284,7 @@ function construir(fn,P){
       if(seen.has(k1)||seen.has(k2))continue;seen.add(k1);}
     out.push(m);
   }
-  PN.nomes=PNN;PN.lista=PNL;out.paineis=PN;out.extras=X.filter(x=>x.tipo!=='chapa'||DC.planificar(x.pts).area>1);out.anim=AN;out.blocos=BL;
+  PN.nomes=PNN;PN.lista=PNL;out.paineis=PN;out.extras=X.filter(x=>x.tipo!=='chapa'||DC.planificar(x.pts).area>1);out.anim=AN;out.blocos=BL;out.itens=IT;
   return out;
 }
 const cortar=DC.cortar;
@@ -457,18 +458,20 @@ function esquadrias(M){
 // ===== modelos prontos =====
 const PR={};
 PR.piscina={
- titulo:'Gabarito · piscina por blocos',
- resumo:'Gabarito simples em grade para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima). O corpo tem quadros transversais, longarinas inteiras e montantes. Prainha, escada, banco e hidro são BLOCOS: adicione quantos quiser, em qualquer lado (cabeceira A/B, lateral 1/2), centralizados ou encostados no canto.',
+ titulo:'Gabarito · piscina modular',
+ resumo:'Gabarito para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima), feito de MÓDULOS RETANGULARES PARAFUSADOS: frente, costa, laterais (meio, escada, prainha), fundo e espelhos dos degraus. Cada módulo é um quadro fechado; os vizinhos encostam e parafusam, e dá para desmontar um por um. A forma (prainha, escada, banco, hidro) é definida nos cartões.',
  perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento dos quadros e das longarinas'],
- grupos:[{id:'q',nome:'Quadros (frente)'},{id:'l',nome:'Longarinas'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ grupos:[{id:'p',nome:'Paredes (frente, costa, laterais)'},{id:'f',nome:'Fundo'},{id:'d',nome:'Espelhos (degraus e desníveis)'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:10000,grupo:'Medidas'},
   {id:'L',nome:'Largura',tipo:'num',valor:6000,grupo:'Medidas'},
   {id:'H',nome:'Profundidade',tipo:'num',valor:1500,grupo:'Medidas'},
-  {id:'esp',nome:'Espaç. quadros',tipo:'num',valor:1000,grupo:'Estrutura'},
-  {id:'travY',nome:'Vão máx. entre montantes',tipo:'num',valor:3000,grupo:'Estrutura'},
-  {id:'travL',nome:'Espaç. longarinas',tipo:'num',valor:1500,grupo:'Estrutura'},
+  {id:'modMax',nome:'Largura máx. de cada módulo',tipo:'num',valor:2000,grupo:'Módulos'},
+  {id:'travY',nome:'Vão máx. entre montantes (paredes)',tipo:'num',valor:1000,grupo:'Módulos'},
+  {id:'esp',nome:'Espaç. travessas do fundo',tipo:'num',valor:1000,grupo:'Módulos'},
+  {id:'paraf',nome:'Parafuso de ligação',tipo:'sel',valor:'M10',opcoes:['M8','M10','M12'],grupo:'Módulos'},
+  {id:'parafEsp',nome:'Espaç. dos parafusos',tipo:'num',valor:300,grupo:'Módulos'},
   {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:false,grupo:'Arestas'},
   {id:'borda',nome:'Borda externa',tipo:'bool',valor:true,grupo:'Borda'},
   {id:'bLarg',nome:'Largura da aba',tipo:'num',valor:200,grupo:'Borda',se:'borda'},
@@ -476,7 +479,7 @@ PR.piscina={
   {id:'bExt',nome:'Balanço dos dormentes',tipo:'num',valor:500,grupo:'Base cruzada',se:'base'},
   {id:'bTril',nome:'Nº de trilhos',tipo:'int',valor:3,grupo:'Base cruzada',se:'base'},
   {id:'bH',nome:'Altura de cada camada',tipo:'num',valor:80,grupo:'Base cruzada',se:'base'}],
- blocos:{
+ blocos:{titulo:'Forma da piscina',dica:'Defina a forma (prainha, escada, banco, hidro em qualquer lado). O gabarito é dividido sozinho em módulos retangulares parafusados: veja a lista "Por módulo" e use "separar módulos" na legenda do 3D.',
   tipos:{
    prainha:{nome:'Prainha',parametros:[
     {id:'lado',nome:'Lado',tipo:'sel',valor:'Cabeceira A',opcoes:['Cabeceira A','Cabeceira B','Lateral 1','Lateral 2']},
@@ -526,7 +529,7 @@ PR.piscina={
     else if(b.tipo==='escada'){const[t,s0,s1]=faixa(b,b.larg);let off=0,d0=0;
       if(b.prainha){const pr=prainhas.find(p=>lado(p)===t);if(pr){off=pr.comp;d0=pr.prof}}
       const pisos=Math.max(1,b.n);reg={b,t,s0,s1,n0:off,n1:off+pisos*b.piso,degraus:Array.from({length:pisos-1},(_,i)=>off+(i+1)*b.piso),prof:n=>d0+Math.min(pisos,Math.floor((n-off)/b.piso)+1)*b.espelho}}
-    if(reg){reg.r=rect(reg.t,reg.s0,reg.s1,reg.n0,reg.n1);R.push(reg);H.bloco&&H.bloco(b.uid,[reg.r])}}
+    if(reg){reg.r=rect(reg.t,reg.s0,reg.s1,reg.n0,reg.n1);R.push(reg)}}
   const nDe=(g,x,y)=>g.t==='A'?x:g.t==='B'?L-x:g.t==='L1'?y:W-y;
   const f=(x,y)=>{x=Math.min(Math.max(x,EPS),L-EPS);y=Math.min(Math.max(y,EPS),W-EPS);let d=P.H;
     for(const g of R){const[x0,y0,x1,y1]=g.r;if(x>x0&&x<x1&&y>y0&&y<y1)d=Math.min(d,g.prof(nDe(g,x,y)))}return d;};
@@ -534,32 +537,51 @@ PR.piscina={
   let bx=[],yb=[];
   for(const g of R){bx.push(g.r[0],g.r[2]);yb.push(g.r[1],g.r[3]);for(const nd of g.degraus||[]){const p=xy(g.t,g.s0,nd);if(g.t==='A'||g.t==='B')bx.push(p[0]);else yb.push(p[1])}}
   bx=[...new Set(bx.map(Math.round))].filter(x=>x>30&&x<L-30);yb=[...new Set(yb.map(Math.round))].filter(y=>y>30&&y<W-30);
-  const xs=divPts([0,L,...bx],P.esp),yL=divPts([0,W],P.travL);
-  const lados=x=>[y=>f(x-EPS,y),y=>f(x+EPS,y)];
-  const runs=[];for(const y of yL){let ini=null,zc=null;
-    for(let i=0;i<xs.length-1;i++){const z=f((xs[i]+xs[i+1])/2,y);
-      if(ini===null){ini=xs[i];zc=z;}else if(Math.abs(z-zc)>1){runs.push([y,ini,xs[i],zc]);ini=xs[i];zc=z;}}
-    if(ini!==null)runs.push([y,ini,L,zc]);}
-  for(const x of xs){
-    const[dl,dr]=lados(x);
-    let B=[0,W,...runs.filter(r=>r[1]<x-1&&x<r[2]-1&&r[0]>0&&r[0]<W).map(r=>r[0])];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)B.push(y);
-    B=[...new Set(B.map(Math.round))].sort((a,b)=>a-b);
-    add([x,0,0],[x,W,0],'q','base do quadro');
-    const feitos=new Set();
-    for(const d of[dl,dr])for(let i=0;i<B.length-1;i++){const z=d((B[i]+B[i+1])/2),k=B[i]+'|'+B[i+1]+'|'+Math.round(z);if(feitos.has(k))continue;feitos.add(k);add([x,B[i],z],[x,B[i+1],z],'q');}
-    const Bm=[0,W];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)Bm.push(y);
-    const ys=divPts(Bm,P.travY);
-    for(const y of ys){const h=Math.max(dl(y-EPS),dl(y+EPS),dr(y-EPS),dr(y+EPS));add([x,y,0],[x,y,h],'q','montante');}
-  }
-  for(const[y,a,b,z]of runs)add([a,y,z],[b,y,z],'l');
-  add([0,0,0],[L,0,0],'l','borda');add([0,W,0],[L,W,0],'l','borda');
+  /* grade da forma: células com profundidade constante */
+  const cx=[...new Set([0,L,...bx])].sort((a,b)=>a-b),cy=[...new Set([0,W,...yb])].sort((a,b)=>a-b),nx=cx.length-1,ny=cy.length-1;
+  const D=[];for(let i=0;i<nx;i++){D.push([]);for(let j=0;j<ny;j++)D[i].push(Math.round(f((cx[i]+cx[i+1])/2,(cy[j]+cy[j+1])/2)));}
+  const pw=H.perfil('p').w,MX=Math.max(300,P.modMax),MODS=[];let furos=0;
+  const nomeReg=(x,y)=>{for(const g of R){const[x0,y0,x1,y1]=g.r;if(x>x0-1&&x<x1+1&&y>y0-1&&y<y1+1)return g.b.nome}return 'meio'};
+  const nomeEsp=(a,b)=>[a,b].find(n=>/^Escada/.test(n))||[a,b].find(n=>n!=='meio')||'meio';
+  const partes=(a,b)=>{const n=Math.max(1,Math.ceil((b-a)/MX-1e-9));return Array.from({length:n},(_,i)=>[a+(b-a)*i/n,a+(b-a)*(i+1)/n])};
+  const nPar=l=>Math.max(2,Math.ceil(l/Math.max(50,P.parafEsp))+1);
+  /* módulo vertical (parede ou espelho): quadro fechado com montantes; postes recuados meio perfil para encostar no vizinho */
+  const vert=(nome,g,pt,s0,s1,z0,z1,dir,baseLivre)=>{if(z1-z0<pw*1.5)return;const id='m'+MODS.length,o={bloco:id},a=s0+pw/2,b=s1-pw/2;if(b-a<pw)return;
+    add(pt(a,z0),pt(b,z0),g,'travessa de baixo',o);add(pt(a,z1),pt(b,z1),g,'travessa de cima',o);for(const s of divPts([a,b],P.travY))add(pt(s,z0),pt(s,z1),g,'montante',o);
+    MODS.push({id,nome,dir,med:Math.round(s1-s0)+' × '+Math.round(z1-z0)});furos+=2*nPar(z1-z0)+nPar(s1-s0)*(baseLivre?1:2)};
+  /* módulo do fundo: quadro fechado com travessas */
+  const hori=(nome,x0,x1,y0,y1,z)=>{const id='m'+MODS.length,o={bloco:id},xa=x0+pw/2,xb=x1-pw/2,ya=y0+pw/2,yb2=y1-pw/2;if(xb-xa<pw||yb2-ya<pw)return;
+    add([xa,ya,z],[xb,ya,z],'f','longarina',o);add([xa,yb2,z],[xb,yb2,z],'f','longarina',o);for(const x of divPts([xa,xb],P.esp))add([x,ya,z],[x,yb2,z],'f','travessa',o);
+    MODS.push({id,nome,dir:[0,0,1],med:Math.round(x1-x0)+' × '+Math.round(y1-y0)});furos+=2*nPar(x1-x0)+2*nPar(y1-y0)};
+  /* paredes: frente (cab. A), costa (cab. B), laterais — divididas onde a altura muda e pela largura máxima */
+  const parede=(nome,cel,cs,pt,dir,mid)=>{let k=0;while(k<cel.length){let e=k;while(e+1<cel.length&&cel[e+1]===cel[k])e++;
+    for(const[s0,s1]of partes(cs[k],cs[e+1]))vert(nome+' – '+mid((s0+s1)/2),'p',pt,s0,s1,0,cel[k],dir,true);k=e+1}};
+  parede('Frente',D[0],cy,(s,z)=>[0,s,z],[-1,0,0],s=>nomeReg(pw,s));
+  parede('Costa',D[nx-1],cy,(s,z)=>[L,s,z],[1,0,0],s=>nomeReg(L-pw,s));
+  parede('Lateral 1',D.map(c=>c[0]),cx,(s,z)=>[s,0,z],[0,-1,0],s=>nomeReg(s,pw));
+  parede('Lateral 2',D.map(c=>c[ny-1]),cx,(s,z)=>[s,W,z],[0,1,0],s=>nomeReg(s,W-pw));
+  /* espelhos: onde duas células vizinhas têm profundidades diferentes */
+  for(let i=0;i<nx-1;i++){let j=0;while(j<ny){if(D[i][j]===D[i+1][j]){j++;continue}let e=j;while(e+1<ny&&D[i][e+1]===D[i][j]&&D[i+1][e+1]===D[i+1][j])e++;const x=cx[i+1],z0=Math.min(D[i][j],D[i+1][j]),z1=Math.max(D[i][j],D[i+1][j]);
+    for(const[s0,s1]of partes(cy[j],cy[e+1]))vert('Espelho – '+nomeEsp(nomeReg(x-pw,(s0+s1)/2),nomeReg(x+pw,(s0+s1)/2)),'d',(s,z)=>[x,s,z],s0,s1,z0,z1,[0,0,1],false);j=e+1}}
+  for(let j=0;j<ny-1;j++){let i=0;while(i<nx){if(D[i][j]===D[i][j+1]){i++;continue}let e=i;while(e+1<nx&&D[e+1][j]===D[i][j]&&D[e+1][j+1]===D[i][j+1])e++;const y=cy[j+1],z0=Math.min(D[i][j],D[i][j+1]),z1=Math.max(D[i][j],D[i][j+1]);
+    for(const[s0,s1]of partes(cx[i],cx[e+1]))vert('Espelho – '+nomeEsp(nomeReg((s0+s1)/2,y-pw),nomeReg((s0+s1)/2,y+pw)),'d',(s,z)=>[s,y,z],s0,s1,z0,z1,[0,0,1],false);i=e+1}}
+  /* fundo: junta células iguais em retângulos e corta pela largura máxima */
+  const usado=D.map(c=>c.map(()=>false));
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){if(usado[i][j])continue;const d=D[i][j];let j1=j;while(j1+1<ny&&!usado[i][j1+1]&&D[i][j1+1]===d)j1++;
+    let i1=i;while(i1+1<nx){let ok=true;for(let q=j;q<=j1;q++)if(usado[i1+1][q]||D[i1+1][q]!==d)ok=false;if(!ok)break;i1++}
+    for(let a=i;a<=i1;a++)for(let q=j;q<=j1;q++)usado[a][q]=true;
+    for(const[x0,x1]of partes(cx[i],cx[i1+1]))for(const[y0,y1]of partes(cy[j],cy[j1+1]))hori('Fundo – '+nomeReg((x0+x1)/2,(y0+y1)/2),x0,x1,y0,y1,d)}
+  /* nomes: numera só o que se repete; registra cada módulo */
+  const tot={},seq={};MODS.forEach(m=>tot[m.nome]=(tot[m.nome]||0)+1);
+  MODS.forEach(m=>{const nm=tot[m.nome]>1?m.nome+' '+(seq[m.nome]=(seq[m.nome]||0)+1):m.nome;H.bloco(m.id,[],nm+' ('+m.med+')',m.dir)});
+  H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm)',Math.ceil(furos/2)+' un');
+  const xs=divPts([0,L],P.esp);
   if(P.borda){const b=P.bLarg;
     add([-b,-b,0],[L+b,-b,0],'b');add([-b,W+b,0],[L+b,W+b,0],'b');add([-b,-b,0],[-b,W+b,0],'b');add([L+b,-b,0],[L+b,W+b,0],'b');
     for(const x of xs){add([x,-b,0],[x,0,0],'b');add([x,W,0],[x,W+b,0],'b');}}
   if(P.base){const h=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-h],[x,W+e,-h],'s','dormente',{livre:true});
     for(const y of divPts([0,W],W/Math.max(1,P.bTril-1)))add([0,y,-2*h],[L,y,-2*h],'s','trilho',{livre:true});}
-  let cx=[...new Set([0,L,...bx])].sort((a,b)=>a-b),cy=[...new Set([0,W,...yb])].sort((a,b)=>a-b);
-  const D=[];for(let i=0;i<cx.length-1;i++){D.push([]);for(let j=0;j<cy.length-1;j++)D[i].push(f((cx[i]+cx[i+1])/2,(cy[j]+cy[j+1])/2));}
+  /* chapa por cima, nas mesmas células */
   for(let i=0;i<cx.length-1;i++)for(let j=0;j<cy.length-1;j++){const d=D[i][j],xa=cx[i],xb=cx[i+1],ya=cy[j],yb2=cy[j+1];
     painel([[xa,ya,d],[xb,ya,d],[xb,yb2,d],[xa,yb2,d]]);
     if(j===0)painel([[xa,0,0],[xb,0,0],[xb,0,d],[xa,0,d]]);
@@ -898,7 +920,8 @@ function montarUI(){
   montarBlocos();vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;$('alinha').value=MOD.alinha||'centro';
   legenda();
 }
-function legenda(){const tb=tiposBloco();$('legend').innerHTML=(VERBLOCO&&tb?['Corpo',...nomesBlocos()].map((n,i)=>`<i style="background:${i?CORBL[(i-1)%CORBL.length]:'#8a857a'}"></i>${esc(n)}`).join('')+' · ':CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`+(tb?` · <u id="lgBl" style="cursor:pointer">${VERBLOCO?'tirar blocos':'ver blocos'}</u>`:'');
+function legenda(){const tb=tiposBloco();const temMod=LAST.M&&(LAST.M.blocos||[]).some(b=>b.nome);$('legend').innerHTML=(VERBLOCO&&tb&&temMod?'cada cor = um módulo · ':VERBLOCO&&tb?['Corpo',...nomesBlocos()].map((n,i)=>`<i style="background:${i?CORBL[(i-1)%CORBL.length]:'#8a857a'}"></i>${esc(n)}`).join('')+' · ':CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`+(tb?` · <u id="lgBl" style="cursor:pointer">${VERBLOCO?'tirar cores':(LAST.M&&(LAST.M.blocos||[]).some(b=>b.nome)?'ver módulos':'ver blocos')}</u>`:'')+(LAST.M&&(LAST.M.blocos||[]).some(b=>b.dir)?` · <u id="lgSep" style="cursor:pointer">${SEPARA?'montar':'separar módulos'}</u>`:'');
+  if($('lgSep'))$('lgSep').onclick=()=>{SEPARA=!SEPARA;legenda();upd();};
   if($('lgBl'))$('lgBl').onclick=()=>{VERBLOCO=!VERBLOCO;if(VERBLOCO)CORES=false;legenda();upd();};
   $('lgCor').onclick=()=>{CORES=!CORES;if(CORES)VERBLOCO=false;store('dc-estr-cores',CORES);legenda();upd();};}
 function vis(){document.querySelectorAll('#params [data-se]').forEach(e=>{const s=e.dataset.se;e.style.display=!s||VAL[s]?'':'none';});}
@@ -1016,7 +1039,7 @@ function draw(M){
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
   for(const m of M){const c0=group.children.length;
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=m.pf||g.perfil,sel=SEL.includes(chaveM(m));
-    const ck=VERBLOCO?'b'+(m.bloco||''):g.id,bi=(VAL.mods||[]).findIndex(b=>b.uid===m.bloco),cor=VERBLOCO?(bi<0?'#8a857a':CORBL[bi%CORBL.length]):CORES?g.cor:0x8a857a;
+    const ck=VERBLOCO?'b'+(m.bloco||''):g.id,bi=((M.blocos||[]).some(b=>b.nome)?(M.blocos||[]).findIndex(b=>b.uid===m.bloco):(VAL.mods||[]).findIndex(b=>b.uid===m.bloco)),cor=VERBLOCO?(bi<0?'#8a857a':CORBL[bi%CORBL.length]):CORES?g.cor:0x8a857a;
     const mat=sel?SELMAT:mats[ck]=mats[ck]||new THREE.MeshStandardMaterial({color:cor,roughness:.6,metalness:.15});
     for(let i=1;i<m.pts.length;i++){
       let a=P3(...m.pts[i-1]),b=P3(...m.pts[i]);
@@ -1279,19 +1302,23 @@ const pfOf=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
 // ===== cálculo e resultado =====
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
 /* ===== blocos (módulos) do projeto: cada tipo tem seus campos; o gerador recebe P.mods ===== */
-let VERBLOCO=false;const CORBL=['#e3924a','#5d8fb8','#7fb87a','#c97fb8','#d4c35a','#6fc3c0','#b07a5a','#8a7fd0'];
+let VERBLOCO=false,SEPARA=false;const CORBL=['#e3924a','#5d8fb8','#7fb87a','#c97fb8','#d4c35a','#6fc3c0','#b07a5a','#8a7fd0'];
 function tiposBloco(){return(MOD&&MOD.blocos&&MOD.blocos.tipos)||null}
 function novoBloco(tipo,extra){const T=tiposBloco()[tipo],b={uid:'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),tipo};for(const q of T.parametros)b[q.id]=q.valor;return Object.assign(b,extra||{})}
 function nomesBlocos(){const cont={};return(VAL.mods||[]).map(b=>{const T=tiposBloco()[b.tipo];cont[b.tipo]=(cont[b.tipo]||0)+1;const tot=VAL.mods.filter(x=>x.tipo===b.tipo).length;return (T?T.nome:b.tipo)+(tot>1?' '+cont[b.tipo]:'')})}
 function valComBlocos(){if(!tiposBloco())return VAL;const nm=nomesBlocos();return Object.assign({},VAL,{mods:(VAL.mods||[]).filter(b=>tiposBloco()[b.tipo]).map((b,i)=>{const T=tiposBloco()[b.tipo],o={};for(const q of T.parametros)o[q.id]=q.valor;return Object.assign(o,b,{nome:nm[i]})})})}
 /* peça pertence ao bloco cujo retângulo contém o meio dela (o menor, se houver mais de um); senão é do corpo */
-function atribuiBlocos(M){const BL=(M.blocos||[]).map(b=>({uid:b.uid,rects:b.rects,area:b.rects.reduce((a,r)=>a+(r[2]-r[0])*(r[3]-r[1]),0)})).sort((a,b)=>a.area-b.area);
-  for(const m of M){const a=m.pts[0],b=m.pts[m.pts.length-1],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,t=1;m.bloco='';
+let BLN={};
+function atribuiBlocos(M){BLN={};(M.blocos||[]).forEach(b=>{if(b.nome)BLN[b.uid]=b.nome});const BL=(M.blocos||[]).filter(b=>b.rects.length).map(b=>({uid:b.uid,rects:b.rects,area:b.rects.reduce((a,r)=>a+(r[2]-r[0])*(r[3]-r[1]),0)})).sort((a,b)=>a.area-b.area);
+  for(const m of M){if(m.bloco)continue;const a=m.pts[0],b=m.pts[m.pts.length-1],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,t=1;m.bloco='';
     for(const B of BL)if(B.rects.some(r=>x>=r[0]-t&&x<=r[2]+t&&y>=r[1]-t&&y<=r[3]+t)){m.bloco=B.uid;break}}}
-function nomeBloco(uid){if(!uid)return'Corpo';const i=(VAL.mods||[]).findIndex(b=>b.uid===uid);return i<0?'Corpo':nomesBlocos()[i]}
+function nomeBloco(uid){if(!uid)return Object.keys(BLN).length?'Fora dos módulos (borda, base)':'Corpo';if(BLN[uid])return BLN[uid];const i=(VAL.mods||[]).findIndex(b=>b.uid===uid);return i<0?'Corpo':nomesBlocos()[i]}
+/* vista desmontada: cada módulo afasta na sua direção */
+function separados(M){const dir={};(M.blocos||[]).forEach(b=>{if(b.dir)dir[b.uid]=b.dir});const k=450;
+  const o=M.filter(m=>dir[m.bloco]).map(m=>Object.assign({},m,{pts:m.pts.map(p=>p.map((v,i)=>v+dir[m.bloco][i]*k)),cuts:null,trim:null}));o.paineis=[];o.extras=[];o.blocos=M.blocos;return o}
 function montarBlocos(){const box=$('blocos');if(!box)return;const T=tiposBloco();box.style.display=T?'':'none';if(!T){box.innerHTML='';return}
   const nm=nomesBlocos();
-  box.innerHTML=`<div class="ttl">Blocos</div><div class="sub" style="margin:-2px 0 8px">Cada parte é um bloco: adicione, duplique ou tire. Lados: cabeceira A (início do comprimento), cabeceira B, lateral 1, lateral 2.</div>`+
+  box.innerHTML=`<div class="ttl">${esc(MOD.blocos.titulo||'Blocos')}</div><div class="sub" style="margin:-2px 0 8px">${esc(MOD.blocos.dica||'Cada parte é um bloco: adicione, duplique ou tire.')} Lados: cabeceira A (início do comprimento), cabeceira B, lateral 1, lateral 2.</div>`+
     (VAL.mods||[]).map((b,i)=>{const tp=T[b.tipo];if(!tp)return'';return `<div class="bloco" data-i="${i}"><div class="bh"><i style="background:${CORBL[i%CORBL.length]}"></i><b>${esc(nm[i])}</b><span class="bx" data-dup="${i}" title="Duplicar">⧉</span><span class="bx" data-del="${i}" title="Tirar">✕</span></div><div class="grid">`+
       tp.parametros.map(q=>q.tipo==='bool'?`<label class="f swl"><span>${esc(q.nome)}</span><input type="checkbox" data-k="${q.id}" ${b[q.id]?'checked':''}></label>`:q.tipo==='sel'?`<label class="f">${esc(q.nome)}<select data-k="${q.id}">${q.opcoes.map(o=>`<option${o===b[q.id]?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`:`<label class="f">${esc(q.nome)}${q.tipo==='int'?'':' (mm)'}<input type="number" step="${q.tipo==='int'?1:'any'}" data-k="${q.id}" value="${b[q.id]}"></label>`).join('')+`</div></div>`}).join('')+
     `<div class="row" style="grid-template-columns:1fr auto;margin-top:8px"><select id="novoTipo">${Object.entries(T).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('')}</select><div class="btn on" id="bAddBloco">+ Adicionar bloco</div></div>`;
@@ -1314,7 +1341,8 @@ function upd(reset){
   let M=[];const st=$('status');
   try{M=construir(compilar(MOD.codigo),valComBlocos());aplicaAjustes(M);esquadrias(M);juntas(M);chapaPorFora(M);atribuiBlocos(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
-  draw(M);
+  draw(SEPARA?separados(M):M);
+  LAST.M=M;
   const dims=`${Math.round(bbox.x1-bbox.x0)} × ${Math.round(bbox.y1-bbox.y0)} × ${Math.round(bbox.z1-bbox.z0)} mm`;
   $('sub').textContent=dims+' · '+MOD.grupos.length+' grupo(s) de perfil';
   const gid=[...new Set(M.map(m=>m.g))],GN=id=>MOD.grupos.find(g=>g.id===id)||MOD.grupos[0];
@@ -1341,10 +1369,11 @@ function upd(reset){
   const bd=$('badge');bd.textContent=emd?`${emd} EMENDA(S)`:'SEM EMENDA';bd.className='badge'+(emd?' warn':'');
   {const cs=compTodos();if(cs.length){const secs=[...new Set(cs.map(c=>c[0]))];$('tab').innerHTML+=secs.map(sc=>`<h2 style="margin-top:18px">${esc(sc)}</h2><table>${cs.filter(c=>c[0]===sc).map(c=>`<tr><td>${esc(c[1])}</td><td class="n">${esc(c[2])}</td></tr>`).join('')}</table>`).join('');PED.push('',...secs.flatMap(sc=>[sc.toUpperCase()+':',...cs.filter(c=>c[0]===sc).map(c=>c[1]+' — '+c[2])]));}}
   if(tiposBloco()){const pb={};for(const m of M){const g=GN(m.g),pp=m.pf||g.perfil,k=m.bloco||'';const o=(pb[k]=pb[k]||{m:0,kg:0,n:0});const l=(m.lenCorte||m.len)/1000;o.m+=l;o.kg+=l*kgm(pp);o.n++;}
-    const ord=['',...(VAL.mods||[]).map(b=>b.uid)].filter(k=>pb[k]);
-    $('tab').innerHTML+=`<h2 style="margin-top:18px">Por bloco</h2><table><tr><th>Bloco</th><th class="n">Peças</th><th class="n">Metros</th><th class="n">Peso</th></tr>${ord.map(k=>`<tr><td>${esc(nomeBloco(k))}</td><td class="n">${pb[k].n}</td><td class="n">${pb[k].m.toFixed(1)} m</td><td class="n">${pb[k].kg.toFixed(1)} kg</td></tr>`).join('')}</table>`;
-    PED.push('','POR BLOCO:',...ord.map(k=>`${nomeBloco(k)}: ${pb[k].n} peças · ${pb[k].m.toFixed(1)} m · ${pb[k].kg.toFixed(1)} kg`));}
+    const ord=['',...(M.blocos||[]).map(b=>b.uid),...(VAL.mods||[]).map(b=>b.uid)].filter((k,i,a)=>pb[k]&&a.indexOf(k)===i),pm=(M.blocos||[]).some(b=>b.nome);
+    $('tab').innerHTML+=`<h2 style="margin-top:18px">${pm?'Por módulo (medida em mm)':'Por bloco'}</h2><table><tr><th>Bloco</th><th class="n">Peças</th><th class="n">Metros</th><th class="n">Peso</th></tr>${ord.map(k=>`<tr><td>${esc(nomeBloco(k))}</td><td class="n">${pb[k].n}</td><td class="n">${pb[k].m.toFixed(1)} m</td><td class="n">${pb[k].kg.toFixed(1)} kg</td></tr>`).join('')}</table>`;
+    PED.push('',pm?'POR MÓDULO:':'POR BLOCO:',...ord.map(k=>`${nomeBloco(k)}: ${pb[k].n} peças · ${pb[k].m.toFixed(1)} m · ${pb[k].kg.toFixed(1)} kg`));}
   LAST={M,cut,gid,PED};try{montaEsc();montaCompL();}catch(e){}painelSel();opcoesChapa();store('dc-estr-atual',{mod:MOD,val:VAL});
+  try{legenda()}catch(e){}
   if(reset)setView(view);else render();
 }
 function copiar(txt){const ta=$('ta');ta.style.display='block';ta.value=txt;ta.select();
@@ -1384,7 +1413,7 @@ function mecPlan(M){M=M||LAST.M||[];const out=[],idx={};
     const k=x.tipo+'|'+x.nome+'|'+x.d+'|'+L+'|'+(x.eixo||0)+'|'+(x.ponta||0);if(idx[k])idx[k].q++;else{idx[k]={tipo:x.tipo,nome:x.nome,d:x.d,L,eixo:x.eixo,ponta:x.ponta,q:1};out.push(idx[k]);}}
   return out;}
 const fmt=v=>String(Math.round(v*10)/10).replace('.',',');
-function compTodos(){return[...compAuto(),...((MOD&&MOD.comp)||[]).map(c=>[c.sec,c.nome,c.qtd])];}
+function compTodos(){return[...((LAST.M&&LAST.M.itens)||[]),...compAuto(),...((MOD&&MOD.comp)||[]).map(c=>[c.sec,c.nome,c.qtd])];}
 function montaCompL(){const L=(MOD.comp||[]);$('compL').innerHTML=compAuto().map(c=>`<div><span>${esc(c[1])} · <b>${esc(c[2])}</b><br><span style="color:var(--mut);font-size:11px">${esc(c[0])} · automático</span></span></div>`).join('')+
   L.map((c,i)=>`<div><span>${esc(c.nome)} · <b>${esc(c.qtd)}</b><br><span style="color:var(--mut);font-size:11px">${esc(c.sec)}</span></span><span class="x" data-c="${i}">✕</span></div>`).join('');
   $('compL').querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{MOD.comp.splice(+e.dataset.c,1);upd();});}
@@ -1502,8 +1531,8 @@ function cartaoMec(c,x,y,w,h,n,m){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRec
   DC.cota(c,[cx-L/2,cy+D/2],[cx+L/2,cy+D/2],m.L+'',50);txt(c,(m.tipo==='rolo'?'tubo ':'')+'Ø'+fmt(m.d),cx,cy-D/2-24,24,'#c05a10','center',true);
   if(m.tipo==='rolo')txt(c,'eixo Ø'+fmt(m.eixo),cx-L/2-pt*k,cy-E/2-30,22,'#c05a10','left',true);}
 function montaEsc(){const e=$('fEsc'),v=e.value,gs=[...new Set((LAST.M||[]).map(m=>m.g))];
-  const bl=tiposBloco()?['',...(VAL.mods||[]).map(b=>b.uid)].filter(k=>(LAST.M||[]).some(m=>(m.bloco||'')===k)):[];
-  e.innerHTML='<option value="tudo">Projeto completo</option>'+bl.map(k=>`<option value="b:${k||'corpo'}">Só o bloco: ${esc(nomeBloco(k))}</option>`).join('')+gs.map(id=>{const g=MOD.grupos.find(x=>x.id===id);return `<option value="g:${id}">Só: ${esc(g?g.nome:id)}</option>`}).join('')+'<option value="peca">Só uma peça</option>';
+  const bl=tiposBloco()?['',...((LAST.M&&LAST.M.blocos)||[]).map(b=>b.uid),...(VAL.mods||[]).map(b=>b.uid)].filter((k,i,a)=>a.indexOf(k)===i&&(LAST.M||[]).some(m=>(m.bloco||'')===k)):[],pmo=((LAST.M&&LAST.M.blocos)||[]).some(b=>b.nome);
+  e.innerHTML='<option value="tudo">Projeto completo</option>'+bl.map(k=>`<option value="b:${k||'corpo'}">${pmo?'Só o módulo':'Só o bloco'}: ${esc(nomeBloco(k))}</option>`).join('')+gs.map(id=>{const g=MOD.grupos.find(x=>x.id===id);return `<option value="g:${id}">Só: ${esc(g?g.nome:id)}</option>`}).join('')+'<option value="peca">Só uma peça</option>';
   if([...e.options].some(o=>o.value===v))e.value=v;const pu=pecasUnicas(LAST.M||[]);$('fPeca').innerHTML=pu.map((p,i)=>`<option value="${i}">P${i+1} · ${esc(p.g.nome)} · ${p.L} mm (${p.q} un)</option>`).join('')+
     chapasPlan().map((ch,i)=>`<option value="c:${i}">C${i+1} · ${esc(ch.nome)} · ${ch.pl.larg}×${ch.pl.alt} (${ch.q} un)</option>`).join('')+mecPlan().map((m,i)=>`<option value="m:${i}">${m.tipo==='rolo'?'R':'PI'}${i+1} · ${m.tipo==='rolo'?'Rolo':'Pino'} ${esc(m.nome)} · ${m.L} mm (${m.q} un)</option>`).join('');$('lfPeca').style.display=e.value==='peca'?'':'none';}
 $('fEsc').onchange=()=>{$('lfPeca').style.display=$('fEsc').value==='peca'?'':'none';};
