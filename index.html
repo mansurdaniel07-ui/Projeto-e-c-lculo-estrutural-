@@ -468,8 +468,7 @@ PR.piscina={
   {id:'L',nome:'Largura',tipo:'num',valor:6000,grupo:'Medidas'},
   {id:'H',nome:'Profundidade',tipo:'num',valor:1500,grupo:'Medidas'},
   {id:'modMax',nome:'Largura máx. de cada módulo',tipo:'num',valor:2000,grupo:'Módulos'},
-  {id:'travY',nome:'Vão máx. entre montantes (paredes)',tipo:'num',valor:1000,grupo:'Módulos'},
-  {id:'esp',nome:'Espaç. travessas do fundo',tipo:'num',valor:1000,grupo:'Módulos'},
+  {id:'travY',nome:'Vão máx. entre montantes (todos os quadros)',tipo:'num',valor:1000,grupo:'Módulos'},
   {id:'paraf',nome:'Parafuso de ligação',tipo:'sel',valor:'M10',opcoes:['M8','M10','M12'],grupo:'Módulos'},
   {id:'parafEsp',nome:'Espaç. dos parafusos',tipo:'num',valor:300,grupo:'Módulos'},
   {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:false,grupo:'Arestas'},
@@ -551,7 +550,7 @@ PR.piscina={
     MODS.push({id,nome,dir,med:Math.round(s1-s0)+' × '+Math.round(z1-z0)});furos+=2*nPar(z1-z0)+nPar(s1-s0)*(baseLivre?1:2)};
   /* módulo do fundo: quadro fechado com travessas */
   const hori=(nome,x0,x1,y0,y1,z)=>{const id='m'+MODS.length,o={bloco:id},xa=x0+pw/2,xb=x1-pw/2,ya=y0+pw/2,yb2=y1-pw/2;if(xb-xa<pw||yb2-ya<pw)return;
-    add([xa,ya,z],[xb,ya,z],'f','longarina',o);add([xa,yb2,z],[xb,yb2,z],'f','longarina',o);for(const x of divPts([xa,xb],P.esp))add([x,ya,z],[x,yb2,z],'f','travessa',o);
+    add([xa,ya,z],[xb,ya,z],'f','travessa',o);add([xa,yb2,z],[xb,yb2,z],'f','travessa',o);for(const x of divPts([xa,xb],P.travY))add([x,ya,z],[x,yb2,z],'f','montante',o);
     MODS.push({id,nome,dir:[0,0,1],med:Math.round(x1-x0)+' × '+Math.round(y1-y0)});furos+=2*nPar(x1-x0)+2*nPar(y1-y0)};
   /* paredes: frente (cab. A), costa (cab. B), laterais — divididas onde a altura muda e pela largura máxima */
   const parede=(nome,cel,cs,pt,dir,mid)=>{let k=0;while(k<cel.length){let e=k;while(e+1<cel.length&&cel[e+1]===cel[k])e++;
@@ -575,7 +574,7 @@ PR.piscina={
   const tot={},seq={};MODS.forEach(m=>tot[m.nome]=(tot[m.nome]||0)+1);
   MODS.forEach(m=>{const nm=tot[m.nome]>1?m.nome+' '+(seq[m.nome]=(seq[m.nome]||0)+1):m.nome;H.bloco(m.id,[],nm+' ('+m.med+')',m.dir)});
   H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm)',Math.ceil(furos/2)+' un');
-  const xs=divPts([0,L],P.esp);
+  const xs=divPts([0,L],P.travY);
   if(P.borda){const b=P.bLarg;
     add([-b,-b,0],[L+b,-b,0],'b');add([-b,W+b,0],[L+b,W+b,0],'b');add([-b,-b,0],[-b,W+b,0],'b');add([L+b,-b,0],[L+b,W+b,0],'b');
     for(const x of xs){add([x,-b,0],[x,0,0],'b');add([x,W,0],[x,W+b,0],'b');}}
