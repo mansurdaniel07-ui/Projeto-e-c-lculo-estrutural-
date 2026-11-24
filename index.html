@@ -461,7 +461,7 @@ PR.piscina={
  titulo:'Gabarito · piscina modular',
  resumo:'Gabarito para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima), feito de QUADROS RETANGULARES PARAFUSADOS: frente, costa, laterais (meio, escada, prainha), espelhos dos degraus e reforços do meio (quadros verticais). Em cima, amarração com perfis soltos parafusados. As medidas digitadas são as externas; o app desconta os perfis. A forma (prainha, escada, banco, hidro) é definida nos cartões.',
  perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento dos quadros e das longarinas'],
- grupos:[{id:'p',nome:'Paredes (frente, costa, laterais)'},{id:'f',nome:'Amarração do topo (perfis parafusados)'},{id:'d',nome:'Espelhos (degraus e desníveis)'},{id:'r',nome:'Reforços do meio (quadros verticais)'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ grupos:[{id:'p',nome:'Paredes (frente, costa, laterais)'},{id:'f',nome:'Amarração (perfis entre os quadros)'},{id:'d',nome:'Espelhos (degraus e desníveis)'},{id:'r',nome:'Reforços do meio (quadros verticais)'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:10000,grupo:'Medidas'},
@@ -560,15 +560,15 @@ PR.piscina={
   /* paredes: frente (cab. A), costa (cab. B), laterais — divididas onde a altura muda e pela largura máxima */
   const parede=(nome,cel,cs,pt,dir,mid,lim)=>{let k=0;while(k<cel.length){let e=k;while(e+1<cel.length&&cel[e+1]===cel[k])e++;
     const a0=Math.max(cs[k],lim[0]),a1=Math.min(cs[e+1],lim[1]),ehMeio=dir[1]!==0&&mid((a0+a1)/2)==='meio';
-    for(const[s0,s1]of partes(a0,a1,ehMeio?nMeioDe(a1-a0):0))vert(nome+' – '+mid((s0+s1)/2),'p',pt,s0,s1,0,cel[k]-ft,dir,true);k=e+1}};
+    for(const[s0,s1]of partes(a0,a1,ehMeio?nMeioDe(a1-a0):0))vert(nome+' – '+mid((s0+s1)/2),'p',pt,s0,s1,0,cel[k],dir,true);k=e+1}};
   parede('Frente',D[0],cy,(s,z)=>[pw/2,s,z],[-1,0,0],s=>nomeReg(pw,s),[pw,W-pw]);
   parede('Costa',D[nx-1],cy,(s,z)=>[L-pw/2,s,z],[1,0,0],s=>nomeReg(L-pw,s),[pw,W-pw]);
   parede('Lateral 1',D.map(c=>c[0]),cx,(s,z)=>[s,pw/2,z],[0,-1,0],s=>nomeReg(s,pw),[0,L]);
   parede('Lateral 2',D.map(c=>c[ny-1]),cx,(s,z)=>[s,W-pw/2,z],[0,1,0],s=>nomeReg(s,W-pw),[0,L]);
   /* espelhos: onde duas células vizinhas têm profundidades diferentes */
-  for(let i=0;i<nx-1;i++){let j=0;while(j<ny){if(D[i][j]===D[i+1][j]){j++;continue}let e=j;while(e+1<ny&&D[i][e+1]===D[i][j]&&D[i+1][e+1]===D[i+1][j])e++;const xb=cx[i+1],z0=Math.min(D[i][j],D[i+1][j])-ft,z1=Math.max(D[i][j],D[i+1][j])-ft,x=D[i][j]<D[i+1][j]?xb+pd/2:xb-pd/2;
+  for(let i=0;i<nx-1;i++){let j=0;while(j<ny){if(D[i][j]===D[i+1][j]){j++;continue}let e=j;while(e+1<ny&&D[i][e+1]===D[i][j]&&D[i+1][e+1]===D[i+1][j])e++;const xb=cx[i+1],z0=Math.min(D[i][j],D[i+1][j])-pw,z1=Math.max(D[i][j],D[i+1][j]),x=D[i][j]<D[i+1][j]?xb+pd/2:xb-pd/2;
     for(const[s0,s1]of partes(Math.max(cy[j],pw),Math.min(cy[e+1],W-pw)))vert('Espelho – '+nomeEsp(nomeReg(xb-pw,(s0+s1)/2),nomeReg(xb+pw,(s0+s1)/2)),'d',(s,z)=>[x,s,z],s0,s1,z0,z1,[0,0,1],false);j=e+1}}
-  for(let j=0;j<ny-1;j++){let i=0;while(i<nx){if(D[i][j]===D[i][j+1]){i++;continue}let e=i;while(e+1<nx&&D[e+1][j]===D[i][j]&&D[e+1][j+1]===D[i][j+1])e++;const yb0=cy[j+1],z0=Math.min(D[i][j],D[i][j+1])-ft,z1=Math.max(D[i][j],D[i][j+1])-ft,y=D[i][j]<D[i][j+1]?yb0+pd/2:yb0-pd/2;
+  for(let j=0;j<ny-1;j++){let i=0;while(i<nx){if(D[i][j]===D[i][j+1]){i++;continue}let e=i;while(e+1<nx&&D[e+1][j]===D[i][j]&&D[e+1][j+1]===D[i][j+1])e++;const yb0=cy[j+1],z0=Math.min(D[i][j],D[i][j+1])-pw,z1=Math.max(D[i][j],D[i][j+1]),y=D[i][j]<D[i][j+1]?yb0+pd/2:yb0-pd/2;
     for(const[s0,s1]of partes(Math.max(cx[i],pw),Math.min(cx[e+1],L-pw)))vert('Espelho – '+nomeEsp(nomeReg((s0+s1)/2,yb0-pw),nomeReg((s0+s1)/2,yb0+pw)),'d',(s,z)=>[s,y,z],s0,s1,z0,z1,[0,0,1],false);i=e+1}}
   /* fundo: junta células iguais em retângulos e corta pela largura máxima */
   const usado=D.map(c=>c.map(()=>false)),emendas=[];
@@ -577,17 +577,20 @@ PR.piscina={
     for(let a=i;a<=i1;a++)for(let q=j;q<=j1;q++)usado[a][q]=true;
     const px=nomeReg((cx[i]+cx[i1+1])/2,(cy[j]+cy[j1+1])/2)==='meio'?partes(cx[i],cx[i1+1],nMeioDe(cx[i1+1]-cx[i])):[[cx[i],cx[i1+1]]];
     /* amarração do topo: perfis soltos ao longo do comprimento, de um quadro transversal ao próximo, parafusados no topo deles */
-    const za=d-ft/2,ys=divPts([Math.max(cy[j],pw/2),Math.min(cy[j1+1],W-pw/2)],P.travY);
-    for(const[x0,x1]of px)for(const y of ys){add([x0,y,za],[x1,y,za],'f','amarração',{bloco:'amarr',livre:true});furos+=(y<=pw||y>=W-pw)?2*nPar(x1-x0):4}
+    const za=d-pw/2,ys=divPts([Math.max(cy[j],pw/2),Math.min(cy[j1+1],W-pw/2)],P.travY).filter(y=>y>pw&&y<W-pw);
+    const lin=y=>{let q=0;while(q<ny-1&&cy[q+1]<=y)q++;return q};
+    /* desconto na ponta: frente/costa = perfil; emenda com reforço = meio perfil; espelho do lado deste nível = perfil do espelho */
+    const desc=(xb,y,lado)=>{if(xb<=0||xb>=L)return pw;if(px.some(([a,b],k)=>k>0&&Math.abs(a-xb)<1))return pw/2;const ci=cx.indexOf(xb);if(ci<0)return pw/2;const nb=lado<0?D[ci-1]:D[ci];if(!nb)return pw;const dn=nb[lin(y)];return dn===d?pw/2:dn<d?pd:0};
+    for(const[x0,x1]of px)for(const y of ys){const a=x0+desc(x0,y,-1),b=x1-desc(x1,y,1);if(b-a>pw)add([a,y,za],[b,y,za],'f','amarração (entre quadros)',{bloco:'amarr',livre:true});furos+=4}
     /* emendas do teto sem espelho embaixo: entre partes do mesmo retângulo e na borda dele quando o vizinho tem a mesma profundidade */
     px.slice(1).forEach(([x0])=>emendas.push([x0,cy[j],cy[j1+1],d]));
     if(i1+1<nx){let q=j;while(q<=j1){if(D[i1+1][q]!==d){q++;continue}let e=q;while(e+1<=j1&&D[i1+1][e+1]===d)e++;emendas.push([cx[i1+1],cy[q],cy[e+1],d]);q=e+1}}}
   /* reforços do meio: quadro vertical embaixo de cada emenda do teto, de lateral a lateral (altura = profundidade − teto) */
-  for(const[x,y0,y1,d]of emendas)for(const[s0,s1]of partes(Math.max(y0,pw),Math.min(y1,W-pw)))vert('Reforço do meio – '+nomeReg(x,(s0+s1)/2),'r',(s,z)=>[x,s,z],s0,s1,0,d-ft,[0,0,1],true);
+  for(const[x,y0,y1,d]of emendas)for(const[s0,s1]of partes(Math.max(y0,pw),Math.min(y1,W-pw)))vert('Reforço do meio – '+nomeReg(x,(s0+s1)/2),'r',(s,z)=>[x,s,z],s0,s1,0,d,[0,0,1],true);
   /* nomes: numera só o que se repete; registra cada módulo */
   const tot={},seq={};MODS.forEach(m=>tot[m.nome]=(tot[m.nome]||0)+1);
   MODS.forEach(m=>{const nm=tot[m.nome]>1?m.nome+' '+(seq[m.nome]=(seq[m.nome]||0)+1):m.nome;H.bloco(m.id,[],nm+' ('+m.med+')',m.dir)});
-  H.bloco('amarr',[],'Amarração do topo (perfis soltos)',[0,0,1]);
+  H.bloco('amarr',[],'Amarração (perfis entre os quadros)',[0,0,1]);
   H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm)',Math.ceil(furos/2)+' un');
   const xs=divPts([0,L],P.travY);
   if(P.borda){const b=P.bLarg;
