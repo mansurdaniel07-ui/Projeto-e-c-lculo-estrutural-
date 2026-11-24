@@ -267,7 +267,7 @@ function construir(fn,P){
   /* peças detalhadas: rolo (tubo + eixo com pontas), pino, chapa recortada (planificada na folha) */
   const rolo=o=>{if(!o||!okP(o.a)||!okP(o.b))return;chk();const d=Math.max(5,+o.d||76.2);X.push({tipo:'rolo',a:o.a,b:o.b,d,eixo:Math.max(10,+o.eixo||Math.round(Math.max(20,d/3))),ponta:Math.max(0,o.ponta==null?60:+o.ponta),nome:String(o.nome||'rolo'),g:o.g||''});};
   const pino=o=>{if(!o||!okP(o.a)||!okP(o.b))return;chk();X.push({tipo:'pino',a:o.a,b:o.b,d:Math.max(3,+o.d||20),nome:String(o.nome||'pino'),g:o.g||''});};
-  const chapa=o=>{if(!o||!Array.isArray(o.pts)||o.pts.length<3||!o.pts.every(okP))return;chk();X.push({tipo:'chapa',pts:o.pts,esp:Math.max(.5,+o.esp||6.35),nome:String(o.nome||'chapa'),g:o.g||''});};
+  const chapa=o=>{if(!o||!Array.isArray(o.pts)||o.pts.length<3||!o.pts.every(okP))return;chk();X.push({tipo:'chapa',pts:o.pts,esp:Math.max(.5,+o.esp||6.35),nome:String(o.nome||'chapa'),g:o.g||'',lista:o.lista!==false});};
   /* animação: {tipo:'girar', eixo:[[x,y,z],[x,y,z]], grupos:['q',...], chapa:true, rpm} */
   const animar=o=>{if(o&&Array.isArray(o.eixo)&&okP(o.eixo[0])&&okP(o.eixo[1]))AN={tipo:'girar',eixo:o.eixo,grupos:(o.grupos||[]).map(String),chapa:o.chapa!==false,extras:o.extras!==false,rpm:Math.max(.5,Math.min(60,+o.rpm||6))};};
   const perfil=id=>{const g=(MOD&&MOD.grupos||[]).find(x=>x.id===id)||(MOD&&MOD.grupos||[])[0];const p=g?g.perfil:{tipo:'ret',a:50,b:50,t:2};return {...p,w:p.tipo==='chapa'?p.t:p.a,h:p.tipo==='ret'?p.b:p.a};};
@@ -572,16 +572,21 @@ PR.piscina={
     for(const[s0,s1]of partes(Math.max(cx[i],pw),Math.min(cx[e+1],L-pw)))vert('Espelho – '+nomeEsp(nomeReg((s0+s1)/2,yb0-pw),nomeReg((s0+s1)/2,yb0+pw)),'d',(s,z)=>[s,y,z],s0,s1,z0,z1,[0,0,1],false);i=e+1}}
   /* fundo: junta células iguais em retângulos e corta pela largura máxima */
   const usado=D.map(c=>c.map(()=>false)),emendas=[];
+  /* linhas da amarração = montantes dos quadros transversais (todos usam a mesma divisão de lateral a lateral) */
+  const linhas=[];for(const[s0,s1]of partes(pw,W-pw))for(const y of divPts([s0+pw/2,s1-pw/2],P.travY))if(y>pw*1.5&&y<W-pw*1.5)linhas.push(y);
+  linhas.sort((a,b)=>a-b);const linhasY=linhas.filter((y,k)=>k===0||y-linhas[k-1]>2*pw+1);let nCant=0;
   for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){if(usado[i][j])continue;const d=D[i][j];let j1=j;while(j1+1<ny&&!usado[i][j1+1]&&D[i][j1+1]===d)j1++;
     let i1=i;while(i1+1<nx){let ok=true;for(let q=j;q<=j1;q++)if(usado[i1+1][q]||D[i1+1][q]!==d)ok=false;if(!ok)break;i1++}
     for(let a=i;a<=i1;a++)for(let q=j;q<=j1;q++)usado[a][q]=true;
     const px=nomeReg((cx[i]+cx[i1+1])/2,(cy[j]+cy[j1+1])/2)==='meio'?partes(cx[i],cx[i1+1],nMeioDe(cx[i1+1]-cx[i])):[[cx[i],cx[i1+1]]];
     /* amarração do topo: perfis soltos ao longo do comprimento, de um quadro transversal ao próximo, parafusados no topo deles */
-    const za=d-pw/2,ys=divPts([Math.max(cy[j],pw/2),Math.min(cy[j1+1],W-pw/2)],P.travY).filter(y=>y>pw&&y<W-pw);
+    const za=d-pw/2,ys=linhasY.filter(y=>y>cy[j]&&y<cy[j1+1]);
     const lin=y=>{let q=0;while(q<ny-1&&cy[q+1]<=y)q++;return q};
     /* desconto na ponta: frente/costa = perfil; emenda com reforço = meio perfil; espelho do lado deste nível = perfil do espelho */
     const desc=(xb,y,lado)=>{if(xb<=0||xb>=L)return pw;if(px.some(([a,b],k)=>k>0&&Math.abs(a-xb)<1))return pw/2;const ci=cx.indexOf(xb);if(ci<0)return pw/2;const nb=lado<0?D[ci-1]:D[ci];if(!nb)return pw;const dn=nb[lin(y)];return dn===d?pw/2:dn<d?pd:0};
-    for(const[x0,x1]of px)for(const y of ys){const a=x0+desc(x0,y,-1),b=x1-desc(x1,y,1);if(b-a>pw)add([a,y,za],[b,y,za],'f','amarração (entre quadros)',{bloco:'amarr',livre:true});furos+=4}
+    /* cantoneira soldada na lateral do montante, esperando a barra; a barra parafusa nela (2 parafusos) */
+    const cant=(x,dir,y)=>{const yc=y+pw/2+2.4;H.chapa({pts:[[x,yc,za-pw/2],[x+dir*60,yc,za-pw/2],[x+dir*60,yc,za+pw/2],[x,yc,za+pw/2]],esp:4.76,nome:'cantoneira de ligação',g:'f',lista:false});nCant++;furos+=4};
+    for(const[x0,x1]of px)for(const y of ys){const a=x0+desc(x0,y,-1),b=x1-desc(x1,y,1);if(b-a>pw){add([a,y,za],[b,y,za],'f','amarração (entre quadros)',{bloco:'amarr',livre:true});cant(a,1,y);cant(b,-1,y)}}
     /* emendas do teto sem espelho embaixo: entre partes do mesmo retângulo e na borda dele quando o vizinho tem a mesma profundidade */
     px.slice(1).forEach(([x0])=>emendas.push([x0,cy[j],cy[j1+1],d]));
     if(i1+1<nx){let q=j;while(q<=j1){if(D[i1+1][q]!==d){q++;continue}let e=q;while(e+1<=j1&&D[i1+1][e+1]===d)e++;emendas.push([cx[i1+1],cy[q],cy[e+1],d]);q=e+1}}}
@@ -591,7 +596,8 @@ PR.piscina={
   const tot={},seq={};MODS.forEach(m=>tot[m.nome]=(tot[m.nome]||0)+1);
   MODS.forEach(m=>{const nm=tot[m.nome]>1?m.nome+' '+(seq[m.nome]=(seq[m.nome]||0)+1):m.nome;H.bloco(m.id,[],nm+' ('+m.med+')',m.dir)});
   H.bloco('amarr',[],'Amarração (perfis entre os quadros)',[0,0,1]);
-  H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm)',Math.ceil(furos/2)+' un');
+  H.item&&H.item('Mecânicos','Parafuso '+P.paraf+' × 40 sextavado + porca + 2 arruelas (ligação dos módulos, a cada '+P.parafEsp+' mm, e 2 por cantoneira)',Math.ceil(furos/2)+' un');
+  if(nCant)H.item('Mecânicos','Cantoneira de ligação 2" × 3/16" × 60 mm, soldada na lateral do montante, com 2 furos (amarração)',nCant+' un');
   const xs=divPts([0,L],P.travY);
   if(P.borda){const b=P.bLarg;
     add([-b,-b,0],[L+b,-b,0],'b');add([-b,W+b,0],[L+b,W+b,0],'b');add([-b,-b,0],[-b,W+b,0],'b');add([L+b,-b,0],[L+b,W+b,0],'b');
@@ -1413,12 +1419,12 @@ function compAuto(){const L=[],v=VAL||{},area=(LAST.M&&LAST.M.paineis||[]).reduc
   if(v.eixo&&MOD.preset==='cilindro')L.push(['Mecânicos','Mancal com rolamento para o eixo Ø'+((MOD.grupos.find(g=>g.id==='e')||{}).perfil||{}).a+' [CONFIRMAR]','2']);
   for(const m of mecPlan()){if(m.tipo==='rolo'){L.push(['Mecânicos','Rolo '+m.nome+' · tubo Ø'+fmt(m.d)+' × '+m.L+' mm · eixo Ø'+fmt(m.eixo)+' com pontas de '+m.ponta+' mm',m.q+' un']);L.push(['Mecânicos','Mancal com rolamento para eixo Ø'+fmt(m.eixo)+' ('+m.nome+') [CONFIRMAR]',2*m.q+' un']);}
     else L.push(['Mecânicos','Pino '+m.nome+' · Ø'+fmt(m.d)+' × '+m.L+' mm (aço 1045) [CONFIRMAR]',m.q+' un']);}
-  for(const c of chapasPlan())L.push(['Chapas',(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):'Chapeamento ')+c.nome+' · '+c.pl.larg+' × '+c.pl.alt+' · esp. '+fmt(c.esp)+(c.pl.desenvolvida?' (calandrar/emendar)':''),c.q+' un · '+fmt(c.m2)+' m² · '+fmt(c.kg)+' kg']);
+  for(const c of chapasPlan())L.push(['Chapas',(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):(/^chapeamento/i.test(c.nome)?'':'Chapeamento '))+c.nome+' · '+c.pl.larg+' × '+c.pl.alt+' · esp. '+fmt(c.esp)+(c.pl.desenvolvida?' (calandrar/emendar)':''),c.q+' un · '+fmt(c.m2)+' m² · '+fmt(c.kg)+' kg']);
   if(area>0)L.push(['Compósito','Área de molde/chapa '+area.toFixed(1)+' m² (manta, tecido e resina: calcular no app de cálculo de material)','—']);
   return L;}
 /* chapas: recortadas (H.chapa) + chapeamento (painéis) planificados, iguais juntas */
 function chapasPlan(M){M=M||LAST.M||[];const out=[],idx={},put=(k,o)=>{if(idx[k])idx[k].q++;else{idx[k]=Object.assign({q:1},o);out.push(idx[k]);}};
-  for(const x of(M.extras||[]))if(x.tipo==='chapa'){const pl=DC.planificar(x.pts);put('c|'+x.nome+'|'+x.esp+'|'+DC.assinaturaChapa(pl),{nome:x.nome,esp:x.esp,pl,tipo:'chapa'});}
+  for(const x of(M.extras||[]))if(x.tipo==='chapa'&&x.lista!==false){const pl=DC.planificar(x.pts);put('c|'+x.nome+'|'+x.esp+'|'+DC.assinaturaChapa(pl),{nome:x.nome,esp:x.esp,pl,tipo:'chapa'});}
   const PN=M.paineis||[],NN=PN.nomes||[],LS=PN.lista||[];if(PN.length){const esp=+chapaCfg().esp||3,gr={};PN.forEach((p,i)=>{if(LS[i]===false)return;(gr[NN[i]||'']=gr[NN[i]||'']||[]).push(p);});
     for(const nm in gr){const dv=nm?DC.desenvolver(gr[nm]):null;
       if(dv){put('p|'+nm,{nome:nm+' (desenvolvida)',esp,pl:dv,tipo:'chapeamento'});continue;}
@@ -1438,7 +1444,7 @@ $('cAdd').onclick=()=>{const n=$('cNome').value.trim();if(!n)return;(MOD.comp=MO
 function secoesMaterial(){const out=[],st={};
   for(const m of LAST.M||[]){const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],pp=m.pf||g.perfil,k=perfNome(pp);(st[k]=st[k]||{p:pp,lens:[]}).lens.push(m.lenCorte||m.len);}
   const est=[],chp=[];for(const k in st){const s=st[k],m=s.lens.reduce((a,b)=>a+b,0)/1000,q=m*kgm(s.p);if(s.p.tipo==='placa')chp.push([k,s.lens.length+' un','',q]);else est.push([k,cortar(s.lens,CFG.barra,CFG.kerf).bars.length+' varas',m.toFixed(1)+' m',q]);}
-  for(const c of chapasPlan())chp.push([(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):'Chapeamento ')+c.nome+' '+c.pl.larg+'×'+c.pl.alt+' esp. '+fmt(c.esp),c.q+' un',fmt(c.m2)+' m²',c.kg]);
+  for(const c of chapasPlan())chp.push([(c.tipo==='chapa'?(/^chapa/i.test(c.nome)?'':'Chapa '):(/^chapeamento/i.test(c.nome)?'':'Chapeamento '))+c.nome+' '+c.pl.larg+'×'+c.pl.alt+' esp. '+fmt(c.esp),c.q+' un',fmt(c.m2)+' m²',c.kg]);
   out.push(['Estrutura (tubos e perfis · varas de '+CFG.barra/1000+' m)',est]);if(chp.length)out.push(['Chapas',chp]);
   for(const sec of['Mecânicos','Acionamento','Comando e elétrica','Compósito','Outros']){const r=compTodos().filter(c=>c[0]===sec).map(c=>[c[1],c[2],'',null]);if(r.length)out.push([sec,r]);}
   return out;}
