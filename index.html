@@ -468,7 +468,7 @@ PR.piscina={
   {id:'L',nome:'Largura',tipo:'num',valor:6000,grupo:'Medidas'},
   {id:'H',nome:'Profundidade',tipo:'num',valor:1500,grupo:'Medidas'},
   {id:'modMax',nome:'Largura máx. de cada módulo',tipo:'num',valor:4000,grupo:'Módulos'},
-  {id:'nRef',nome:'Reforços do meio (quantidade)',tipo:'int',valor:1,grupo:'Módulos'},
+  {id:'nRef',nome:'Reforços do meio (0 = automático: mesma largura da costa)',tipo:'int',valor:0,grupo:'Módulos'},
   {id:'travY',nome:'Vão máx. entre montantes (todos os quadros)',tipo:'num',valor:1000,grupo:'Módulos'},
   {id:'paraf',nome:'Parafuso de ligação',tipo:'sel',valor:'M10',opcoes:['M8','M10','M12'],grupo:'Módulos'},
   {id:'parafEsp',nome:'Espaç. dos parafusos',tipo:'num',valor:300,grupo:'Módulos'},
@@ -545,7 +545,9 @@ PR.piscina={
   const nomeReg=(x,y)=>{for(const g of R){const[x0,y0,x1,y1]=g.r;if(x>x0-1&&x<x1+1&&y>y0-1&&y<y1+1)return g.b.nome}return 'meio'};
   const nomeEsp=(a,b)=>[a,b].find(n=>/^Escada/.test(n))||[a,b].find(n=>n!=='meio')||'meio';
   const partes=(a,b,nf)=>{const n=nf||Math.max(1,Math.ceil((b-a)/MX-1e-9));return Array.from({length:n},(_,i)=>[a+(b-a)*i/n,a+(b-a)*(i+1)/n])};
-  const nMeio=Math.max(0,Math.round(P.nRef||0))+1;
+  /* largura do quadro da costa (fecha a largura); no automático o meio é dividido em quadros dessa mesma largura */
+  const nW=Math.max(1,Math.ceil((W-2*pw)/MX-1e-9)),Mw=(W-2*pw)/nW;
+  const nMeioDe=len=>P.nRef>0?Math.round(P.nRef)+1:Math.max(1,Math.round(len/Mw));
   const nPar=l=>Math.max(2,Math.ceil(l/Math.max(50,P.parafEsp))+1);
   /* módulo vertical (parede ou espelho): quadro fechado com montantes; postes recuados meio perfil para encostar no vizinho */
   const vert=(nome,g,pt,s0,s1,z0,z1,dir,baseLivre)=>{const t=g==='d'?pd:pw;if(z1-z0<t*2)return;const id='m'+MODS.length,o={bloco:id},a=s0+t/2,b=s1-t/2,za=z0+t/2,zb=z1-t/2;if(b-a<t)return;
@@ -558,7 +560,7 @@ PR.piscina={
   /* paredes: frente (cab. A), costa (cab. B), laterais — divididas onde a altura muda e pela largura máxima */
   const parede=(nome,cel,cs,pt,dir,mid,lim)=>{let k=0;while(k<cel.length){let e=k;while(e+1<cel.length&&cel[e+1]===cel[k])e++;
     const a0=Math.max(cs[k],lim[0]),a1=Math.min(cs[e+1],lim[1]),ehMeio=dir[1]!==0&&mid((a0+a1)/2)==='meio';
-    for(const[s0,s1]of partes(a0,a1,ehMeio?nMeio:0))vert(nome+' – '+mid((s0+s1)/2),'p',pt,s0,s1,0,cel[k]-ft,dir,true);k=e+1}};
+    for(const[s0,s1]of partes(a0,a1,ehMeio?nMeioDe(a1-a0):0))vert(nome+' – '+mid((s0+s1)/2),'p',pt,s0,s1,0,cel[k]-ft,dir,true);k=e+1}};
   parede('Frente',D[0],cy,(s,z)=>[pw/2,s,z],[-1,0,0],s=>nomeReg(pw,s),[pw,W-pw]);
   parede('Costa',D[nx-1],cy,(s,z)=>[L-pw/2,s,z],[1,0,0],s=>nomeReg(L-pw,s),[pw,W-pw]);
   parede('Lateral 1',D.map(c=>c[0]),cx,(s,z)=>[s,pw/2,z],[0,-1,0],s=>nomeReg(s,pw),[0,L]);
@@ -573,7 +575,7 @@ PR.piscina={
   for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){if(usado[i][j])continue;const d=D[i][j];let j1=j;while(j1+1<ny&&!usado[i][j1+1]&&D[i][j1+1]===d)j1++;
     let i1=i;while(i1+1<nx){let ok=true;for(let q=j;q<=j1;q++)if(usado[i1+1][q]||D[i1+1][q]!==d)ok=false;if(!ok)break;i1++}
     for(let a=i;a<=i1;a++)for(let q=j;q<=j1;q++)usado[a][q]=true;
-    const px=nomeReg((cx[i]+cx[i1+1])/2,(cy[j]+cy[j1+1])/2)==='meio'?partes(cx[i],cx[i1+1],nMeio):[[cx[i],cx[i1+1]]];
+    const px=nomeReg((cx[i]+cx[i1+1])/2,(cy[j]+cy[j1+1])/2)==='meio'?partes(cx[i],cx[i1+1],nMeioDe(cx[i1+1]-cx[i])):[[cx[i],cx[i1+1]]];
     /* amarração do topo: perfis soltos ao longo do comprimento, de um quadro transversal ao próximo, parafusados no topo deles */
     const za=d-ft/2,ys=divPts([Math.max(cy[j],pw/2),Math.min(cy[j1+1],W-pw/2)],P.travY);
     for(const[x0,x1]of px)for(const y of ys){add([x0,y,za],[x1,y,za],'f','amarração',{bloco:'amarr',livre:true});furos+=(y<=pw||y>=W-pw)?2*nPar(x1-x0):4}
