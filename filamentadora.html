@@ -147,6 +147,13 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
       </div>
       <div id="secAuto"><div class="sec">Roving</div>
         <div class="f"><label class="c">Nº de fios<input id="iFios" inputmode="numeric"></label><label class="c">Largura da banda (mm)<input id="iBanda" inputmode="decimal"></label></div>
+        <div class="sec">Padrão de enrolamento</div>
+        <div class="f"><label class="c">Padrão<select id="iPadrao"><option value="cruzado">Cruzado (helicoidal)</option><option value="paralelo">Paralelo (circunferencial)</option><option value="misto">Cruzado + paralelo</option></select></label><label class="c" id="lOrdem">Ordem das camadas<select id="iOrdem"><option value="alt">Alternado</option><option value="par1">Paralelo primeiro</option><option value="cruz1">Cruzado primeiro</option></select></label></div>
+        <div class="f"><label class="c" id="lNCruz">Camadas cruzadas<input id="iNCruz" inputmode="numeric"></label><label class="c" id="lNPar">Camadas paralelas<input id="iNPar" inputmode="numeric"></label></div>
+        <div class="f"><label class="c" id="lAng">Ângulo do cruzado (° do eixo)<input id="iAng" inputmode="decimal"></label><label class="c" id="lParada">Parada na virada (°)<input id="iParada" inputmode="decimal"></label></div>
+        <div class="f"><label class="c">Borda: tolerância a mais (%)<input id="iBordaTol" inputmode="decimal"></label><label class="c">Borda: voltas mínimas por camada<input id="iBordaMin" inputmode="decimal"></label></div>
+        <div class="f"><label class="c">Roving (tex)<input id="iTex" inputmode="numeric" list="lTex"><datalist id="lTex"><option value="1200"><option value="2200"><option value="2400"><option value="4800"></datalist></label><label class="c">Vidro no laminado (%)<input id="iVidro" inputmode="decimal"></label></div>
+        <div class="st" id="padInfo"></div>
         <div class="sec">Reforços do tanque (no final da bobinagem)</div>
         <div class="f"><label class="c">Reforço<select id="iRefOn"><option value="1">Com reforço</option><option value="0">Sem reforço</option></select></label><label class="c">Quantos reforços<input id="iRefN" inputmode="numeric"></label></div>
         <div class="f"><label class="c">Distância entre reforços (mm)<input id="iRefEsp" inputmode="decimal"></label><label class="c">Largura do reforço (mm)<input id="iRefLarg" inputmode="decimal" list="lRefLarg"><datalist id="lRefLarg"><option value="100"><option value="200"><option value="300"><option value="400"></datalist></label></div>
@@ -237,7 +244,7 @@ table.mt{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px}t
 {
 const $=id=>document.getElementById(id);
 const vp=$('vp');
-const DEF={refOn:true,refN:3,refEsp:1500,refLarg:200,refVoltas:5,tipo:'auto',D:3000,L:6000,Dm:3000,Lm:6000,fol:500,fios:8,banda:100,mat:'Tecido biaxial 1808',larg:1200,sob:100,cli:'',proj:'',apag:[],cmdT:'clp',mand:'motorredutor',carroM:'passo',ten:30,peso:1000,rpm:10,vc:30000,mod:2,z:20,pEsc:0,redEsc:0,tqEsc:0};
+const DEF={padrao:'cruzado',nCruz:2,nPar:1,ordem:'alt',ang:55,parada:0,bordaTol:10,bordaMin:0,tex:2200,vidro:50,refOn:true,refN:3,refEsp:1500,refLarg:200,refVoltas:5,tipo:'auto',D:3000,L:6000,Dm:3000,Lm:6000,fol:500,fios:8,banda:100,mat:'Tecido biaxial 1808',larg:1200,sob:100,cli:'',proj:'',apag:[],cmdT:'clp',mand:'motorredutor',carroM:'passo',ten:30,peso:1000,rpm:10,vc:30000,mod:2,z:20,pEsc:0,redEsc:0,tqEsc:0};
 let S=DEF;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem('dc-fil-3d')||'{}'))}catch(e){S=Object.assign({},DEF)}
 if(!Array.isArray(S.apag))S.apag=[];
 const salvar=()=>{try{localStorage.setItem('dc-fil-3d',JSON.stringify(S))}catch(e){}};
@@ -298,9 +305,11 @@ const BOB=(()=>{const lado=canvasTex(512,256,(c,W,H)=>{c.fillStyle='#f3eee2';c.f
 /* reforços: posições (mm a partir da ponta do tanque), centralizados e fora das bordas */
 function posReforcos(){const n=Math.max(1,Math.round(S.refN)),t=(n-1)*S.refEsp,a=(Math.min(S.L,S.Lm)-t)/2;return Array.from({length:n},(_,i)=>Math.round(a+i*S.refEsp))}
 function refCabe(){const p=posReforcos(),L=Math.min(S.L,S.Lm);return p[0]-S.refLarg/2>=150&&p[p.length-1]+S.refLarg/2<=L-150}
-/* espessura de uma passada de roving (mm): fios × 2200 tex ÷ banda ÷ vidro 2540 kg/m³ ÷ 50% de vidro no laminado */
-const passadaMM=()=>S.fios*2.2e-3/Math.max(0.02,S.banda/1000)/2540/0.5*1000;
-function refInfo(){const el=document.getElementById('refInfo');if(!el)return;if(!S.refOn||S.tipo!=='auto'){el.textContent='';return}
+/* espessura de uma passada de roving (mm): fios × tex ÷ banda ÷ vidro 2540 kg/m³ ÷ % de vidro no laminado */
+const passadaMM=()=>S.fios*(S.tex/1e6)/Math.max(0.02,S.banda/1000)/2540/(S.vidro/100)*1000;
+function padInfo(){const el=document.getElementById('padInfo');if(!el||!D.plano)return;const P=D.plano,f=v=>v.toFixed(1).replace('.',','),h=P.horasReais;
+  el.textContent=P.cam.map(c=>c==='c'?'cruzada':'paralela').join(' → ')+(P.cam.includes('c')?' · ângulo real '+f(P.angR)+'° (padrão '+P.N+'/'+P.q+')':'')+' · corpo ≈ '+f(P.corpoMM)+' mm · borda ≈ '+f(P.bordaMM)+' mm (+'+S.bordaTol+'%) · voltas na borda por camada: '+P.voltasBorda.map(v=>String(v).replace('.',',')).join(', ')+' · tempo de máquina a '+S.rpm+' rpm ≈ '+Math.floor(h)+' h '+String(Math.round((h%1)*60)).padStart(2,'0')+' min'}
+function refInfo(){padInfo();const el=document.getElementById('refInfo');if(!el)return;if(!S.refOn||S.tipo!=='auto'){el.textContent='';return}
   el.textContent=(refCabe()?'':'⚠ não cabe · ')+posReforcos().length+' reforço(s) em '+posReforcos().join(', ')+' mm · '+S.refLarg+' mm de largura · '+S.refVoltas+' voltas · ≈ '+(S.refVoltas*passadaMM()).toFixed(1).replace('.',',')+' mm no centro, afinando nas bordas'}
 function anelGeo(ro,ri,esp){const sh=new THREE.Shape();sh.absarc(0,0,ro,0,Math.PI*2,false);const h=new THREE.Path();h.absarc(0,0,ri,0,Math.PI*2,true);sh.holes.push(h);return new THREE.ExtrudeGeometry(sh,{depth:esp,bevelEnabled:false,curveSegments:96})}
 function canvasTex(w,h,draw,rep){const cv=document.createElement('canvas');cv.width=w;cv.height=h;draw(cv.getContext('2d'),w,h);const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;if(rep){t.wrapS=THREE.RepeatWrapping;t.repeat.set(rep,1)}return t}
@@ -486,7 +495,7 @@ function build(){
     /* bobinas de roving 2200 tex (desenrola por dentro): prateleiras cheias */
     const nf=Math.max(1,Math.min(16,Math.round(S.fios))),ativa=[];let nb=0;
     PR.slice().reverse().forEach((y,ip)=>{for(const row of[0,1])for(let c=0;c<cols;c++){nb++;const x=cx-(cols-1)*pas/2+c*pas,z=ZC+(row?0.165:-0.165),yb=y+0.015+HB/2;
-      NM('Gaiola – bobina de roving 2200 tex '+nb);const b=add(G.creel,new THREE.CylinderGeometry(RB,RB,HB,40),BOB.mat,x,yb,z);b.rotation.y=(nb*1.7)%6.28;
+      NM('Gaiola – bobina de roving '+nb);const b=add(G.creel,new THREE.CylinderGeometry(RB,RB,HB,40),BOB.mat,x,yb,z);b.rotation.y=(nb*1.7)%6.28;
       if(row===0&&ativa.length<nf)ativa.push({x,y:yb+HB/2,z,yEye:y+0.48+(ip===0?0:0)})}});
     /* barra de olhais na frente de cada prateleira (guia de saída) */
     PR.forEach((y,i)=>{const ye=y+0.48;if(ye>HT-0.1)return;NM('Gaiola – guia de saída prateleira '+(i+1));box(G.creel,2*BW,0.03,0.03,mt.aco,cx,ye,zF-0.12);
@@ -522,7 +531,7 @@ function build(){
     ['apoio',()=>V(xt,H+0.3,0),'Apoio móvel'],['carro',()=>V(car.position.x,top+0.35,Z0+0.3),semi?'Rolo de tecido':'Carro com pente'],
     ['carro',()=>V(car.position.x+w/2,by+0.2,Z0),'Banheira'],['carro',()=>V(car.position.x-w/2,by+0.55,Z0-0.2),'Espremedor de 2 rolos'],
     ['estrutura',()=>V(xc+l/4,0.15,-0.62),'Trilho guia do mandril'],['painel',()=>V(xh-1.4,2.08,1.8),semi?'Liga/desliga + timer':'CLP + IHM']];
-  if(!semi){labs.push(['acion',()=>V(xh-0.5,H+0.18,0),'Encoder'],['creel',()=>V(xc,2.45,ZC),'Gaiola de rovings 2200 tex (fixa)'],['prot',()=>V(xEnd,TY+0.4,RZ+0.2),'Calha da cremalheira'])}
+  if(!semi){labs.push(['acion',()=>V(xh-0.5,H+0.18,0),'Encoder'],['creel',()=>V(xc,2.45,ZC),'Gaiola de rovings '+S.tex+' tex (fixa)'],['prot',()=>V(xEnd,TY+0.4,RZ+0.2),'Calha da cremalheira'])}
   else labs.push(['trilhos',()=>V(xs0,TY+0.35,Z0+0.3),'Trava de posição das faixas']);
   $('labels').innerHTML=labs.map((x,i)=>`<div class="lb" id="lb${i}">${x[2]}</div>`).join('');
   montarNav();views();aplicaApag();atualizaTexto();
@@ -614,29 +623,55 @@ function iniBobina(r,l,xc){if(!WB.cv){WB.cv=document.createElement('canvas');WB.
   WB.mat=M(0xffffff,.22,0,{map:WB.tex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});clipMats.push(WB.mat);
   WB.refs=[];if(!D.semi&&S.refOn&&refCabe()){const tv=Math.max(S.refVoltas*passadaMM()/1000,0.006),Lr=S.refLarg/1000+0.06;
     posReforcos().forEach((pm,i)=>{NM('Reforço '+(i+1)+' do tanque');const o=add(G.tanque,new THREE.BufferGeometry(),REFM,D.xs0+pm/1000,0,0);o.rotation.z=-Math.PI/2;o.castShadow=false;o.visible=false;WB.refs.push({o,p:-1,Lr,tv,r})})}
+  if(!D.semi&&D.plano){const P=D.plano,bwm=Math.max(0.02,S.banda/1000),tv=Math.max((P.bordaMM-P.corpoMM)/1000,0.004);const qr=P.sg.find(q=>q.tipo==='reforco');P.Tcam=qr?qr.t0:P.T;
+    [D.xs0+bwm/2,D.xs0+D.l-bwm/2].forEach((xb,i)=>{NM('Borda '+(i+1)+' do tanque');const o=add(G.tanque,new THREE.BufferGeometry(),REFM,xb,0,0);o.rotation.z=-Math.PI/2;o.castShadow=false;o.visible=false;WB.refs.push({o,p:-1,Lr:bwm+0.03,tv,r,borda:1})})}
   NM('Fibra enrolada no tanque');WB.mesh=add(G.tanque,new THREE.CylinderGeometry(r+0.003,r+0.003,l,160,1,true),WB.mat,xc,0,0);WB.mesh.rotation.z=-Math.PI/2;WB.mesh.castShadow=false}
 const REFM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.3,metalness:0,map:canvasTex(512,128,(c,W,H)=>{c.fillStyle='#7c4a1e';c.fillRect(0,0,W,H);for(let y=0;y<H;y+=3){c.fillStyle=`rgba(226,160,86,${.15+Math.random()*.3})`;c.fillRect(0,y,W,1.2)}})});
 function geoRef(Lr,r,t){const pts=[];for(let i=0;i<=32;i++){const y=-Lr/2+Lr*i/32,f=Math.pow(Math.cos(Math.PI*y/Lr),2);pts.push(new THREE.Vector2(r+0.003+t*f,y))}return new THREE.LatheGeometry(pts,120)}
-function atualizaRefs(forca){if(!WB.refs)return;WB.refs.forEach((R,i)=>{const p=WB.fim&&!forca?1:refProg(i);if(!forca&&Math.abs(p-R.p)<0.03&&!(p===1&&R.p<1))return;
+function atualizaRefs(forca){if(!WB.refs)return;WB.refs.forEach((R,i)=>{const p=R.borda?(D.plano&&D.plano.Tcam?Math.max(0,Math.min(1,tt/D.plano.Tcam)):0):(WB.fim&&!forca?1:refProg(i));if(!forca&&Math.abs(p-R.p)<0.03&&!(p===1&&R.p<1))return;
   R.p=p;R.o.visible=p>0;if(p>0){R.o.geometry.dispose();R.o.geometry=geoRef(R.Lr,R.r,R.tv*p)}})}
 function bobZera(){if(!WB.cx)return;WB.cx.clearRect(0,0,WB.W,WB.H);WB.prev=null;WB.cob=0;WB.fim=false;WB.si=0;WB.sujo=true;if(typeof tt!=='undefined')tt=0;atualizaRefs(true);mostraBob()}
 function bobPronto(){bobZera();desenhoPronto(WB.r,WB.l)(WB.cx,WB.W,WB.H);WB.cob=1;if(D.plano)tt=D.plano.T+0.01;WB.fim=true;WB.sujo=true;atualizaRefs(true);mostraBob()}
-/* roteiro da bobinagem automática: camada helicoidal (fecha o padrão) com paradas nas bordas,
-   depois os reforços, sem cortar o roving: anda até cada reforço e dá as voltas, oscilando cada vez menos (grosso no meio, fino nas bordas) */
+/* camadas na ordem escolhida: 'c' = cruzada (±ângulo), 'p' = paralela (circunferencial) */
+function camadas(){const m=S.padrao,nc=m==='paralelo'?0:Math.round(S.nCruz),np=m==='cruzado'?0:Math.round(S.nPar),L=[];
+  if(m!=='misto'||S.ordem==='cruz1'){for(let i=0;i<nc;i++)L.push('c');for(let i=0;i<np;i++)L.push('p')}
+  else if(S.ordem==='par1'){for(let i=0;i<np;i++)L.push('p');for(let i=0;i<nc;i++)L.push('c')}
+  else for(let i=0;i<Math.max(nc,np);i++){if(i<np)L.push('p');if(i<nc)L.push('c')}
+  return L}
+/* roteiro da bobinagem automática, igual à máquina:
+   cruzada: idas e voltas no ângulo; o ângulo é ajustado um pouquinho para o padrão fechar (N posições, avanço q);
+   paralela: uma passada avançando uma banda por volta;
+   borda: no fim de cada camada o carro dá nas duas pontas só as voltas que faltam para a borda ficar com a espessura do corpo + tolerância;
+   reforços: no final, sem cortar o roving (anda até cada um e dá as voltas, grosso no meio e fino nas bordas). */
 function plano(){if(D.semi){D.wm=0.6;return null}
-  const bw=Math.max(0.02,S.banda/1000),a=D.xs0+bw/2,b=D.xs0+D.l-bw/2,Tp=12,thd=0.6,dl=1.15*bw/D.r,w=(4*Math.PI+dl-2*thd)/(2*Tp);D.wm=w;
-  const Td=thd/w,Tf=2*Math.PI/w,nRT=Math.ceil(2*Math.PI/dl),sg=[];let rv=0;
-  const parada=x=>{rv++;sg.push({tipo:'borda',t:Td+(rv%3===0?Tf:0),x0:x,x1:x})};
-  for(let k=0;k<nRT;k++){sg.push({tipo:'helice',t:Tp,x0:a,x1:b,k});parada(b);sg.push({tipo:'helice',t:Tp,x0:b,x1:a,k});parada(a)}
-  let nref=0;if(S.refOn&&refCabe()){let xc=a;const ps=posReforcos();nref=ps.length;ps.forEach((pm,i)=>{const xr=D.xs0+pm/1000;
-    sg.push({tipo:'transito',t:Math.max(1,Math.abs(xr-xc)/0.45),x0:xc,x1:xr,i});sg.push({tipo:'reforco',t:Math.max(1,S.refVoltas)*2*Math.PI/w,xr,A:Math.max(0,(S.refLarg/1000-bw)/2),i});xc=xr})}
-  let t=0;sg.forEach(q=>{q.t0=t;t+=q.t});return{sg,T:t,nRT,nref}}
+  const w=0.5,bw=Math.max(0.02,S.banda/1000),a=D.xs0+bw/2,b=D.xs0+D.l-bw/2,Lt=b-a,r=D.r,thd=S.parada*Math.PI/180,sg=[];D.wm=w;
+  /* padrão do cruzado: rotação por ida e volta ≡ 2π·q/N (N ≥ circunferência ÷ largura da banda na volta); escolhe o mais perto do ângulo pedido */
+  const al=S.ang*Math.PI/180,phi=Lt*Math.tan(al)/r,N0=Math.ceil(2*Math.PI*r*Math.cos(al)/bw);let best=null;
+  for(let N=N0;N<=N0+6;N++)for(let q=1;q<N;q++){if(gcd(q,N)!==1)continue;const k=Math.round((2*phi+2*thd-2*Math.PI*q/N)/(2*Math.PI)),ph=(2*Math.PI*k+2*Math.PI*q/N-2*thd)/2;
+    if(ph<=0.05)continue;const e=Math.abs(ph-phi);if(!best||e<best.e-1e-9)best={N,q,ph,e}}
+  const ph=best.ph,angR=Math.atan(ph*r/Lt)*180/Math.PI,Tp=ph/w,Td=thd/w,Tv=2*Math.PI/w;
+  /* espessura em "passadas" (1 = uma camada de banda): corpo, borda natural e voltas extras */
+  const cam=camadas();let corpo=0,borda=0,x=a,lado=0;const voltasBorda=[];
+  cam.forEach((tp,ci)=>{
+    if(tp==='c'){if(x!==a){sg.push({tipo:'transito',t:Math.max(1,Math.abs(x-a)/0.45),x0:x,x1:a,ci});x=a}
+      for(let k=0;k<best.N;k++){sg.push({tipo:'helice',t:Tp,x0:a,x1:b,k,ci});if(Td>0)sg.push({tipo:'virada',t:Td,x0:b,x1:b,ci});sg.push({tipo:'helice',t:Tp,x0:b,x1:a,k,ci});if(Td>0)sg.push({tipo:'virada',t:Td,x0:a,x1:a,ci})}
+      corpo+=2;borda+=2+best.N*thd/(2*Math.PI)}
+    else{const x1=x===a?b:a;sg.push({tipo:'paralelo',t:(Lt/bw)*Tv,x0:x,x1,ci});x=x1;corpo+=1;borda+=1}
+    /* voltas na borda: só o que falta para corpo × (1 + tolerância); no mínimo o que foi pedido */
+    const falta=Math.max(S.bordaMin,corpo*(1+S.bordaTol/100)-borda),v=Math.round(falta*20)/20;voltasBorda.push(v);
+    if(v>0){const lados=x===a?[a,b]:[b,a];sg.push({tipo:'borda',t:v*Tv,x0:lados[0],x1:lados[0],ci,v});sg.push({tipo:'transito',t:Math.max(1,Lt/0.45),x0:lados[0],x1:lados[1],ci,borda:1});sg.push({tipo:'borda',t:v*Tv,x0:lados[1],x1:lados[1],ci,v});x=lados[1];borda+=v}});
+  let nref=0;if(S.refOn&&refCabe()){let xc=x;const ps=posReforcos();nref=ps.length;ps.forEach((pm,i)=>{const xr=D.xs0+pm/1000;
+    sg.push({tipo:'transito',t:Math.max(1,Math.abs(xr-xc)/0.45),x0:xc,x1:xr,i});sg.push({tipo:'reforco',t:Math.max(1,S.refVoltas)*Tv,xr,A:Math.max(0,(S.refLarg/1000-bw)/2),i});xc=xr})}
+  let t=0;const out=sg.filter(q=>q.t>1e-6);if(!out.length)out.push({tipo:'virada',t:1,x0:a,x1:a});out.forEach(q=>{q.t0=t;t+=q.t});
+  const pmm=passadaMM();return{sg:out,T:t,N:best.N,q:best.q,angR,cam,nref,corpoMM:corpo*pmm,bordaMM:borda*pmm,voltasBorda,horasReais:t*w/(Math.max(0.5,S.rpm)*2*Math.PI/60)/3600}}
+function gcd(a,b){while(b){[a,b]=[b,a%b]}return a}
 function refProg(i){const P=D.plano;if(!P)return 0;const q=P.sg.find(x=>x.tipo==='reforco'&&x.i===i);return q?Math.max(0,Math.min(1,(tt-q.t0)/q.t)):0}
 function posCarro(){const a=D.xs0+0.1,b=D.xs0+D.l-0.1;
   if(!D.semi&&D.plano){const P=D.plano;if(tt>=P.T){WB.fim=true;const q=P.sg[P.sg.length-1];car.position.x=q.tipo==='reforco'?q.xr:q.x1;WB.fase='bobinagem terminada';return}
     WB.fim=false;let i=WB.si||0;if(!P.sg[i]||P.sg[i].t0>tt)i=0;while(i<P.sg.length-1&&P.sg[i].t0+P.sg[i].t<=tt)i++;WB.si=i;const q=P.sg[i],u=(tt-q.t0)/q.t;
     if(q.tipo==='reforco'){const n=Math.max(1,S.refVoltas);car.position.x=q.xr+q.A*(1-u)*Math.sin(Math.PI*u*n);WB.fase='reforço '+(q.i+1)+'/'+P.nref+' · volta '+Math.min(n,Math.floor(u*n)+1)+' de '+n}
-    else{car.position.x=q.x0+(q.x1-q.x0)*u;WB.fase=q.tipo==='helice'?'camada helicoidal · ida e volta '+(q.k+1)+'/'+P.nRT:q.tipo==='borda'?'parada na borda':'indo para o reforço '+(q.i+1)}
+    else{car.position.x=q.x0+(q.x1-q.x0)*u;const cn=q.ci!=null?'camada '+(q.ci+1)+'/'+P.cam.length+' · ':'';
+      WB.fase=q.tipo==='helice'?cn+'cruzada ±'+P.angR.toFixed(1).replace('.',',')+'° · ida e volta '+(q.k+1)+'/'+P.N:q.tipo==='virada'?cn+'virada':q.tipo==='paralelo'?cn+'paralela · '+Math.round(u*100)+'%':q.tipo==='borda'?cn+'borda · '+String(q.v).replace('.',',')+' volta(s)':q.i!=null?'indo para o reforço '+(q.i+1):cn+'indo para a outra borda'}
     return}
   if(D.semi){const pas=Math.max(0.05,(S.larg-S.sob)/1000),n=Math.max(1,Math.ceil((D.l-S.larg/1000)/pas)+1),Th=2*Math.PI/D.wm*1.06,k=Math.min(n-1,Math.floor(tt/Th)%(n+1));car.position.x=Math.min(b-S.larg/2000+0.1,D.xs0+S.larg/2000+k*pas)}
   else{const ph=(tt/12)%2;car.position.x=a+(b-a)*(ph<1?ph:2-ph)}}
@@ -648,7 +683,7 @@ function pintaBobina(){if(!WB.mesh||!D.cont)return;const p=WB.mesh.worldToLocal(
   if(!WB.prev){WB.prev=[X,Y];return}let dx=X-WB.prev[0];if(dx>W/2)dx-=W;if(dx<-W/2)dx+=W;const dy=Y-WB.prev[1];
   if(Math.hypot(dx,dy)<1.5)return;if(Math.abs(dy)>Hc/4){WB.prev=[X,Y];return}
   const c=WB.cx,x0=WB.prev[0],y0=WB.prev[1],x1=x0+dx,y1=Y,pu=W/(2*Math.PI*WB.r),pv=Hc/WB.l,semi=D.semi;
-  const bw=(semi?S.larg:S.banda)/1000*(semi?pv:(pu+pv)/2),L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L;
+  const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,bw=(semi?S.larg/1000*pv:S.banda/1000*Math.hypot(nx*pu,ny*pv));
   for(const o of[-W,0,W]){if(Math.max(x0,x1)+o<-bw||Math.min(x0,x1)+o>W+bw)continue;
     const seg=(st,lw,k)=>{c.strokeStyle=st;c.lineWidth=lw;c.beginPath();c.moveTo(x0+o+nx*k,y0+ny*k);c.lineTo(x1+o+nx*k,y1+ny*k);c.stroke()};
     c.lineCap=semi?'butt':'round';
@@ -778,7 +813,7 @@ function listaPecas(){const mm=v=>Math.round(v*1000),semi=D.semi,L=[];
   L.push(['Espremedor (rolo aço + rolo borracha)',2,'Ø 90 × '+mm(D.w-0.08)+' mm','placas com fuso de regulagem']);
   L.push(['Bandeja articulada (chapa com bordas)',1,mm(D.w)+' × '+mm(Math.hypot(D.T1[0]-(D.by+0.27),D.T1[1]-(D.Z0-0.28)))+' mm','dobradiça + 2 braços reguláveis']);
   if(!semi){L.push(['Pente de entrada / pente de saída',2,'','']);L.push(['Motor de passo malha fechada + pinhão',1,'','']);
-    L.push(['GAIOLA DE ROVINGS']);L.push(['Gaiola fixa (colunas + prateleiras)',1,'1760 × 560 × 1900 mm','']);L.push(['Bobinas de roving 2200 tex (Ø290 × 260, ~18 kg) — gaiola cheia',36,S.fios+' em uso','[CONFIRMAR]'])}
+    L.push(['GAIOLA DE ROVINGS']);L.push(['Gaiola fixa (colunas + prateleiras)',1,'1760 × 560 × 1900 mm','']);L.push(['Bobinas de roving '+S.tex+' tex (Ø290 × 260, ~18 kg) — gaiola cheia',36,S.fios+' em uso','[CONFIRMAR]'])}
   else{L.push(['Suporte e eixo do rolo de tecido',1,mm(2*Math.max(0.38,D.w/2+0.1)+0.1)+' mm','']);L.push(['Trava de posição do carro',1,'','pino'])}
   L.push(['COMANDO']);L.push([semi?'Painel liga/desliga + timer':'Painel CLP Delta + IHM',1,'','emergência física']);
   return L}
@@ -1031,7 +1066,7 @@ function materiais(){const mm=v=>Math.round(v*1000),semi=S.tipo==='semi',auto=!s
   if(S.carroM!=='manual')el.push(['trilhos','Fim de curso + sensor de home do carro','3']);
   const area=Math.PI*Math.min(S.D,S.Dm)/1000*Math.min(S.L,S.Lm)/1000;
   const cp=semi?[['geral',S.mat+' · largura '+S.larg+' mm · '+fx(area*S.larg/Math.max(1,S.larg-S.sob),1)+' m² por camada (com sobreposição)','conforme camadas'],['geral','Resina (calcular no app de cálculo de material)','—']]
-    :[['geral','Roving direto 2200 tex · '+S.fios+' fios · banda '+S.banda+' mm · bobina ~18 kg (gaiola: 36 bobinas) [CONFIRMAR]','conforme camadas'],...(S.refOn?[['geral','Reforços do tanque: '+posReforcos().length+' × '+S.refLarg+' mm a cada '+S.refEsp+' mm (em '+posReforcos().join(', ')+' mm) · '+S.refVoltas+' voltas · ≈ '+(S.refVoltas*passadaMM()).toFixed(1).replace('.',',')+' mm no centro, afinando nas bordas','no final da bobinagem']]:[]),['geral','Resina (calcular no app de cálculo de material)','—']];
+    :[['geral','Roving direto '+S.tex+' tex · '+S.fios+' fios · banda '+S.banda+' mm · bobina ~18 kg (gaiola: 36 bobinas) [CONFIRMAR]','conforme camadas'],...(D.plano?[['geral','Enrolamento: '+D.plano.cam.map(c=>c==='c'?'cruzada':'paralela').join(' → ')+(D.plano.cam.includes('c')?' (±'+D.plano.angR.toFixed(1).replace('.',',')+'°)':'')+' · corpo ≈ '+D.plano.corpoMM.toFixed(1).replace('.',',')+' mm · borda ≈ '+D.plano.bordaMM.toFixed(1).replace('.',',')+' mm (+'+S.bordaTol+'%)','tempo ≈ '+D.plano.horasReais.toFixed(1).replace('.',',')+' h a '+S.rpm+' rpm']]:[]),...(S.refOn?[['geral','Reforços do tanque: '+posReforcos().length+' × '+S.refLarg+' mm a cada '+S.refEsp+' mm (em '+posReforcos().join(', ')+' mm) · '+S.refVoltas+' voltas · ≈ '+(S.refVoltas*passadaMM()).toFixed(1).replace('.',',')+' mm no centro, afinando nas bordas','no final da bobinagem']]:[]),['geral','Resina (calcular no app de cálculo de material)','—']];
   return{est,ch,mec,ac,el,cp}}
 function materialSecoes(esc){const M=materiais(),f=r=>!esc||esc==='tudo'||r[0]===esc||(r[0]==='geral'&&esc==='tudo');const S2=[];
   const grp={};M.est.filter(f).forEach(([sc,pf,len,q,d])=>{const k=perfNome(pf);(grp[k]=grp[k]||{pf,lens:[],ds:new Set()});for(let i=0;i<q;i++)grp[k].lens.push(len);grp[k].ds.add(d)});
@@ -1060,19 +1095,21 @@ $('bSalvarP').addEventListener('click',()=>{const L=listaProj();L.unshift({S:JSO
 mostraProj();
 
 /* editor */
-const campos=[['iRefN','refN'],['iRefEsp','refEsp'],['iRefLarg','refLarg'],['iRefV','refVoltas'],['iD','D'],['iL','L'],['iDm','Dm'],['iLm','Lm'],['iFol','fol'],['iFios','fios'],['iBanda','banda'],['iLarg','larg'],['iSob','sob'],['iTen','ten'],['iPeso','peso'],['iRpm','rpm'],['iVc','vc'],['iMod','mod'],['iZ','z']];
-const lim={refN:[1,12],refEsp:[300,6000],refLarg:[50,600],refVoltas:[1,60],ten:[1,500],peso:[50,10000],rpm:[0.5,60],vc:[100,120000],mod:[1,8],z:[10,60],D:[1000,3500],L:[1000,6000],Dm:[1000,3500],Lm:[1000,6000],fol:[200,1500],fios:[1,16],banda:[20,500],larg:[100,2000],sob:[0,500]};
-function preenche(){regras();$('iRefOn').value=S.refOn?'1':'0';$('iCmd').value=S.cmdT;$('iMand').value=S.mand;$('iCarro').value=S.carroM;$('iProj').value=S.proj||'';{const o=document.getElementById('optGai');if(o)o.hidden=S.tipo==='semi'}campos.forEach(([id,k])=>$(id).value=S[k]);$('iMat').value=S.mat;$('iCli').value=S.cli;
+const campos=[['iNCruz','nCruz'],['iNPar','nPar'],['iAng','ang'],['iParada','parada'],['iBordaTol','bordaTol'],['iBordaMin','bordaMin'],['iTex','tex'],['iVidro','vidro'],['iRefN','refN'],['iRefEsp','refEsp'],['iRefLarg','refLarg'],['iRefV','refVoltas'],['iD','D'],['iL','L'],['iDm','Dm'],['iLm','Lm'],['iFol','fol'],['iFios','fios'],['iBanda','banda'],['iLarg','larg'],['iSob','sob'],['iTen','ten'],['iPeso','peso'],['iRpm','rpm'],['iVc','vc'],['iMod','mod'],['iZ','z']];
+const lim={nCruz:[0,20],nPar:[0,20],ang:[10,85],parada:[0,360],bordaTol:[0,100],bordaMin:[0,10],tex:[300,9600],vidro:[30,80],refN:[1,12],refEsp:[300,6000],refLarg:[50,600],refVoltas:[1,60],ten:[1,500],peso:[50,10000],rpm:[0.5,60],vc:[100,120000],mod:[1,8],z:[10,60],D:[1000,3500],L:[1000,6000],Dm:[1000,3500],Lm:[1000,6000],fol:[200,1500],fios:[1,16],banda:[20,500],larg:[100,2000],sob:[0,500]};
+function preenche(){regras();$('iRefOn').value=S.refOn?'1':'0';$('iPadrao').value=S.padrao;$('iOrdem').value=S.ordem;mostraPadrao();$('iCmd').value=S.cmdT;$('iMand').value=S.mand;$('iCarro').value=S.carroM;$('iProj').value=S.proj||'';{const o=document.getElementById('optGai');if(o)o.hidden=S.tipo==='semi'}campos.forEach(([id,k])=>$(id).value=S[k]);$('iMat').value=S.mat;$('iCli').value=S.cli;
   $('tAuto').classList.toggle('on',S.tipo==='auto');$('tSemi').classList.toggle('on',S.tipo==='semi');$('secAuto').hidden=S.tipo!=='auto';$('secSemi').hidden=S.tipo!=='semi'}
 function valida(){const av=[];for(const k in lim){const[a,b]=lim[k];if(!(S[k]>=a&&S[k]<=b))av.push(k)}
-  if(S.D>S.Dm)av.push('D');if(S.L>S.Lm)av.push('L');if(S.sob>=S.larg)av.push('sob');if(S.tipo==='auto'&&S.refOn&&!refCabe())av.push('ref');return av}
+  if(S.D>S.Dm)av.push('D');if(S.L>S.Lm)av.push('L');if(S.sob>=S.larg)av.push('sob');if(S.tipo==='auto'&&S.refOn&&!refCabe())av.push('ref');if(S.tipo==='auto'&&camadas().length<1)av.push('cam');return av}
 let tmr=null;
 function aplicar(){const av=valida(),st=$('stEd');
-  if(av.length){st.className='st err';st.textContent='Confira: '+[...new Set(av)].map(k=>({D:'diâmetro (1000 a 3500, até o máximo da máquina)',L:'comprimento (1000 a 6000, até o máximo da máquina)',Dm:'diâmetro máximo (1000 a 3500)',Lm:'comprimento máximo (1000 a 6000)',fol:'folga (200 a 1500)',fios:'nº de fios (1 a 16)',banda:'banda (20 a 500)',larg:'largura do tecido (100 a 2000)',sob:'sobreposição (menor que a largura)',refN:'quantidade de reforços (1 a 12)',refEsp:'distância entre reforços (300 a 6000)',refLarg:'largura do reforço (50 a 600)',refVoltas:'voltas do reforço (1 a 60)',ref:'reforços: não cabem no meio do tanque (diminua a quantidade ou a distância; reforço não vai na borda)'}[k])).join(' · ');return}
+  if(av.length){st.className='st err';st.textContent='Confira: '+[...new Set(av)].map(k=>({D:'diâmetro (1000 a 3500, até o máximo da máquina)',L:'comprimento (1000 a 6000, até o máximo da máquina)',Dm:'diâmetro máximo (1000 a 3500)',Lm:'comprimento máximo (1000 a 6000)',fol:'folga (200 a 1500)',fios:'nº de fios (1 a 16)',banda:'banda (20 a 500)',larg:'largura do tecido (100 a 2000)',sob:'sobreposição (menor que a largura)',refN:'quantidade de reforços (1 a 12)',refEsp:'distância entre reforços (300 a 6000)',refLarg:'largura do reforço (50 a 600)',refVoltas:'voltas do reforço (1 a 60)',nCruz:'camadas cruzadas (0 a 20)',nPar:'camadas paralelas (0 a 20)',ang:'ângulo do cruzado (10° a 85°)',parada:'parada na virada (0° a 360°)',bordaTol:'tolerância da borda (0 a 100%)',bordaMin:'voltas mínimas na borda (0 a 10)',tex:'tex do roving (300 a 9600)',vidro:'vidro no laminado (30 a 80%)',cam:'coloque pelo menos 1 camada no padrão escolhido',ref:'reforços: não cabem no meio do tanque (diminua a quantidade ou a distância; reforço não vai na borda)'}[k])).join(' · ');return}
   st.className='st';st.textContent='';salvar();build()}
 campos.forEach(([id,k])=>$(id).addEventListener('input',()=>{const v=parseFloat($(id).value.replace(',','.'));if(isFinite(v)){S[k]=v;clearTimeout(tmr);tmr=setTimeout(aplicar,350)}}));
 $('iMat').addEventListener('change',()=>{S.mat=$('iMat').value;aplicar()});
 $('iRefOn').addEventListener('change',()=>{S.refOn=$('iRefOn').value==='1';aplicar()});
+function mostraPadrao(){const m=S.padrao;$('lNCruz').hidden=m==='paralelo';$('lNPar').hidden=m==='cruzado';$('lOrdem').hidden=m!=='misto';$('lAng').hidden=$('lParada').hidden=m==='paralelo'}
+$('iPadrao').addEventListener('change',()=>{S.padrao=$('iPadrao').value;mostraPadrao();aplicar()});$('iOrdem').addEventListener('change',()=>{S.ordem=$('iOrdem').value;aplicar()});
 $('iCli').addEventListener('input',()=>{S.cli=$('iCli').value;salvar();atualizaTexto()});
 $('tAuto').addEventListener('click',()=>{S.tipo='auto';if(S.cmdT==='timer')S.cmdT='clp';if(S.carroM==='manual')S.carroM='passo';preenche();aplicar()});
 ['iCmd','iMand','iCarro'].forEach(id=>$(id).addEventListener('change',()=>{S.cmdT=$('iCmd').value;S.mand=$('iMand').value;S.carroM=$('iCarro').value;if(S.cmdT==='timer')S.tipo='semi';S.pEsc=S.redEsc=S.tqEsc=0;preenche();aplicar()}));
@@ -1103,6 +1140,12 @@ function comando(txt){const t=norm(txt),f=[];
   pega('comprimento (?:maximo|da maquina)','Lm','comprimento máximo')||pega('comprimento','L','comprimento');
   if(/largura do reforco/.test(t))pega('largura do reforco','refLarg','largura do reforço');else pega('largura','larg','largura');
   if(/sem reforco/.test(t)){S.refOn=false;f.push('sem reforço')}
+  if(/cruzado e paralelo|paralelo e cruzado|misto/.test(t)){S.padrao='misto';f.push('cruzado + paralelo')}else if(/\bparalel/.test(t)&&!/camadas? paralel/.test(t)){S.padrao='paralelo';f.push('enrolamento paralelo')}else if(/\bcruzad/.test(t)&&!/camadas? cruzad/.test(t)){S.padrao='cruzado';f.push('enrolamento cruzado')}
+  {const m=t.match(/(\d+)\s*camadas?\s*cruzad/);if(m){S.nCruz=+m[1];f.push(m[1]+' camada(s) cruzada(s)')}}
+  {const m=t.match(/(\d+)\s*camadas?\s*paralel/);if(m){S.nPar=+m[1];f.push(m[1]+' camada(s) paralela(s)')}}
+  {const m=t.match(/angulo\D{0,12}(\d+(?:[.,]\d+)?)/);if(m){S.ang=parseFloat(m[1].replace(',','.'));f.push('ângulo '+S.ang+'°')}}
+  {const m=t.match(/toleranci\w*\D{0,20}(\d+(?:[.,]\d+)?)/);if(m){S.bordaTol=parseFloat(m[1].replace(',','.'));f.push('tolerância da borda '+S.bordaTol+'%')}}
+  {const m=t.match(/(\d+)\s*tex/);if(m){S.tex=+m[1];f.push('roving '+S.tex+' tex')}}
   {const m=t.match(/(\d+)\s*reforcos?/);if(m){S.refN=+m[1];S.refOn=true;f.push(S.refN+(S.refN>1?' reforços':' reforço'))}}
   {const m=t.match(new RegExp('reforco\\D{0,30}?'+N+'\\s*(?:em|e)\\s*'+N));if(m){S.refEsp=numMM(m[3],m[4]||m[2]);S.refOn=true;f.push('reforço a cada '+S.refEsp+' mm')}
    else{const m2=t.match(new RegExp('(?:a cada|distancia(?: entre (?:os )?reforcos)?)\\D{0,6}'+N));if(m2&&/reforco/.test(t)){S.refEsp=numMM(m2[1],m2[2]);S.refOn=true;f.push('reforço a cada '+S.refEsp+' mm')}}}
@@ -1138,7 +1181,7 @@ $('arq').addEventListener('change',async e=>{const fs=[...e.target.files];e.targ
 async function perguntaClaude(txt){const st=$('stCmd');ocup=true;$('bCmd').style.opacity=.5;st.className='st';st.textContent='Pensando…';DC.aviso('Entendi: “'+(txt||'anexo')+'” · pensando…','ouv',0);
   const prompt=`Você controla um visualizador 3D de uma filamentadora de tanques de PRFV da D. Compósitos. O usuário fala por voz, em português, às vezes dirigindo.
 Responda SOMENTE um JSON: {"fala":"1 ou 2 frases curtas do que fez","estado":{campos a mudar} ou null,"visiveis":{chave:true/false} ou null,"enquadrar":"carro"|"tanque"|"acionamento"|"tudo"|null,"vista":"iso"|"frente"|"topo"|"lado"|null,"animar":true/false/null,"corte":true/false/null,"rotulos":true/false/null,"apagar":["nome da peça", ...] ou null,"mostrar":["nome da peça", ...] ou null,"restaurar":true/null}
-Campos do estado (mm): tipo ("auto" = automática com roving, "semi" = semiautomática com tecido/manta), D diâmetro do tanque 1000-3500, L comprimento do tanque 1000-6000, Dm diâmetro máximo da máquina 1000-3500 (>= D), Lm comprimento máximo 1000-6000 (>= L), fol folga do tanque ao chão 200-1500, fios 1-16, banda 20-500 (largura da banda de roving), mat ("Tecido biaxial 1808","Tecido biaxial 2408","Faixa de tecido","Manta"), larg largura do tecido/manta 100-2000, sob sobreposição 0-500 (< larg), cli nome do cliente, proj nome do projeto, cmdT comando ("clp","ddcs4","ddcs3","timer"), mand mandril ("motorredutor","servo"), carroM carro ("passo","servo","manual"), refOn reforços do tanque true/false, refN quantidade de reforços 1-12, refEsp distância entre reforços mm 300-6000, refLarg largura do reforço mm (100, 200, 300 ou 400), refVoltas voltas em cada reforço 1-60 (os reforços ficam centralizados e nunca na borda; são feitos no final da bobinagem), ten tensão por fio N, peso kg do tanque com gabaritos, rpm rotação máx do mandril, vc velocidade máx do carro mm/min.
+Campos do estado (mm): tipo ("auto" = automática com roving, "semi" = semiautomática com tecido/manta), D diâmetro do tanque 1000-3500, L comprimento do tanque 1000-6000, Dm diâmetro máximo da máquina 1000-3500 (>= D), Lm comprimento máximo 1000-6000 (>= L), fol folga do tanque ao chão 200-1500, fios 1-16, banda 20-500 (largura da banda de roving), mat ("Tecido biaxial 1808","Tecido biaxial 2408","Faixa de tecido","Manta"), larg largura do tecido/manta 100-2000, sob sobreposição 0-500 (< larg), cli nome do cliente, proj nome do projeto, cmdT comando ("clp","ddcs4","ddcs3","timer"), mand mandril ("motorredutor","servo"), carroM carro ("passo","servo","manual"), padrao enrolamento ("cruzado","paralelo","misto" = cruzado + paralelo), nCruz camadas cruzadas 0-20, nPar camadas paralelas 0-20, ordem ("alt" alternado, "par1" paralelo primeiro, "cruz1" cruzado primeiro), ang ângulo do cruzado em graus do eixo 10-85, parada parada na virada em graus 0-360, bordaTol tolerância a mais de espessura na borda em % 0-100, bordaMin voltas mínimas na borda por camada 0-10, tex do roving 300-9600, vidro % de vidro no laminado 30-80, refOn reforços do tanque true/false, refN quantidade de reforços 1-12, refEsp distância entre reforços mm 300-6000, refLarg largura do reforço mm (100, 200, 300 ou 400), refVoltas voltas em cada reforço 1-60 (os reforços ficam centralizados e nunca na borda; são feitos no final da bobinagem), ten tensão por fio N, peso kg do tanque com gabaritos, rpm rotação máx do mandril, vc velocidade máx do carro mm/min.
 Manta ou tecido implica tipo "semi". Números ditos em metros viram mm (2,5 = 2500).
 Componentes (chaves de "visiveis"): ${Object.entries(NOMES).map(([k,v])=>k+' = '+v).join('; ')}.
 "Só o carrinho" = deixe visível só carro e trilhos, e enquadre "carro". "Mostra tudo" = todos true e enquadrar "tudo".
@@ -1150,7 +1193,7 @@ VISÍVEIS AGORA: ${JSON.stringify(vis)}
 PEDIDO: ${txt||'Tire as medidas do anexo e ajuste a máquina.'}${ANEX.length?'\nANEXOS: '+ANEX.length+' imagem(ns) (foto, desenho ou PDF do cliente). Tire deles as medidas e o tipo (tanque, tecido, largura etc.); o que não der para ler, pergunte na fala.':''}`;
   try{let op={modelTier:'default',cache:false};try{if(ANEX.length&&(await SAMP.limits()).images)op.images=ANEX.map(a=>a.blob)}catch(e){}
     const r=await SAMP(prompt,op);ANEX=[];mostraAnex();let raw=r.text.trim().replace(/^```(json)?/,'').replace(/```$/,'');const j=JSON.parse(raw.slice(raw.indexOf('{'),raw.lastIndexOf('}')+1));
-    if(j.estado){const ok=['refOn','refN','refEsp','refLarg','refVoltas','tipo','D','L','Dm','Lm','fol','fios','banda','mat','larg','sob','cli','cmdT','mand','carroM','ten','peso','rpm','vc','proj'];for(const k of ok)if(k in j.estado)S[k]=j.estado[k];preenche();aplicar()}
+    if(j.estado){const ok=['padrao','nCruz','nPar','ordem','ang','parada','bordaTol','bordaMin','tex','vidro','refOn','refN','refEsp','refLarg','refVoltas','tipo','D','L','Dm','Lm','fol','fios','banda','mat','larg','sob','cli','cmdT','mand','carroM','ten','peso','rpm','vc','proj'];for(const k of ok)if(k in j.estado)S[k]=j.estado[k];preenche();aplicar()}
     if(j.visiveis)aplicaVis(j.visiveis);
     if(typeof j.animar==='boolean'){anim=j.animar;$('bAnim').classList.toggle('on',anim)}
     if(typeof j.corte==='boolean'){setCut(j.corte);$('bCut').classList.toggle('on',cutOn)}
