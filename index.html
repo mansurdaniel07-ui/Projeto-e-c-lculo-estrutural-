@@ -108,6 +108,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
 .ini .it{background:#17191c;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;min-height:92px;display:flex;flex-direction:column;gap:4px}
 .ini .it b{font:600 16px 'IBM Plex Sans'}.ini .it span{font-size:12px;color:var(--mut)}
 .ini .it.dest{border-color:var(--or);background:#2a2018}
+.bloco{background:#17191c;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}.bloco .bh{display:flex;align-items:center;gap:8px;margin-bottom:8px}.bloco .bh i{width:12px;height:12px;border-radius:3px;display:inline-block}.bloco .bh b{flex:1;font:600 15px 'IBM Plex Sans'}.bloco .bx{cursor:pointer;color:var(--mut);padding:4px 8px;border:1px solid var(--line);border-radius:6px}.swl{display:flex!important;align-items:center;gap:8px}.swl input{width:20px;height:20px}
 .ini .it.breve{opacity:.55;border-style:dashed;position:relative}.ini .it.breve .emb{position:absolute;top:8px;right:10px;font:600 10px 'IBM Plex Sans';color:var(--or);letter-spacing:.06em;text-transform:uppercase;font-style:normal}
 .ini .it.pisca{opacity:.9;border-color:var(--or)}.iniSep{grid-column:1/-1;margin-top:10px;font:600 12px 'IBM Plex Sans';color:var(--mut);letter-spacing:.08em;text-transform:uppercase}
 .viewer.full{position:fixed;inset:0;height:100dvh;margin:0;border-radius:0;z-index:80;background:#fff}
@@ -165,6 +166,7 @@ textarea{width:100%;height:120px;background:#15171a;color:var(--tx);border:1px s
   <div class="resumo" id="resumo"></div>
   <div id="perguntas"></div>
   <div id="params"></div>
+  <div id="blocos" class="gsec" style="display:none"></div>
 </div>
 
 <div class="card">
@@ -269,7 +271,8 @@ function construir(fn,P){
   /* animação: {tipo:'girar', eixo:[[x,y,z],[x,y,z]], grupos:['q',...], chapa:true, rpm} */
   const animar=o=>{if(o&&Array.isArray(o.eixo)&&okP(o.eixo[0])&&okP(o.eixo[1]))AN={tipo:'girar',eixo:o.eixo,grupos:(o.grupos||[]).map(String),chapa:o.chapa!==false,extras:o.extras!==false,rpm:Math.max(.5,Math.min(60,+o.rpm||6))};};
   const perfil=id=>{const g=(MOD&&MOD.grupos||[]).find(x=>x.id===id)||(MOD&&MOD.grupos||[])[0];const p=g?g.perfil:{tipo:'ret',a:50,b:50,t:2};return {...p,w:p.tipo==='chapa'?p.t:p.a,h:p.tipo==='ret'?p.b:p.a};};
-  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil,rolo,pino,chapa,animar});
+  const BL=[];const bloco=(uid,rects)=>{if(uid&&Array.isArray(rects))BL.push({uid,rects:rects.filter(q=>Array.isArray(q)&&q.length===4&&q.every(isFinite))})};
+  fn(P,{add,poli,arco,dobrada,divide,divPts,painel,perfil,rolo,pino,chapa,animar,bloco});
   // limpeza
   const seen=new Set(),out=[];
   for(const m of M){
@@ -280,7 +283,7 @@ function construir(fn,P){
       if(seen.has(k1)||seen.has(k2))continue;seen.add(k1);}
     out.push(m);
   }
-  PN.nomes=PNN;PN.lista=PNL;out.paineis=PN;out.extras=X.filter(x=>x.tipo!=='chapa'||DC.planificar(x.pts).area>1);out.anim=AN;
+  PN.nomes=PNN;PN.lista=PNL;out.paineis=PN;out.extras=X.filter(x=>x.tipo!=='chapa'||DC.planificar(x.pts).area>1);out.anim=AN;out.blocos=BL;
   return out;
 }
 const cortar=DC.cortar;
@@ -454,10 +457,10 @@ function esquadrias(M){
 // ===== modelos prontos =====
 const PR={};
 PR.piscina={
- titulo:'Gabarito · piscina modular',
- resumo:'Gabarito simples em grade para plaquear: montado de cabeça pra baixo (borda no chão, fundo em cima). Quadros transversais, longarinas inteiras no comprimento (as peças menores encostam nelas) e montantes. Degrau e prainha no mesmo quadro, sem quadro em par. Cantoneira e base são opcionais.',
+ titulo:'Gabarito · piscina por blocos',
+ resumo:'Gabarito simples em grade para plaquear, montado de cabeça pra baixo (borda no chão, fundo em cima). O corpo tem quadros transversais, longarinas inteiras e montantes. Prainha, escada, banco e hidro são BLOCOS: adicione quantos quiser, em qualquer lado (cabeceira A/B, lateral 1/2), centralizados ou encostados no canto.',
  perguntas:['Profundidade e comprimento da prainha','Altura (espelho) e piso de cada degrau','Espaçamento dos quadros e das longarinas'],
- grupos:[{id:'q',nome:'Quadros (frente)'},{id:'l',nome:'Longarinas'},{id:'e',nome:'Escada'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
+ grupos:[{id:'q',nome:'Quadros (frente)'},{id:'l',nome:'Longarinas'},{id:'c',nome:'Arestas (cantoneira)',proprio:true,perfil:{tipo:'cant',a:25.4,b:25.4,t:3.17}},{id:'b',nome:'Borda externa',proprio:true,perfil:{tipo:'cant',a:31.75,b:31.75,t:3.17}},{id:'s',nome:'Base cruzada'}],
  perfilPadrao:{tipo:'ret',a:50,b:50,t:2},
  parametros:[
   {id:'C',nome:'Comprimento',tipo:'num',valor:10000,grupo:'Medidas'},
@@ -466,23 +469,6 @@ PR.piscina={
   {id:'esp',nome:'Espaç. quadros',tipo:'num',valor:1000,grupo:'Estrutura'},
   {id:'travY',nome:'Vão máx. entre montantes',tipo:'num',valor:3000,grupo:'Estrutura'},
   {id:'travL',nome:'Espaç. longarinas',tipo:'num',valor:1500,grupo:'Estrutura'},
-  {id:'praia',nome:'Prainha',tipo:'bool',valor:true,grupo:'Prainha'},
-  {id:'pComp',nome:'Comprimento',tipo:'num',valor:2500,grupo:'Prainha',se:'praia'},
-  {id:'pProf',nome:'Profundidade',tipo:'num',valor:400,grupo:'Prainha',se:'praia'},
-  {id:'escada',nome:'Escada',tipo:'bool',valor:true,grupo:'Escada'},
-  {id:'ePos',nome:'Posição',tipo:'sel',valor:'Largura toda (até a prainha)',opcoes:['Largura toda (até a prainha)','Cabeceira (centro)'],grupo:'Escada',se:'escada'},
-  {id:'eN',nome:'Nº degraus',tipo:'int',valor:3,grupo:'Escada',se:'escada'},
-  {id:'eEsp',nome:'Espelho (altura)',tipo:'num',valor:280,grupo:'Escada',se:'escada'},
-  {id:'ePiso',nome:'Piso',tipo:'num',valor:400,grupo:'Escada',se:'escada'},
-  {id:'eLarg',nome:'Largura (se centro)',tipo:'num',valor:1500,grupo:'Escada',se:'escada'},
-  {id:'degrau',nome:'Banco lateral',tipo:'bool',valor:false,grupo:'Banco lateral'},
-  {id:'dLarg',nome:'Largura',tipo:'num',valor:400,grupo:'Banco lateral',se:'degrau'},
-  {id:'dProf',nome:'Prof. da borda',tipo:'num',valor:450,grupo:'Banco lateral',se:'degrau'},
-  {id:'dComp',nome:'Comprimento',tipo:'num',valor:3000,grupo:'Banco lateral',se:'degrau'},
-  {id:'hidro',nome:'Hidro',tipo:'bool',valor:false,grupo:'Hidro'},
-  {id:'hC',nome:'Comprimento',tipo:'num',valor:2000,grupo:'Hidro',se:'hidro'},
-  {id:'hL',nome:'Largura',tipo:'num',valor:2000,grupo:'Hidro',se:'hidro'},
-  {id:'hProf',nome:'Profundidade',tipo:'num',valor:800,grupo:'Hidro',se:'hidro'},
   {id:'aresta',nome:'Cantoneira nas arestas',tipo:'bool',valor:false,grupo:'Arestas'},
   {id:'borda',nome:'Borda externa',tipo:'bool',valor:true,grupo:'Borda'},
   {id:'bLarg',nome:'Largura da aba',tipo:'num',valor:200,grupo:'Borda',se:'borda'},
@@ -490,32 +476,70 @@ PR.piscina={
   {id:'bExt',nome:'Balanço dos dormentes',tipo:'num',valor:500,grupo:'Base cruzada',se:'base'},
   {id:'bTril',nome:'Nº de trilhos',tipo:'int',valor:3,grupo:'Base cruzada',se:'base'},
   {id:'bH',nome:'Altura de cada camada',tipo:'num',valor:80,grupo:'Base cruzada',se:'base'}],
+ blocos:{
+  tipos:{
+   prainha:{nome:'Prainha',parametros:[
+    {id:'lado',nome:'Lado',tipo:'sel',valor:'Cabeceira A',opcoes:['Cabeceira A','Cabeceira B','Lateral 1','Lateral 2']},
+    {id:'comp',nome:'Avanço para dentro',tipo:'num',valor:2500},
+    {id:'prof',nome:'Profundidade',tipo:'num',valor:400},
+    {id:'larg',nome:'Largura no lado (0 = lado todo)',tipo:'num',valor:0},
+    {id:'enc',nome:'Encostar',tipo:'sel',valor:'No centro',opcoes:['No centro','No canto inicial','No canto final']},
+    {id:'afa',nome:'Afastamento do canto',tipo:'num',valor:0}]},
+   escada:{nome:'Escada',parametros:[
+    {id:'lado',nome:'Lado',tipo:'sel',valor:'Cabeceira A',opcoes:['Cabeceira A','Cabeceira B','Lateral 1','Lateral 2']},
+    {id:'n',nome:'Nº de degraus',tipo:'int',valor:3},
+    {id:'espelho',nome:'Espelho (altura)',tipo:'num',valor:280},
+    {id:'piso',nome:'Piso',tipo:'num',valor:400},
+    {id:'larg',nome:'Largura (0 = lado todo)',tipo:'num',valor:0},
+    {id:'enc',nome:'Encostar',tipo:'sel',valor:'No centro',opcoes:['No centro','No canto inicial','No canto final']},
+    {id:'afa',nome:'Afastamento do canto',tipo:'num',valor:0},
+    {id:'prainha',nome:'Começa depois da prainha do mesmo lado',tipo:'bool',valor:true}]},
+   banco:{nome:'Banco',parametros:[
+    {id:'lado',nome:'Lado',tipo:'sel',valor:'Lateral 1',opcoes:['Cabeceira A','Cabeceira B','Lateral 1','Lateral 2']},
+    {id:'comp',nome:'Comprimento no lado',tipo:'num',valor:3000},
+    {id:'larg',nome:'Largura (para dentro)',tipo:'num',valor:400},
+    {id:'prof',nome:'Profundidade da borda',tipo:'num',valor:450},
+    {id:'enc',nome:'Encostar',tipo:'sel',valor:'No canto final',opcoes:['No centro','No canto inicial','No canto final']},
+    {id:'afa',nome:'Afastamento do canto',tipo:'num',valor:0}]},
+   hidro:{nome:'Hidro',parametros:[
+    {id:'lado',nome:'Lado',tipo:'sel',valor:'Lateral 2',opcoes:['Cabeceira A','Cabeceira B','Lateral 1','Lateral 2']},
+    {id:'comp',nome:'Comprimento no lado',tipo:'num',valor:2000},
+    {id:'larg',nome:'Largura (para dentro)',tipo:'num',valor:2000},
+    {id:'prof',nome:'Profundidade',tipo:'num',valor:800},
+    {id:'enc',nome:'Encostar',tipo:'sel',valor:'No canto inicial',opcoes:['No centro','No canto inicial','No canto final']},
+    {id:'afa',nome:'Afastamento do canto',tipo:'num',valor:3700}]}},
+  inicial:[{tipo:'prainha'},{tipo:'escada'}]},
  codigo:String(function(P,H){
-  const {add,divPts,painel}=H;const L=P.C,W=P.L,EPS=1;
-  const larga=P.escada&&String(P.ePos).startsWith('Largura');
-  const ey0=W/2-P.eLarg/2,ey1=W/2+P.eLarg/2;
-  const x0e=P.praia?P.pComp:0,b0=P.praia?P.pProf:0;
-  const hx0=Math.min(L-P.hC,(P.praia?P.pComp:0)+(larga?P.eN*P.ePiso:0));
+  const {add,divPts,painel}=H;const L=P.C,W=P.L,EPS=1,R=[];
+  /* cada bloco vira um retângulo encostado num lado: s = ao longo do lado, n = para dentro */
+  const lado=b=>({'Cabeceira A':'A','Cabeceira B':'B','Lateral 1':'L1','Lateral 2':'L2'}[b.lado]||'A');
+  const comprLado=t=>t==='A'||t==='B'?W:L;
+  const faixa=(b,larg)=>{const t=lado(b),Ls=comprLado(t),w=larg>0?Math.min(larg,Ls):Ls;let s0;
+    if(w>=Ls)s0=0;else if(b.enc==='No canto inicial')s0=b.afa||0;else if(b.enc==='No canto final')s0=Ls-w-(b.afa||0);else s0=(Ls-w)/2+(b.afa||0);
+    s0=Math.max(0,Math.min(Ls-w,s0));return[t,s0,s0+w]};
+  const xy=(t,s,n)=>t==='A'?[n,s]:t==='B'?[L-n,s]:t==='L1'?[s,n]:[s,W-n];
+  const rect=(t,s0,s1,n0,n1)=>{const a=xy(t,s0,n0),b=xy(t,s1,n1);return[Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[0],b[0]),Math.max(a[1],b[1])]};
+  const mods=P.mods||[],prainhas=mods.filter(b=>b.tipo==='prainha');
+  for(const b of mods){let reg=null;
+    if(b.tipo==='prainha'){const[t,s0,s1]=faixa(b,b.larg);reg={b,t,s0,s1,n0:0,n1:b.comp,prof:()=>b.prof}}
+    else if(b.tipo==='banco'||b.tipo==='hidro'){const[t,s0,s1]=faixa(b,b.comp);reg={b,t,s0,s1,n0:0,n1:b.larg,prof:()=>b.prof}}
+    else if(b.tipo==='escada'){const[t,s0,s1]=faixa(b,b.larg);let off=0,d0=0;
+      if(b.prainha){const pr=prainhas.find(p=>lado(p)===t);if(pr){off=pr.comp;d0=pr.prof}}
+      const pisos=Math.max(1,b.n);reg={b,t,s0,s1,n0:off,n1:off+pisos*b.piso,degraus:Array.from({length:pisos-1},(_,i)=>off+(i+1)*b.piso),prof:n=>d0+Math.min(pisos,Math.floor((n-off)/b.piso)+1)*b.espelho}}
+    if(reg){reg.r=rect(reg.t,reg.s0,reg.s1,reg.n0,reg.n1);R.push(reg);H.bloco&&H.bloco(b.uid,[reg.r])}}
+  const nDe=(g,x,y)=>g.t==='A'?x:g.t==='B'?L-x:g.t==='L1'?y:W-y;
   const f=(x,y)=>{x=Math.min(Math.max(x,EPS),L-EPS);y=Math.min(Math.max(y,EPS),W-EPS);let d=P.H;
-    if(P.praia&&x<P.pComp)d=Math.min(d,P.pProf);
-    if(larga&&x>=x0e&&x<x0e+P.eN*P.ePiso){const k=Math.floor((x-x0e)/P.ePiso)+1;d=Math.min(d,b0+k*P.eEsp);}
-    if(P.escada&&!larga&&y>ey0&&y<ey1&&x>L-P.eN*P.ePiso){const k=Math.max(1,Math.ceil((L-x)/P.ePiso));d=Math.min(d,k*P.eEsp);}
-    if(P.degrau&&y<P.dLarg&&x>L-P.dComp)d=Math.min(d,P.dProf);
-    if(P.hidro&&x>hx0&&x<hx0+P.hC&&y>W-P.hL)d=Math.min(d,P.hProf);
-    return d;};
-  let bx=[];if(P.praia)bx.push(P.pComp);
-  if(P.escada){if(larga)for(let i=1;i<=P.eN;i++)bx.push(x0e+i*P.ePiso);else for(let i=1;i<=P.eN;i++)bx.push(L-i*P.ePiso);}
-  if(P.degrau)bx.push(L-P.dComp);if(P.hidro)bx.push(hx0,hx0+P.hC);
-  bx=[...new Set(bx.map(Math.round))].filter(x=>x>30&&x<L-30);
+    for(const g of R){const[x0,y0,x1,y1]=g.r;if(x>x0&&x<x1&&y>y0&&y<y1)d=Math.min(d,g.prof(nDe(g,x,y)))}return d;};
+  /* pontos obrigatórios: bordas de cada bloco e de cada degrau */
+  let bx=[],yb=[];
+  for(const g of R){bx.push(g.r[0],g.r[2]);yb.push(g.r[1],g.r[3]);for(const nd of g.degraus||[]){const p=xy(g.t,g.s0,nd);if(g.t==='A'||g.t==='B')bx.push(p[0]);else yb.push(p[1])}}
+  bx=[...new Set(bx.map(Math.round))].filter(x=>x>30&&x<L-30);yb=[...new Set(yb.map(Math.round))].filter(y=>y>30&&y<W-30);
   const xs=divPts([0,L,...bx],P.esp),yL=divPts([0,W],P.travL);
-  const yb=[];for(const y of[P.dLarg,ey0,ey1,W-P.hL])if(y>0&&y<W)yb.push(y);
   const lados=x=>[y=>f(x-EPS,y),y=>f(x+EPS,y)];
-  // longarinas: trechos inteiros enquanto a profundidade não muda
   const runs=[];for(const y of yL){let ini=null,zc=null;
     for(let i=0;i<xs.length-1;i++){const z=f((xs[i]+xs[i+1])/2,y);
       if(ini===null){ini=xs[i];zc=z;}else if(Math.abs(z-zc)>1){runs.push([y,ini,xs[i],zc]);ini=xs[i];zc=z;}}
     if(ini!==null)runs.push([y,ini,L,zc]);}
-  // quadros transversais
   for(const x of xs){
     const[dl,dr]=lados(x);
     let B=[0,W,...runs.filter(r=>r[1]<x-1&&x<r[2]-1&&r[0]>0&&r[0]<W).map(r=>r[0])];for(const y of yb)for(const d of[dl,dr])if(Math.abs(d(y-EPS)-d(y+EPS))>1)B.push(y);
@@ -534,7 +558,6 @@ PR.piscina={
     for(const x of xs){add([x,-b,0],[x,0,0],'b');add([x,W,0],[x,W+b,0],'b');}}
   if(P.base){const h=P.bH,e=P.bExt;for(const x of xs)add([x,-e,-h],[x,W+e,-h],'s','dormente',{livre:true});
     for(const y of divPts([0,W],W/Math.max(1,P.bTril-1)))add([0,y,-2*h],[L,y,-2*h],'s','trilho',{livre:true});}
-  // chapa
   let cx=[...new Set([0,L,...bx])].sort((a,b)=>a-b),cy=[...new Set([0,W,...yb])].sort((a,b)=>a-b);
   const D=[];for(let i=0;i<cx.length-1;i++){D.push([]);for(let j=0;j<cy.length-1;j++)D[i].push(f((cx[i]+cx[i+1])/2,(cy[j]+cy[j+1])/2));}
   for(let i=0;i<cx.length-1;i++)for(let j=0;j<cy.length-1;j++){const d=D[i][j],xa=cx[i],xb=cx[i+1],ya=cy[j],yb2=cy[j+1];
@@ -839,6 +862,7 @@ function carregar(m,vals){
     if(g.proprio===undefined)g.proprio=!!(g.perfil&&!igual(g.perfil,MOD.perfilPadrao));
     if(!g.proprio||!g.perfil)g.perfil=clone(MOD.perfilPadrao);});
   for(const p of MOD.parametros)VAL[p.id]=vals&&p.id in vals?vals[p.id]:p.valor;
+  if(MOD.blocos&&MOD.blocos.tipos){if(vals&&Array.isArray(vals.mods))VAL.mods=clone(vals.mods);else if(vals&&MOD.preset==='piscina'&&('praia' in vals||'escada' in vals))VAL.mods=migraPiscina(vals);else VAL.mods=(MOD.blocos.inicial||[]).map(({tipo,...o})=>novoBloco(tipo,o))}
   montarUI();upd(true);
 }
 function montarUI(){
@@ -871,11 +895,12 @@ function montarUI(){
     if(gn==='Medidas'||head)box.appendChild(sec);else{if(!detE){detE=document.createElement('details');detE.id='detEsp';detE.className='det';detE.innerHTML='<summary>Especificações detalhadas</summary>';}detE.appendChild(sec);}
   }
   if(detE)box.appendChild(detE);
-  vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;$('alinha').value=MOD.alinha||'centro';
+  montarBlocos();vis();montarPerfis();$('esqAuto').checked=!!MOD.esqAuto;$('alinha').value=MOD.alinha||'centro';
   legenda();
 }
-function legenda(){$('legend').innerHTML=(CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`;
-  $('lgCor').onclick=()=>{CORES=!CORES;store('dc-estr-cores',CORES);legenda();upd();};}
+function legenda(){const tb=tiposBloco();$('legend').innerHTML=(VERBLOCO&&tb?['Corpo',...nomesBlocos()].map((n,i)=>`<i style="background:${i?CORBL[(i-1)%CORBL.length]:'#8a857a'}"></i>${esc(n)}`).join('')+' · ':CORES?MOD.grupos.map(g=>`<i style="background:${g.cor}"></i>${esc(g.nome)}`).join('')+' · ':'')+`<u id="lgCor" style="cursor:pointer">${CORES?'tirar cores':'ver partes por cor'}</u>`+(tb?` · <u id="lgBl" style="cursor:pointer">${VERBLOCO?'tirar blocos':'ver blocos'}</u>`:'');
+  if($('lgBl'))$('lgBl').onclick=()=>{VERBLOCO=!VERBLOCO;if(VERBLOCO)CORES=false;legenda();upd();};
+  $('lgCor').onclick=()=>{CORES=!CORES;if(CORES)VERBLOCO=false;store('dc-estr-cores',CORES);legenda();upd();};}
 function vis(){document.querySelectorAll('#params [data-se]').forEach(e=>{const s=e.dataset.se;e.style.display=!s||VAL[s]?'':'none';});}
 const esc=DC.esc;
 function editorPerfil(p,onChange){
@@ -991,7 +1016,8 @@ function draw(M){
   bbox={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9};
   for(const m of M){const c0=group.children.length;
     const g=MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0],p=m.pf||g.perfil,sel=SEL.includes(chaveM(m));
-    const mat=sel?SELMAT:mats[g.id]=mats[g.id]||new THREE.MeshStandardMaterial({color:CORES?g.cor:0x8a857a,roughness:.6,metalness:.15});
+    const ck=VERBLOCO?'b'+(m.bloco||''):g.id,bi=(VAL.mods||[]).findIndex(b=>b.uid===m.bloco),cor=VERBLOCO?(bi<0?'#8a857a':CORBL[bi%CORBL.length]):CORES?g.cor:0x8a857a;
+    const mat=sel?SELMAT:mats[ck]=mats[ck]||new THREE.MeshStandardMaterial({color:cor,roughness:.6,metalness:.15});
     for(let i=1;i<m.pts.length;i++){
       let a=P3(...m.pts[i-1]),b=P3(...m.pts[i]);
       if(m.trim&&m.pts.length===2){const u=b.clone().sub(a).normalize();a=a.clone().add(u.clone().multiplyScalar(m.trim[0]/1000));b=b.clone().sub(u.clone().multiplyScalar(m.trim[1]/1000));}
@@ -1252,10 +1278,41 @@ const pfOf=m=>m.pf||(MOD.grupos.find(x=>x.id===m.g)||MOD.grupos[0]).perfil;
 }
 // ===== cálculo e resultado =====
 function compilar(codigo){const fn=new Function('return ('+codigo+')')();if(typeof fn!=='function')throw new Error('código sem função');return fn;}
+/* ===== blocos (módulos) do projeto: cada tipo tem seus campos; o gerador recebe P.mods ===== */
+let VERBLOCO=false;const CORBL=['#e3924a','#5d8fb8','#7fb87a','#c97fb8','#d4c35a','#6fc3c0','#b07a5a','#8a7fd0'];
+function tiposBloco(){return(MOD&&MOD.blocos&&MOD.blocos.tipos)||null}
+function novoBloco(tipo,extra){const T=tiposBloco()[tipo],b={uid:'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),tipo};for(const q of T.parametros)b[q.id]=q.valor;return Object.assign(b,extra||{})}
+function nomesBlocos(){const cont={};return(VAL.mods||[]).map(b=>{const T=tiposBloco()[b.tipo];cont[b.tipo]=(cont[b.tipo]||0)+1;const tot=VAL.mods.filter(x=>x.tipo===b.tipo).length;return (T?T.nome:b.tipo)+(tot>1?' '+cont[b.tipo]:'')})}
+function valComBlocos(){if(!tiposBloco())return VAL;const nm=nomesBlocos();return Object.assign({},VAL,{mods:(VAL.mods||[]).filter(b=>tiposBloco()[b.tipo]).map((b,i)=>{const T=tiposBloco()[b.tipo],o={};for(const q of T.parametros)o[q.id]=q.valor;return Object.assign(o,b,{nome:nm[i]})})})}
+/* peça pertence ao bloco cujo retângulo contém o meio dela (o menor, se houver mais de um); senão é do corpo */
+function atribuiBlocos(M){const BL=(M.blocos||[]).map(b=>({uid:b.uid,rects:b.rects,area:b.rects.reduce((a,r)=>a+(r[2]-r[0])*(r[3]-r[1]),0)})).sort((a,b)=>a.area-b.area);
+  for(const m of M){const a=m.pts[0],b=m.pts[m.pts.length-1],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,t=1;m.bloco='';
+    for(const B of BL)if(B.rects.some(r=>x>=r[0]-t&&x<=r[2]+t&&y>=r[1]-t&&y<=r[3]+t)){m.bloco=B.uid;break}}}
+function nomeBloco(uid){if(!uid)return'Corpo';const i=(VAL.mods||[]).findIndex(b=>b.uid===uid);return i<0?'Corpo':nomesBlocos()[i]}
+function montarBlocos(){const box=$('blocos');if(!box)return;const T=tiposBloco();box.style.display=T?'':'none';if(!T){box.innerHTML='';return}
+  const nm=nomesBlocos();
+  box.innerHTML=`<div class="ttl">Blocos</div><div class="sub" style="margin:-2px 0 8px">Cada parte é um bloco: adicione, duplique ou tire. Lados: cabeceira A (início do comprimento), cabeceira B, lateral 1, lateral 2.</div>`+
+    (VAL.mods||[]).map((b,i)=>{const tp=T[b.tipo];if(!tp)return'';return `<div class="bloco" data-i="${i}"><div class="bh"><i style="background:${CORBL[i%CORBL.length]}"></i><b>${esc(nm[i])}</b><span class="bx" data-dup="${i}" title="Duplicar">⧉</span><span class="bx" data-del="${i}" title="Tirar">✕</span></div><div class="grid">`+
+      tp.parametros.map(q=>q.tipo==='bool'?`<label class="f swl"><span>${esc(q.nome)}</span><input type="checkbox" data-k="${q.id}" ${b[q.id]?'checked':''}></label>`:q.tipo==='sel'?`<label class="f">${esc(q.nome)}<select data-k="${q.id}">${q.opcoes.map(o=>`<option${o===b[q.id]?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`:`<label class="f">${esc(q.nome)}${q.tipo==='int'?'':' (mm)'}<input type="number" step="${q.tipo==='int'?1:'any'}" data-k="${q.id}" value="${b[q.id]}"></label>`).join('')+`</div></div>`}).join('')+
+    `<div class="row" style="grid-template-columns:1fr auto;margin-top:8px"><select id="novoTipo">${Object.entries(T).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('')}</select><div class="btn on" id="bAddBloco">+ Adicionar bloco</div></div>`;
+  box.querySelectorAll('.bloco').forEach(el=>{const b=VAL.mods[+el.dataset.i],tp=T[b.tipo];
+    el.querySelectorAll('[data-k]').forEach(inp=>{const q=tp.parametros.find(x=>x.id===inp.dataset.k);
+      const set=()=>{if(q.tipo==='bool')b[q.id]=inp.checked;else if(q.tipo==='sel')b[q.id]=inp.value;else{const v=parseFloat(inp.value);if(!isFinite(v))return;b[q.id]=q.tipo==='int'?Math.round(v):v}upd()};
+      inp.addEventListener(q.tipo==='bool'||q.tipo==='sel'?'change':'input',set)})});
+  box.querySelectorAll('[data-del]').forEach(e=>e.onclick=()=>{VAL.mods.splice(+e.dataset.del,1);montarBlocos();upd()});
+  box.querySelectorAll('[data-dup]').forEach(e=>e.onclick=()=>{const o=clone(VAL.mods[+e.dataset.dup]);o.uid=novoBloco(o.tipo).uid;VAL.mods.splice(+e.dataset.dup+1,0,o);montarBlocos();upd()});
+  $('bAddBloco').onclick=()=>{VAL.mods.push(novoBloco($('novoTipo').value));montarBlocos();upd()};legenda();}
+/* projetos de piscina salvos antes dos blocos: converte prainha/escada/banco/hidro em blocos */
+function migraPiscina(v){const mods=[],L=v.C||10000;
+  if(v.praia)mods.push(novoBloco('prainha',{comp:v.pComp??2500,prof:v.pProf??400}));
+  if(v.escada){const larga=String(v.ePos||'Largura').startsWith('Largura');mods.push(novoBloco('escada',larga?{n:v.eN??3,espelho:v.eEsp??280,piso:v.ePiso??400}:{lado:'Cabeceira B',n:v.eN??3,espelho:v.eEsp??280,piso:v.ePiso??400,larg:v.eLarg??1500,prainha:false}))}
+  if(v.degrau)mods.push(novoBloco('banco',{comp:v.dComp??3000,larg:v.dLarg??400,prof:v.dProf??450}));
+  if(v.hidro){const larga=v.escada&&String(v.ePos||'Largura').startsWith('Largura');mods.push(novoBloco('hidro',{comp:v.hC??2000,larg:v.hL??2000,prof:v.hProf??800,afa:Math.min(L-(v.hC??2000),(v.praia?v.pComp??2500:0)+(larga?(v.eN??3)*(v.ePiso??400):0))}))}
+  return mods}
 function upd(reset){
   if(MOD&&MOD.ajustes){const gs=Date.now();MOD.ajustes.forEach(a=>{if(!a.gr)a.gr=gs;});}
   let M=[];const st=$('status');
-  try{M=construir(compilar(MOD.codigo),VAL);aplicaAjustes(M);esquadrias(M);juntas(M);chapaPorFora(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
+  try{M=construir(compilar(MOD.codigo),valComBlocos());aplicaAjustes(M);esquadrias(M);juntas(M);chapaPorFora(M);atribuiBlocos(M);if(st.dataset.erro){st.textContent='';st.className='status';delete st.dataset.erro;}}
   catch(e){st.textContent='Erro ao montar: '+e.message;st.className='status err';st.dataset.erro=1;}
   draw(M);
   const dims=`${Math.round(bbox.x1-bbox.x0)} × ${Math.round(bbox.y1-bbox.y0)} × ${Math.round(bbox.z1-bbox.z0)} mm`;
@@ -1283,6 +1340,10 @@ function upd(reset){
   $('kB').textContent=tot;$('kP').textContent=M.length;$('kK').textContent=Math.round(kg);
   const bd=$('badge');bd.textContent=emd?`${emd} EMENDA(S)`:'SEM EMENDA';bd.className='badge'+(emd?' warn':'');
   {const cs=compTodos();if(cs.length){const secs=[...new Set(cs.map(c=>c[0]))];$('tab').innerHTML+=secs.map(sc=>`<h2 style="margin-top:18px">${esc(sc)}</h2><table>${cs.filter(c=>c[0]===sc).map(c=>`<tr><td>${esc(c[1])}</td><td class="n">${esc(c[2])}</td></tr>`).join('')}</table>`).join('');PED.push('',...secs.flatMap(sc=>[sc.toUpperCase()+':',...cs.filter(c=>c[0]===sc).map(c=>c[1]+' — '+c[2])]));}}
+  if(tiposBloco()){const pb={};for(const m of M){const g=GN(m.g),pp=m.pf||g.perfil,k=m.bloco||'';const o=(pb[k]=pb[k]||{m:0,kg:0,n:0});const l=(m.lenCorte||m.len)/1000;o.m+=l;o.kg+=l*kgm(pp);o.n++;}
+    const ord=['',...(VAL.mods||[]).map(b=>b.uid)].filter(k=>pb[k]);
+    $('tab').innerHTML+=`<h2 style="margin-top:18px">Por bloco</h2><table><tr><th>Bloco</th><th class="n">Peças</th><th class="n">Metros</th><th class="n">Peso</th></tr>${ord.map(k=>`<tr><td>${esc(nomeBloco(k))}</td><td class="n">${pb[k].n}</td><td class="n">${pb[k].m.toFixed(1)} m</td><td class="n">${pb[k].kg.toFixed(1)} kg</td></tr>`).join('')}</table>`;
+    PED.push('','POR BLOCO:',...ord.map(k=>`${nomeBloco(k)}: ${pb[k].n} peças · ${pb[k].m.toFixed(1)} m · ${pb[k].kg.toFixed(1)} kg`));}
   LAST={M,cut,gid,PED};try{montaEsc();montaCompL();}catch(e){}painelSel();opcoesChapa();store('dc-estr-atual',{mod:MOD,val:VAL});
   if(reset)setView(view);else render();
 }
@@ -1441,12 +1502,13 @@ function cartaoMec(c,x,y,w,h,n,m){c.strokeStyle='#ddd';c.lineWidth=2;c.strokeRec
   DC.cota(c,[cx-L/2,cy+D/2],[cx+L/2,cy+D/2],m.L+'',50);txt(c,(m.tipo==='rolo'?'tubo ':'')+'Ø'+fmt(m.d),cx,cy-D/2-24,24,'#c05a10','center',true);
   if(m.tipo==='rolo')txt(c,'eixo Ø'+fmt(m.eixo),cx-L/2-pt*k,cy-E/2-30,22,'#c05a10','left',true);}
 function montaEsc(){const e=$('fEsc'),v=e.value,gs=[...new Set((LAST.M||[]).map(m=>m.g))];
-  e.innerHTML='<option value="tudo">Projeto completo</option>'+gs.map(id=>{const g=MOD.grupos.find(x=>x.id===id);return `<option value="g:${id}">Só: ${esc(g?g.nome:id)}</option>`}).join('')+'<option value="peca">Só uma peça</option>';
+  const bl=tiposBloco()?['',...(VAL.mods||[]).map(b=>b.uid)].filter(k=>(LAST.M||[]).some(m=>(m.bloco||'')===k)):[];
+  e.innerHTML='<option value="tudo">Projeto completo</option>'+bl.map(k=>`<option value="b:${k||'corpo'}">Só o bloco: ${esc(nomeBloco(k))}</option>`).join('')+gs.map(id=>{const g=MOD.grupos.find(x=>x.id===id);return `<option value="g:${id}">Só: ${esc(g?g.nome:id)}</option>`}).join('')+'<option value="peca">Só uma peça</option>';
   if([...e.options].some(o=>o.value===v))e.value=v;const pu=pecasUnicas(LAST.M||[]);$('fPeca').innerHTML=pu.map((p,i)=>`<option value="${i}">P${i+1} · ${esc(p.g.nome)} · ${p.L} mm (${p.q} un)</option>`).join('')+
     chapasPlan().map((ch,i)=>`<option value="c:${i}">C${i+1} · ${esc(ch.nome)} · ${ch.pl.larg}×${ch.pl.alt} (${ch.q} un)</option>`).join('')+mecPlan().map((m,i)=>`<option value="m:${i}">${m.tipo==='rolo'?'R':'PI'}${i+1} · ${m.tipo==='rolo'?'Rolo':'Pino'} ${esc(m.nome)} · ${m.L} mm (${m.q} un)</option>`).join('');$('lfPeca').style.display=e.value==='peca'?'':'none';}
 $('fEsc').onchange=()=>{$('lfPeca').style.display=$('fEsc').value==='peca'?'':'none';};
 $('fEsc').onfocus=montaEsc;
-function escopoM(){const v=$('fEsc').value||'tudo';if(!v.startsWith('g:'))return null;const id=v.slice(2),f=LAST.M.filter(m=>m.g===id);f.paineis=[];f.extras=(LAST.M.extras||[]).filter(x=>x.g===id);return{id,M:f};}
+function escopoM(){const v=$('fEsc').value||'tudo';if(v.startsWith('b:')){const k=v.slice(2)==='corpo'?'':v.slice(2),f=LAST.M.filter(m=>(m.bloco||'')===k);f.paineis=[];f.extras=[];return{id:null,M:f,bloco:k}}if(!v.startsWith('g:'))return null;const id=v.slice(2),f=LAST.M.filter(m=>m.g===id);f.paineis=[];f.extras=(LAST.M.extras||[]).filter(x=>x.g===id);return{id,M:f};}
 function gerarFolhas(){
   const esc_=$('fEsc').value||'tudo';
   if(esc_==='peca'&&/^[cm]:/.test($('fPeca').value)){const[t,i]=$('fPeca').value.split(':'),e=DC.folha({empresa:EMPRESA,projeto:MOD.nome||MOD.titulo,cliente:MOD.cliente||'',folha:1,total:1});
@@ -1456,7 +1518,7 @@ function gerarFolhas(){
   if(esc_==='peca'){const pu=pecasUnicas(LAST.M),p=pu[+$('fPeca').value||0];const cv=document.createElement('canvas');cv.width=FW;cv.height=FH;const e=cv.getContext('2d');cabecalho(e,1,1);
     txt(e,'PEÇA · '+p.g.nome+' · '+perfNome(p.pf),MG+40,MG+80,40,'#222','left',true);cartaoPeca(e,MG+40,MG+140,FW-2*MG-80,FH-2*MG-480,1,p);
     txt(e,`Quantidade: ${p.q} un · medida de corte ${p.L} mm · ${(p.L*p.q/1000).toFixed(2)} m · ${(p.L*p.q/1000*kgm(p.pf)).toFixed(1)} kg`,MG+40,FH-MG-300,32,'#222','left',true);return[cv];}
-  const ES=escopoM(),gidSalvo=LAST.gid;if(ES)LAST.gid=[ES.id];
+  const ES=escopoM(),gidSalvo=LAST.gid;if(ES)LAST.gid=ES.id?[ES.id]:[...new Set(ES.M.map(m=>m.g))];
   try{return gerarFolhas2(ES?ES.M:LAST.M);}finally{LAST.gid=gidSalvo;}}
 function gerarFolhas2(MM){
   const M=MM,PN=M.paineis||[];const PU=pecasUnicas(M),NPF=Math.ceil(PU.length/12),CH=chapasPlan(M),MC=mecPlan(M),NCH=Math.ceil(CH.length/6),NMC=Math.ceil(MC.length/6),TOT=4+NPF+NCH+NMC;
@@ -1602,7 +1664,8 @@ VOCÊ ESTÁ DENTRO DO APP, conversando com o serralheiro/projetista (ele fala po
 - Mudou a forma da estrutura, os grupos ou acrescentou peças (reforço, travessa, diagonal, escada...)? Mande "modelo" COMPLETO atualizado, mantendo tudo que não foi pedido para mudar (inclusive os valores atuais).
 - Só mudou medidas/opções que já existem como parâmetro? Mande só "valores" e "modelo": null.
 - Pergunta ou conversa sem mudança? "modelo": null e "valores": null.
-- Se não tem modelo atual, monte um do zero a partir do pedido.`;
+- Se não tem modelo atual, monte um do zero a partir do pedido.
+- BLOCOS: se o modelo atual tem "blocos" (ex.: piscina com prainha, escada, banco, hidro), cada parte é um bloco em "mods" (tipo, uid e campos do tipo; lados: Cabeceira A = início do comprimento, Cabeceira B, Lateral 1, Lateral 2). Para pôr, tirar ou mudar blocos mande "valores": {"mods": [lista COMPLETA de blocos]}, mantendo o uid dos que continuam.`;
 let sampler=null,ditado=null,falador=null,ocup=false,REC=false,ANEXOS=[],CHAT=store('dc-estr-chat')||[],FALAR=!!store('dc-estr-falar');
 const norm=DC.norm;
 function addChat(quem,txt){CHAT.push({q:quem,t:txt});CHAT=CHAT.slice(-30);store('dc-estr-chat',CHAT);mostrarChat();}
@@ -1613,7 +1676,7 @@ $('mic').onclick=micTeclado;
 (async()=>{
   const RS=await DC.recursos();sampler=RS.sample;falador=RS.tts;
   if(sampler){try{const lm=await sampler.limits();if(!lm||!lm.images)$('anx').style.display='none';}catch(e){}}
-  else{$('anx').style.display='none';$('status').textContent='Comandos de medida: "profundidade 1,40", "piso da escada 350", "tira a prainha"…';}
+  else{$('anx').style.display='none';$('status').textContent='Comandos: "profundidade 1,40", "adiciona uma escada na lateral 2", "prainha profundidade 40 cm", "tira o banco"…';}
   ditado=await DC.ditado($('pedido'),{mic:$('mic'),antes:()=>{falador&&falador.stop&&falador.stop();},aviso:t=>{$('status').className='status';$('status').textContent=t;}});
   if(falador){const b=$('bFalar');b.style.display='';b.classList.toggle('on',FALAR);
     b.onclick=()=>{FALAR=!FALAR;store('dc-estr-falar',FALAR);b.classList.toggle('on',FALAR);if(!FALAR)falador.stop();};}
@@ -1622,11 +1685,30 @@ function falar(t){if(falador&&FALAR)falador.speak(t,{language:'pt-BR'}).catch(()
 
 // --- comando por frase (sem IA) ---
 const TIPOS_TXT=[[/filament|enroladeira/,'filamentadora'],[/cilindr/,'cilindro'],[/\btanque\b/,'tanque'],[/\bpiscina|gabarito\b/,'piscina'],[/\bmesa\b/,'mesa'],[/\bberco|estrutura de molde\b/,'molde'],[/\bcorrimao|guarda.corpo\b/,'corrimao'],[/\bcapota|\barco\b/,'capota'],[/\bescada (metalica|reta)\b/,'escada']];
+/* comandos de bloco: "adiciona uma escada na lateral 2", "tira o banco", "prainha profundidade 40 cm", "escada 2 com 4 degraus" */
+const LADOS_TXT=[[/cabeceira a\b|cabeceira um\b/,'Cabeceira A'],[/cabeceira b\b|cabeceira dois\b/,'Cabeceira B'],[/lateral 1\b|lateral um\b/,'Lateral 1'],[/lateral 2\b|lateral dois\b/,'Lateral 2']];
+function mmTxt(n,u){let v=parseFloat(String(n).replace(',','.'));if(/^c/.test(u||''))v*=10;else if(/^mm|^mili/.test(u||'')){}else if(/^m/.test(u||'')||(v<=30&&!/^\d{3,}$/.test(String(n))))v*=1000;return v}
+function camposBloco(b,txt){const T=tiposBloco()[b.tipo],f=[],N='(\\d+(?:[.,]\\d+)?)\\s*(metros?|m|cm|mm|centimetros?|milimetros?)?';
+  for(const[re,l]of LADOS_TXT)if(re.test(txt)&&T.parametros.some(q=>q.id==='lado')){b.lado=l;f.push(l)}
+  if(/no centro|centraliz/.test(txt)){b.enc='No centro';f.push('no centro')}else if(/canto inicial|no inicio/.test(txt)){b.enc='No canto inicial';f.push('no canto inicial')}else if(/canto final|no fim|no final/.test(txt)){b.enc='No canto final';f.push('no canto final')}
+  const campos=[['prof',/(?:profundidade|fundo)/],['comp',/(?:comprimento|avanco|comprido)/],['larg',/largura/],['espelho',/(?:espelho|altura do degrau|altura)/],['piso',/piso/],['afa',/(?:afastamento|afastado|distancia do canto)/]];
+  for(const[id,re]of campos){if(!T.parametros.some(q=>q.id===id))continue;const m=txt.match(new RegExp(re.source+'\\D{0,12}?'+N));if(m){b[id]=Math.round(mmTxt(m[1],m[2]));f.push(T.parametros.find(q=>q.id===id).nome.replace(/ \(.*/,'')+' '+b[id]+' mm')}}
+  if(T.parametros.some(q=>q.id==='n')){const m=txt.match(/(\d+)\s*(?:degraus?|degrais)/);if(m){b.n=+m[1];f.push(b.n+' degraus')}}
+  return f}
+function comandoBlocos(t){const T=tiposBloco();if(!T)return null;const tipos=Object.keys(T),achaTipo=s=>tipos.find(k=>s.includes(norm(T[k].nome).slice(0,5)));
+  let m=t.match(/\b(adiciona|adicionar|coloca|colocar|bota|botar|poe|por|inclui|incluir|cria|criar|mais|outra|outro)\b(.*)/);
+  if(m){const k=achaTipo(m[2]);if(k){const b=novoBloco(k);VAL.mods.push(b);const f=camposBloco(b,m[2]);return 'Bloco adicionado: '+nomeBloco(b.uid)+(f.length?' · '+f.join(' · '):'')}}
+  m=t.match(/\b(tira|tirar|remove|remover|sem|apaga|apagar|exclui|excluir)\b\s+(?:a|o|as|os|um|uma)?\s*([a-z]+)(?:\s+(\d+)\b)?/);
+  if(m){const k=achaTipo(m[2]);if(k){const L=VAL.mods.filter(b=>b.tipo===k);if(!L.length)return 'Não tem '+T[k].nome.toLowerCase()+' no projeto.';const alvo=m[3]&&L[+m[3]-1]?L[+m[3]-1]:L[L.length-1],nm=nomeBloco(alvo.uid);VAL.mods.splice(VAL.mods.indexOf(alvo),1);return 'Bloco tirado: '+nm}}
+  const k=achaTipo(t);if(k){const L=VAL.mods.filter(b=>b.tipo===k);if(!L.length)return null;const mi=t.match(new RegExp(norm(T[k].nome).slice(0,5)+'\\w*\\s+(\\d+)\\b(?!\\s*(?:mm|cm|m\\b|metro|centim|milim|degra))'));
+    const b=mi&&L[+mi[1]-1]?L[+mi[1]-1]:L[0],f=camposBloco(b,mi?t.replace(mi[0],norm(T[k].nome)):t);if(f.length)return nomeBloco(b.uid)+': '+f.join(' · ')}
+  return null}
 function comandoLocal(txt){
   let t=norm(txt).trim();if(!t||!MOD||NOVO)return null;
   t=t.replace(/(\d)\s*x\s*(\d)/g,'$1 por $2').replace(/\b(purinha|prainha|praia|prainhas)\b/g,'prainha').replace(/(\d+)\s+(escadas?|degraus?|degrais)/g,'$1 degraus').replace(/\bfundo\b/g,'profundidade').replace(/\bcomprido\b/g,'comprimento');
   const feitos=[],mudou={};let trocou='';
   for(const[re,k]of TIPOS_TXT)if(re.test(t)&&PR[k]){if(MOD.titulo!==PR[k].titulo){carregar({...PR[k],preset:k});trocou=PR[k].titulo;}break;}
+  {const rb=comandoBlocos(t);if(rb){montarBlocos();upd();return (trocou?'Modelo: '+trocou+'. ':'')+rb;}}
   const P=MOD.parametros,pn=p=>norm(p.nome).replace(/\(.*\)/,'').replace(/^n[ºo°]\s*/,'').trim();
   const grupos=[...new Set(P.map(p=>norm(p.grupo||'')))].filter(g=>g&&g!=='medidas'&&g!=='estrutura');
   const achaGrupo=s=>grupos.find(g=>s.includes(g.split(' ')[0].slice(0,6)));
@@ -1681,7 +1763,7 @@ async function enviar(){
   ocup=true;$('bEnviar').style.opacity=.5;st.className='status';st.innerHTML='<span class="spin"></span>Montando a estrutura…';
   addChat('eu',(txt||'(projeto anexado)')+(ANEXOS.length?' 📎'+ANEXOS.length:''));$('pedido').value='';
   let prompt=API+'\n'+CONVERSA+'\n\n';
-  if(MOD&&!NOVO){const atual={comp:MOD.comp||[],titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,proprio:!!g.proprio,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),esqAuto:!!MOD.esqAuto,perfilPadrao:MOD.perfilPadrao,codigo:MOD.codigo};
+  if(MOD&&!NOVO){const atual={comp:MOD.comp||[],titulo:MOD.titulo,resumo:MOD.resumo,perguntas:MOD.perguntas,grupos:MOD.grupos.map(g=>({id:g.id,nome:g.nome,proprio:!!g.proprio,perfil:g.perfil})),parametros:MOD.parametros.map(p=>({...p,valor:VAL[p.id]})),blocos:MOD.blocos||undefined,mods:tiposBloco()?valComBlocos().mods:undefined,esqAuto:!!MOD.esqAuto,perfilPadrao:MOD.perfilPadrao,codigo:MOD.codigo};
     prompt+='MODELO ATUAL NA TELA:\n'+JSON.stringify(atual)+'\n\n';}
   else prompt+='MODELO ATUAL: nenhum.\n\n';
   const hist=CHAT.slice(-13,-1).map(m=>(m.q==='eu'?'Usuário: ':m.q==='cl'?'Você: ':'App: ')+m.t).join('\n');
@@ -1696,7 +1778,8 @@ async function enviar(){
       const op={modelTier:'complex'};if(imgs.length)op.images=imgs;
       const r=await sampler(msgs,op),j=lerJSON(r.text);
       if(j.modelo){validar(j.modelo);j.modelo.deClaude=true;delete j.modelo.preset;carregar(j.modelo);}
-      else if(j.valores&&MOD){for(const k in j.valores)if(MOD.parametros.some(p=>p.id===k))VAL[k]=j.valores[k];montarUI();upd();}
+      else if(j.valores&&MOD){for(const k in j.valores)if(MOD.parametros.some(p=>p.id===k))VAL[k]=j.valores[k];
+        if(Array.isArray(j.valores.mods)&&tiposBloco())VAL.mods=j.valores.mods.filter(b=>b&&tiposBloco()[b.tipo]).map(b=>{const n=novoBloco(b.tipo);const o=Object.assign(n,b);delete o.nome;if(!b.uid)o.uid=n.uid;return o});montarUI();upd();}
       if(Array.isArray(j.componentes)&&MOD){MOD.comp=j.componentes.filter(c=>c&&c.nome).map(c=>({sec:String(c.sec||'Outros'),nome:String(c.nome),qtd:String(c.qtd||'1')}));upd();}
       const f=j.fala||(j.modelo?'Montei. Confere as medidas.':'Ok.');addChat('cl',f);falar(f);
       ANEXOS=[];mostrarAnexos();st.textContent='';break;
